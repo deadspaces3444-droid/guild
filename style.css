@@ -297,7 +297,6 @@ h2 {
     flex-wrap: wrap;
 }
 
-/* Ник — без плашки, жирный белый */
 .player-list li .nick {
     font-weight: 700;
     font-size: 16px;
@@ -305,7 +304,6 @@ h2 {
     word-break: break-word;
 }
 
-/* Гильдия — ЖЁЛТАЯ плашка */
 .player-list li .guild {
     display: inline-block;
     font-size: 12px;
@@ -318,7 +316,6 @@ h2 {
     white-space: nowrap;
 }
 
-/* Фракция — СИНЯЯ плашка */
 .player-list li .faction {
     display: inline-block;
     font-size: 12px;
@@ -371,6 +368,7 @@ h2 {
     align-items: center;
     justify-content: center;
     z-index: 100;
+    padding: 16px;
 }
 .modal-content {
     background: var(--panel);
@@ -382,6 +380,8 @@ h2 {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 .modal-content h2 { font-size: 18px; margin-bottom: 6px; text-shadow: none; }
 .modal-content input {
@@ -492,28 +492,114 @@ a.icon-btn:hover {
     color: var(--green);
 }
 
-/* ============ АДАПТИВ ============ */
+/* ============ АДАПТИВ: ПЛАНШЕТ ============ */
 @media (max-width: 900px) {
     #clanView header { padding: 0 180px; }
 }
 
+/* ============ АДАПТИВ: МОБИЛЬНЫЙ ============ */
 @media (max-width: 700px) {
-    #clanView header { padding: 90px 0 0; }
-    .back-btn { top: -50px; }
+    body { padding: 14px; }
+
+    #clanView header {
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+        text-align: left;
+        margin-bottom: 20px;
+    }
+
+    #clanView header h1 {
+        font-size: 20px;
+        justify-content: flex-start;
+        gap: 8px;
+        margin: 0;
+    }
+
+    .back-btn {
+        position: static;
+        align-self: flex-start;
+        padding: 8px 14px;
+        font-size: 14px;
+    }
+
     #clanView .auth-box {
         position: static;
-        justify-content: center;
-        margin-top: 12px;
+        justify-content: flex-start;
         flex-wrap: wrap;
+        gap: 8px;
+        margin: 0;
     }
-    #clanView header h1 { font-size: 22px; }
+
+    .clan-icon-small { width: 28px; height: 28px; }
+
+    .tabs {
+        gap: 6px;
+        margin-bottom: 16px;
+    }
+    .tab {
+        padding: 8px 12px;
+        font-size: 13px;
+        flex: 1 1 auto;
+    }
+
+    .add-form {
+        padding: 12px;
+        gap: 6px;
+    }
+    .add-form input {
+        min-width: 100%;
+        padding: 10px 12px;
+    }
+    .add-form button {
+        width: 100%;
+        padding: 12px;
+    }
+
+    .player-list li {
+        padding: 10px 12px;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .player-list li .actions {
+        flex-shrink: 0;
+        flex-direction: column;
+    }
+    .player-list li .actions button {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+    }
+
+    .modal-content { padding: 20px; }
 }
 
 @media (max-width: 520px) {
-    .clan-grid { grid-template-columns: 1fr; }
-    .clan-card { aspect-ratio: auto; padding: 30px 20px; }
-    .clan-image { width: 100px; height: 100px; }
-    .clan-icon-small { width: 28px; height: 28px; }
-    .landing-title { font-size: 24px; }
-    .add-form input { min-width: 100%; }
+    .landing { padding: 80px 14px 20px; }
+
+    .landing-auth {
+        position: static;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .clan-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .clan-card {
+        aspect-ratio: auto;
+        padding: 24px 20px;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 20px;
+    }
+    .clan-image { width: 80px; height: 80px; }
+    .clan-name { font-size: 18px; text-align: left; }
+    .landing-title { font-size: 22px; margin-bottom: 24px; }
+
+    #userInfo, #userInfo2 { max-width: 100px; font-size: 11px; }
 }
