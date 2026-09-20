@@ -8,14 +8,13 @@
 </head>
 <body>
 
-    <!-- ═══════════ ЭКРАН 1: ГЛАВНАЯ С ВИДЕО ═══════════ -->
+    <!-- ═══════════ ЭКРАН 1: ГЛАВНАЯ ═══════════ -->
     <div id="screen-home" class="screen">
-
-        <div class="auth-box top-right">
-            <span id="userInfo"></span>
-            <button id="loginBtn">🔐 Войти</button>
-            <button id="registerBtn">📝 Регистрация</button>
-            <button id="logoutBtn" hidden>🚪 Выйти</button>
+        <div class="top-right">
+            <span id="adminInfo"></span>
+            <button id="adminPanelBtn" hidden title="Админ-панель">⚙️</button>
+            <button id="adminLoginBtn">🔐 Админ</button>
+            <button id="adminLogoutBtn" hidden>🚪 Выйти</button>
         </div>
 
         <div class="home-wrap">
@@ -26,29 +25,23 @@
                 <div class="hero-overlay"></div>
                 <div class="hero-text">
                     <h1>⚔️ Добро пожаловать</h1>
-                    <p>Выбери свою гильдию, чтобы продолжить</p>
+                    <p>Выбери свою гильдию, чтобы ознакомиться с правилами</p>
                 </div>
             </div>
 
-            <div class="clan-buttons">
-                <button class="clan-btn" data-clan="clan1">
-                    <img src="images/aov.png" alt="Гильдия АОВ">
-                    <span>Гильдия АОВ</span>
-                </button>
-                <button class="clan-btn" data-clan="clan2">
-                    <img src="images/k.png" alt="Гильдия -К-">
-                    <span>Гильдия -К-</span>
-                </button>
+            <h2 class="section-title">Гильдии</h2>
+            <div id="clanGrid" class="clan-grid">
+                <!-- карточки рендерятся из JS -->
             </div>
         </div>
     </div>
 
     <!-- ═══════════ ЭКРАН 2: ОПИСАНИЕ ГИЛЬДИИ ═══════════ -->
     <div id="screen-clan" class="screen" hidden>
-
-        <div class="auth-box top-right">
-            <span id="userInfo2"></span>
-            <button id="logoutBtn2" hidden>🚪 Выйти</button>
+        <div class="top-right">
+            <span id="adminInfo2"></span>
+            <button id="adminPanelBtn2" hidden>⚙️</button>
+            <button id="adminLogoutBtn2" hidden>🚪 Выйти</button>
         </div>
 
         <button id="backToHomeBtn" class="back-btn">← Назад</button>
@@ -59,20 +52,25 @@
                 <h1 id="clanInfoName" class="clan-info-name"></h1>
                 <p id="clanInfoDesc" class="clan-info-desc"></p>
 
+                <div class="clan-info-rules-wrap">
+                    <h3>📜 Правила гильдии</h3>
+                    <p id="clanInfoRules" class="clan-info-rules"></p>
+                </div>
+
                 <div class="clan-info-actions">
-                    <button id="clanLoginBtn" class="big-btn primary">🔐 Войти в гильдию</button>
                     <a id="clanDownloadBtn"
                        class="big-btn secondary"
                        href="https://github.com/Flowseal/zapret-discord-youtube/releases/download/1.10.3/zapret-discord-youtube-1.10.3.rar"
                        target="_blank" rel="noopener">
                         ⬇️ Скачать zapret
                     </a>
+                    <button id="clanLoginBtn" class="big-btn primary">🔐 Войти в гильдию</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ═══════════ ЭКРАН 3: СПИСКИ ГИЛЬДИИ ═══════════ -->
+    <!-- ═══════════ ЭКРАН 3: СПИСКИ ═══════════ -->
     <div id="clanView" hidden>
         <header>
             <button id="backBtn" class="back-btn">← Назад</button>
@@ -80,14 +78,15 @@
                 <img id="clanIcon" class="clan-icon-small" src="" alt="">
                 <span id="clanTitle"></span>
             </h1>
-            <div class="auth-box top-right">
-                <span id="userInfo3"></span>
+            <div class="top-right">
+                <span id="adminInfo3"></span>
+                <button id="adminPanelBtn3" hidden>⚙️</button>
                 <a id="downloadBtn" class="icon-btn"
                    href="https://github.com/Flowseal/zapret-discord-youtube/releases/download/1.10.3/zapret-discord-youtube-1.10.3.rar"
                    target="_blank" rel="noopener" title="Скачать zapret">⬇️</a>
                 <button id="bgChangeBtn" class="icon-btn admin-only" hidden title="Сменить фон">🎨</button>
                 <button id="bgResetBtn"  class="icon-btn admin-only" hidden title="Сбросить фон">↺</button>
-                <button id="logoutBtn3" hidden>🚪 Выйти</button>
+                <button id="clanLeaveBtn" title="Выйти из гильдии">🚪</button>
             </div>
         </header>
 
@@ -107,7 +106,7 @@
                 <button id="addBtn">➕ Добавить</button>
                 <span id="status"></span>
             </section>
-            <p class="hint admin-only" hidden>💡 Достаточно заполнить <b>Гильдию</b> или <b>Никнейм</b> — хотя бы одно из двух.</p>
+            <p class="hint admin-only" hidden>💡 Достаточно заполнить <b>Гильдию</b> или <b>Никнейм</b>.</p>
 
             <section id="tab-enemies" class="tab-content active">
                 <h2>🔴 Враги гильдии</h2>
@@ -128,35 +127,65 @@
         </main>
     </div>
 
-    <!-- ═══════════ МОДАЛКИ ═══════════ -->
-
-    <div id="authModal" class="modal" hidden>
+    <!-- ═══════════ МОДАЛКА: ПАРОЛЬ ГИЛЬДИИ ═══════════ -->
+    <div id="clanPassModal" class="modal" hidden>
         <div class="modal-content">
-            <div class="auth-tabs">
-                <button id="tabLogin" class="auth-tab active">Вход</button>
-                <button id="tabRegister" class="auth-tab">Регистрация</button>
-            </div>
-
-            <div id="loginForm">
-                <input type="email" id="email" placeholder="Email" autocomplete="username">
-                <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
-            </div>
-
-            <div id="registerForm" hidden>
-                <input type="email" id="regEmail" placeholder="Email" autocomplete="username">
-                <input type="password" id="regPassword" placeholder="Пароль (мин. 6 символов)" autocomplete="new-password">
-                <input type="password" id="regPassword2" placeholder="Повтори пароль" autocomplete="new-password">
-            </div>
-
-            <p id="authError" class="error"></p>
-
+            <h2>🔐 Вход в гильдию</h2>
+            <p id="clanPassName" class="auth-clan-name"></p>
+            <input type="password" id="clanPassword" placeholder="Пароль гильдии" autocomplete="current-password">
+            <p id="clanPassError" class="error"></p>
             <div class="modal-actions">
-                <button id="doAuth">Войти</button>
-                <button id="cancelAuth" class="secondary">Отмена</button>
+                <button id="doClanLogin">Войти</button>
+                <button id="cancelClanLogin" class="secondary">Отмена</button>
             </div>
         </div>
     </div>
 
+    <!-- ═══════════ МОДАЛКА: ВХОД АДМИНА ═══════════ -->
+    <div id="adminAuthModal" class="modal" hidden>
+        <div class="modal-content">
+            <h2>🔐 Вход администратора</h2>
+            <input type="email" id="adminEmail" placeholder="Email" autocomplete="username">
+            <input type="password" id="adminPassword" placeholder="Пароль" autocomplete="current-password">
+            <p id="adminAuthError" class="error"></p>
+            <div class="modal-actions">
+                <button id="doAdminLogin">Войти</button>
+                <button id="cancelAdminLogin" class="secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ МОДАЛКА: АДМИН-ПАНЕЛЬ ═══════════ -->
+    <div id="adminPanelModal" class="modal" hidden>
+        <div class="modal-content">
+            <h2>⚙️ Админ-панель</h2>
+            <p class="hint admin-hint">Настройка паролей гильдий</p>
+
+            <div class="admin-field">
+                <label>Гильдия</label>
+                <select id="adminClanSelect"></select>
+            </div>
+
+            <div class="admin-field">
+                <label>Текущий пароль</label>
+                <input type="text" id="adminCurrentPass" readonly>
+            </div>
+
+            <div class="admin-field">
+                <label>Новый пароль</label>
+                <input type="text" id="adminNewPass" placeholder="Введите новый пароль">
+            </div>
+
+            <p id="adminPanelMsg" class="error"></p>
+
+            <div class="modal-actions">
+                <button id="saveAdminPass">💾 Сохранить</button>
+                <button id="closeAdminPanel" class="secondary">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ МОДАЛКА: РЕДАКТИРОВАНИЕ ═══════════ -->
     <div id="editModal" class="modal" hidden>
         <div class="modal-content">
             <h2>✏️ Редактировать запись</h2>
@@ -172,6 +201,7 @@
         </div>
     </div>
 
+    <!-- ═══════════ МОДАЛКА: ПЕРЕМЕЩЕНИЕ ═══════════ -->
     <div id="moveModal" class="modal" hidden>
         <div class="modal-content">
             <h2>↔ Переместить в…</h2>
