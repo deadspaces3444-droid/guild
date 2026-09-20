@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гильдия — Списки</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>⚔️ Управление гильдией</h1>
+        <div class="auth-box">
+            <span id="userInfo"></span>
+            <button id="loginBtn">🔐 Войти</button>
+            <button id="logoutBtn" hidden>🚪 Выйти</button>
+        </div>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab active" data-tab="enemies">🔴 Враги гильдии</button>
+        <button class="tab" data-tab="friends">🟢 Друзья (содействие)</button>
+        <button class="tab" data-tab="neutral">⚪ Нейтралитет</button>
+        <button class="tab" data-tab="personal">🟡 Не трогать</button>
+    </nav>
+
+    <main>
+        <section class="add-form admin-only" hidden>
+            <input type="text" id="nickname" placeholder="Никнейм игрока" maxlength="32">
+            <input type="text" id="note" placeholder="Заметка (необязательно)" maxlength="120">
+            <button id="addBtn">➕ Добавить</button>
+            <span id="status"></span>
+        </section>
+
+        <section id="tab-enemies" class="tab-content active">
+            <h2>🔴 Враги гильдии</h2>
+            <ul class="player-list" data-list="enemies"></ul>
+        </section>
+        <section id="tab-friends" class="tab-content">
+            <h2>🟢 Друзья гильдии — полное содействие</h2>
+            <ul class="player-list" data-list="friends"></ul>
+        </section>
+        <section id="tab-neutral" class="tab-content">
+            <h2>⚪ Нейтралитет</h2>
+            <ul class="player-list" data-list="neutral"></ul>
+        </section>
+        <section id="tab-personal" class="tab-content">
+            <h2>🟡 Индивидуальный список — не трогать</h2>
+            <ul class="player-list" data-list="personal"></ul>
+        </section>
+    </main>
+
+    <!-- Модалка входа -->
+    <div id="loginModal" class="modal" hidden>
+        <div class="modal-content">
+            <h2>🔐 Вход администратора</h2>
+            <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
+            <div class="modal-actions">
+                <button id="doLogin">Войти</button>
+                <button id="cancelLogin" class="secondary">Отмена</button>
+            </div>
+            <p id="loginError" class="error"></p>
+        </div>
+    </div>
+
+    <!-- Модалка перемещения -->
+    <div id="moveModal" class="modal" hidden>
+        <div class="modal-content">
+            <h2>↔ Переместить в…</h2>
+            <div class="move-grid">
+                <button data-target="enemies">🔴 Враги</button>
+                <button data-target="friends">🟢 Друзья</button>
+                <button data-target="neutral">⚪ Нейтралитет</button>
+                <button data-target="personal">🟡 Не трогать</button>
+            </div>
+            <div class="modal-actions">
+                <button id="cancelMove" class="secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
