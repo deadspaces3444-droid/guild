@@ -28,7 +28,6 @@ body {
     background-repeat: no-repeat;
 }
 
-/* Затемнение фона, чтобы текст читался */
 body::before {
     content: '';
     position: fixed;
@@ -103,9 +102,7 @@ body::before {
     filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .6));
 }
 
-.clan-card:hover .clan-image {
-    transform: scale(1.06);
-}
+.clan-card:hover .clan-image { transform: scale(1.06); }
 
 .clan-name {
     font-size: 18px;
@@ -118,7 +115,7 @@ body::before {
     position: relative;
     text-align: center;
     margin-bottom: 24px;
-    padding: 0 200px;
+    padding: 0 220px;
 }
 
 #clanView header h1 {
@@ -210,7 +207,7 @@ main { max-width: 900px; margin: 0 auto; }
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 24px;
+    margin-bottom: 12px;
     padding: 14px;
     background: rgba(20, 24, 33, 0.85);
     backdrop-filter: blur(6px);
@@ -219,7 +216,7 @@ main { max-width: 900px; margin: 0 auto; }
 }
 .add-form input {
     flex: 1;
-    min-width: 180px;
+    min-width: 160px;
     padding: 10px 14px;
     background: var(--panel);
     border: 1px solid var(--border);
@@ -239,6 +236,14 @@ main { max-width: 900px; margin: 0 auto; }
 }
 .add-form button:hover { background: var(--accent-hover); }
 #status { color: var(--green); font-size: 13px; align-self: center; }
+
+.hint {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 20px;
+    padding: 0 4px;
+}
+.hint b { color: #cfd3dc; }
 
 /* ============ КОНТЕНТ ВКЛАДОК ============ */
 .tab-content { display: none; }
@@ -265,11 +270,40 @@ h2 {
     border: 1px solid var(--border);
     border-radius: 8px;
 }
-.player-list li .info { display: flex; flex-direction: column; gap: 2px; }
-.player-list li .nick { font-weight: 600; }
-.player-list li .note { font-size: 12px; color: var(--muted); }
 
-.player-list li .actions { display: flex; gap: 4px; }
+.player-list li .info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.player-list li .nick {
+    font-weight: 600;
+    font-size: 15px;
+    word-break: break-word;
+}
+
+.player-list li .guild {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffd479;
+    background: rgba(255, 212, 121, 0.1);
+    border: 1px solid rgba(255, 212, 121, 0.3);
+    padding: 2px 8px;
+    border-radius: 10px;
+    width: fit-content;
+}
+
+.player-list li .note {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    word-break: break-word;
+}
+
+.player-list li .actions { display: flex; gap: 4px; flex-shrink: 0; }
 .player-list li .actions button {
     width: 34px;
     height: 34px;
@@ -351,14 +385,39 @@ h2 {
 
 .error { color: var(--red); font-size: 13px; min-height: 18px; }
 
+/* ============ КНОПКИ ФОНА ============ */
+.icon-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: rgba(23, 26, 33, 0.85);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--border);
+    color: #cfd3dc;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+}
+.icon-btn:hover {
+    background: rgba(43, 108, 176, 0.9);
+    border-color: var(--accent);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
 /* ============ АДАПТИВ ============ */
 @media (max-width: 700px) {
-    #clanView header { padding: 60px 0 0; }
+    #clanView header { padding: 80px 0 0; }
     .back-btn { top: -40px; }
     #clanView .auth-box {
         position: static;
         justify-content: center;
         margin-top: 12px;
+        flex-wrap: wrap;
     }
     #clanView header h1 { font-size: 22px; }
 }
@@ -369,4 +428,5 @@ h2 {
     .clan-image { width: 100px; height: 100px; }
     .clan-icon-small { width: 28px; height: 28px; }
     .landing-title { font-size: 24px; }
+    .add-form input { min-width: 100%; }
 }
