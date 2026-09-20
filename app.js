@@ -19,10 +19,10 @@ const CLANS = {
 
 const MAIN_BG = 'images/bg-main.jpg';
 
-// ⚠️ АДМИНЫ — email'ы с правами редактирования.
+// ⚠️ АДМИНЫ — email'ы с правами редактирования (в нижнем регистре!).
 // Должны совпадать со списком в RLS-политике SQL!
 const ADMIN_EMAILS = [
-    'admin@guild.local'
+    'kolibri@wosb.ru'
 ];
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
@@ -190,6 +190,7 @@ $('tabRegister').addEventListener('click', () => openAuth('register'));
 
 $('doAuth').addEventListener('click', async () => {
     const err = $('authError');
+    err.style.color = '';
     err.textContent = '';
 
     if (authMode === 'login') {
@@ -231,7 +232,6 @@ $('doAuth').addEventListener('click', async () => {
 
         if (error) { err.textContent = error.message; return; }
 
-        // Проверяем — сразу залогинен или нужно подтверждать email
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
             closeAuth();
@@ -265,18 +265,15 @@ supabase.auth.onAuthStateChange((_e, session) => {
 function applyAuthUI() {
     const logged = !!currentUser;
 
-    // кнопки входа/регистрации/выхода
     $('loginBtn').hidden    = logged;
     $('registerBtn').hidden = logged;
     $('logoutBtn').hidden   = !logged;
     $('logoutBtn2').hidden  = !logged;
 
-    // кнопка скачивания .rar — доступна всем залогиненным
     document.querySelectorAll('.logged-only').forEach(el => {
         el.hidden = !logged;
     });
 
-    // текст в углу
     const label = logged
         ? (isAdmin ? '👑 ' + currentUser.email : '👤 ' + currentUser.email)
         : '';
@@ -285,7 +282,6 @@ function applyAuthUI() {
     $('userInfo').classList.toggle('admin', isAdmin);
     $('userInfo2').classList.toggle('admin', isAdmin);
 
-    // админские элементы
     document.querySelectorAll('.admin-only').forEach(el => {
         el.hidden = !isAdmin;
         if (!isAdmin) el.style.display = '';
