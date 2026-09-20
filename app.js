@@ -1,44 +1,58 @@
 import { supabase } from './supabase.js';
 
+/* ============================================================
+   КОНФИГ ГИЛЬДИЙ
+   ============================================================ */
+const CLANS = {
+    clan1: { name: 'Гильдия АОВ', image: 'images/aov.png' },
+    clan2: { name: 'Гильдия -К-', image: 'images/k.png' },
+};
+
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
+const CLAN_STORAGE_KEY = 'guild_current_clan';
 
-let currentTab = 'enemies';
-let isAdmin = false;
-let movingItem = null; // { fromTab, id }
+let currentClan = null;
+let currentTab  = 'enemies';
+let isAdmin     = false;
+let movingItem  = null;
 
-// ================== DOM ==================
+/* ============================================================
+   DOM
+   ============================================================ */
 const $ = id => document.getElementById(id);
-const loginBtn    = $('loginBtn');
-const logoutBtn   = $('logoutBtn');
-const userInfo    = $('userInfo');
-const loginModal  = $('loginModal');
-const moveModal   = $('moveModal');
 
-// ================== АДМИН ==================
+const landing   = $('landing');
+const clanView  = $('clanView');
+const clanTitle = $('clanTitle');
+const clanIcon  = $('clanIcon');
+
+/* ============================================================
+   АДМИН
+   ============================================================ */
 function applyAdminUI() {
-    if (isAdmin) {
-        loginBtn.hidden = true;
-        logoutBtn.hidden = false;
-        userInfo.textContent = '✔ Админ';
-        document.querySelectorAll('.admin-only').forEach(el => el.hidden = false);
-    } else {
-        loginBtn.hidden = false;
-        logoutBtn.hidden = true;
-        userInfo.textContent = '';
-        document.querySelectorAll('.admin-only').forEach(el => el.hidden = true);
-    }
+    const logged = isAdmin;
+
+    $('loginBtn').hidden  = logged;
+    $('logoutBtn').hidden = !logged;
+    $('userInfo').textContent = logged ? '✔ Админ' : '';
+
+    $('logoutBtn2').hidden = !logged;
+    $('userInfo2').textContent = logged ? '✔ Админ' : '';
+
+    document.querySelectorAll('.admin-only').forEach(el => el.hidden = !logged);
+
     renderAll();
 }
 
-loginBtn.addEventListener('click', () => {
-    loginModal.hidden = false;
+$('loginBtn').addEventListener('click', () => {
+    $('loginModal').hidden = false;
     $('loginError').textContent = '';
     $('email').value = '';
     $('password').value = '';
     $('email').focus();
 });
 
-$('cancelLogin').addEventListener('click', () => { loginModal.hidden = true; });
+$('cancelLogin').addEventListener('click', () => { $('loginModal').hidden = true; });
 
 $('doLogin').addEventListener('click', async () => {
     const email = $('email').value.trim();
@@ -51,24 +65,65 @@ $('doLogin').addEventListener('click', async () => {
         $('loginError').textContent = error.message;
         return;
     }
-    loginModal.hidden = true;
+    $('loginModal').hidden = true;
 });
 
 $('password').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('doLogin').click();
 });
 
-logoutBtn.addEventListener('click', async () => {
+async function doLogout() {
     await supabase.auth.signOut();
-});
+}
+$('logoutBtn').addEventListener('click', doLogout);
+$('logoutBtn2').addEventListener('click', doLogout);
 
-// ================== СЕССИЯ ==================
-supabase.auth.onAuthStateChange((_event, session) => {
+supabase.auth.onAuthStateChange((_e, session) => {
     isAdmin = !!session;
     applyAdminUI();
 });
 
-// ================== ВКЛАДКИ ==================
+/* ============================================================
+   ВЫБОР ГИЛЬДИИ
+   ============================================================ */
+document.querySelectorAll('.clan-card').forEach(btn => {
+    btn.addEventListener('click', () => openClan(btn.dataset.clan));
+});
+
+$('backBtn').addEventListener('click', closeClan);
+
+function openClan(clanId) {
+    if (!CLANS[clanId]) return;
+    currentClan = clanId;
+    localStorage.setItem(CLAN_STORAGE_KEY, clanId);
+
+    clanTitle.textContent = CLANS[clanId].name;
+    clanIcon.src = CLANS[clanId].image;
+    clanIcon.alt = CLANS[clanId].name;
+
+    landing.hidden = true;
+    clanView.hidden = false;
+
+    currentTab = 'enemies';
+    document.querySelectorAll('.tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.tab === 'enemies'));
+    document.querySelectorAll('.tab-content').forEach(c =>
+        c.classList.toggle('active', c.id === 'tab-enemies'));
+
+    applyAdminUI();
+    renderAll();
+}
+
+function closeClan() {
+    currentClan = null;
+    localStorage.removeItem(CLAN_STORAGE_KEY);
+    clanView.hidden = true;
+    landing.hidden = false;
+}
+
+/* ============================================================
+   ВКЛАДКИ
+   ============================================================ */
 document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
@@ -79,15 +134,28 @@ document.querySelectorAll('.tab').forEach(btn => {
     });
 });
 
-// ================== ЗАГРУЗКА ==================
+/* ============================================================
+   ЗАГРУЗКА
+   ============================================================ */
+function renderAll() {
+    if (!currentClan) return;
+    TABS.forEach(loadList);
+}
+
 async function loadList(tab) {
-    const { data, error } = await supabase
-        .from(tab)
-        .select('*')
-        .order('created_at', { ascending: false });
+    if (!currentClan) return;
 
     const ul = document.querySelector(`[data-list="${tab}"]`);
     if (!ul) return;
+
+    ul.innerHTML = '<li class="empty">Загрузка…</li>';
+
+    const { data, error } = await supabase
+        .from(tab)
+        .select('*')
+        .eq('clan', currentClan)
+        .order('created_at', { ascending: false });
+
     ul.innerHTML = '';
 
     if (error) {
@@ -123,13 +191,11 @@ async function loadList(tab) {
     });
 }
 
-function renderAll() {
-    TABS.forEach(loadList);
-}
-
-// ================== ДОБАВЛЕНИЕ ==================
+/* ============================================================
+   ДОБАВЛЕНИЕ
+   ============================================================ */
 $('addBtn').addEventListener('click', async () => {
-    if (!isAdmin) return;
+    if (!isAdmin || !currentClan) return;
 
     const nickname = $('nickname').value.trim();
     const note = $('note').value.trim();
@@ -141,7 +207,7 @@ $('addBtn').addEventListener('click', async () => {
 
     const { error } = await supabase
         .from(currentTab)
-        .insert({ nickname, note: note || null });
+        .insert({ nickname, note: note || null, clan: currentClan });
 
     if (error) {
         flashStatus('Ошибка: ' + error.message, '#ff7a7a');
@@ -169,7 +235,9 @@ function flashStatus(text, color) {
     flashStatus._t = setTimeout(() => el.textContent = '', 2000);
 }
 
-// ================== УДАЛЕНИЕ ==================
+/* ============================================================
+   УДАЛЕНИЕ
+   ============================================================ */
 async function deleteItem(tab, id) {
     if (!confirm('Удалить запись?')) return;
     const { error } = await supabase.from(tab).delete().eq('id', id);
@@ -177,34 +245,37 @@ async function deleteItem(tab, id) {
     loadList(tab);
 }
 
-// ================== ПЕРЕМЕЩЕНИЕ ==================
+/* ============================================================
+   ПЕРЕМЕЩЕНИЕ
+   ============================================================ */
 function openMoveModal(fromTab, id) {
     movingItem = { fromTab, id };
-    moveModal.hidden = false;
+    $('moveModal').hidden = false;
 }
 
 $('cancelMove').addEventListener('click', () => {
-    moveModal.hidden = true;
+    $('moveModal').hidden = true;
     movingItem = null;
 });
 
 document.querySelectorAll('#moveModal [data-target]').forEach(btn => {
     btn.addEventListener('click', async () => {
-        if (!movingItem) return;
+        if (!movingItem || !currentClan) return;
         const { fromTab, id } = movingItem;
         const toTab = btn.dataset.target;
 
-        moveModal.hidden = true;
+        $('moveModal').hidden = true;
         movingItem = null;
 
         if (toTab === fromTab) return;
 
-        const { data, error } = await supabase.from(fromTab).select('*').eq('id', id).single();
+        const { data, error } = await supabase
+            .from(fromTab).select('*').eq('id', id).single();
         if (error) return alert(error.message);
 
         const { error: insErr } = await supabase
             .from(toTab)
-            .insert({ nickname: data.nickname, note: data.note });
+            .insert({ nickname: data.nickname, note: data.note, clan: currentClan });
         if (insErr) return alert(insErr.message);
 
         const { error: delErr } = await supabase.from(fromTab).delete().eq('id', id);
@@ -215,16 +286,25 @@ document.querySelectorAll('#moveModal [data-target]').forEach(btn => {
     });
 });
 
-// ================== УТИЛИТА ==================
+/* ============================================================
+   УТИЛИТА
+   ============================================================ */
 function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, c => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
 }
 
-// ================== СТАРТ ==================
+/* ============================================================
+   СТАРТ
+   ============================================================ */
 (async () => {
     const { data: { session } } = await supabase.auth.getSession();
     isAdmin = !!session;
     applyAdminUI();
+
+    const savedClan = localStorage.getItem(CLAN_STORAGE_KEY);
+    if (savedClan && CLANS[savedClan]) {
+        openClan(savedClan);
+    }
 })();
