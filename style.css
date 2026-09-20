@@ -115,7 +115,7 @@ body::before {
     position: relative;
     text-align: center;
     margin-bottom: 24px;
-    padding: 0 220px;
+    padding: 0 240px;
 }
 
 #clanView header h1 {
@@ -161,7 +161,18 @@ body::before {
     top: 0;
     right: 0;
 }
-#userInfo, #userInfo2 { color: var(--green); }
+#userInfo, #userInfo2 {
+    color: var(--green);
+    font-size: 12px;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#userInfo.admin, #userInfo2.admin {
+    color: #ffd479;
+    font-weight: 700;
+}
 .auth-box button {
     padding: 6px 12px;
     background: rgba(23, 26, 33, 0.85);
@@ -279,7 +290,6 @@ h2 {
     flex: 1;
 }
 
-/* ===== НИК + ГИЛЬДИЯ + ФРАКЦИЯ В ОДНУ СТРОКУ ===== */
 .player-list li .row-main {
     display: flex;
     align-items: center;
@@ -287,7 +297,7 @@ h2 {
     flex-wrap: wrap;
 }
 
-/* Ник — без плашки, просто жирный белый */
+/* Ник — без плашки, жирный белый */
 .player-list li .nick {
     font-weight: 700;
     font-size: 16px;
@@ -411,7 +421,42 @@ h2 {
 
 .error { color: var(--red); font-size: 13px; min-height: 18px; }
 
-/* ============ КНОПКИ ФОНА ============ */
+/* ============ AUTH TABS ============ */
+.auth-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 4px;
+}
+.auth-tab {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all .15s;
+}
+.auth-tab:hover { color: #fff; }
+.auth-tab.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+#loginForm, #registerForm {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+#registerForm[hidden], #loginForm[hidden] { display: none !important; }
+
+/* ============ КНОПКИ-ИКОНКИ ============ */
 .icon-btn {
     width: 34px;
     height: 34px;
@@ -427,6 +472,7 @@ h2 {
     align-items: center;
     justify-content: center;
     transition: all .15s;
+    text-decoration: none;
 }
 .icon-btn:hover {
     background: rgba(43, 108, 176, 0.9);
@@ -435,10 +481,25 @@ h2 {
     transform: translateY(-1px);
 }
 
+/* ============ КНОПКА СКАЧИВАНИЯ АРХИВА ============ */
+a.icon-btn {
+    text-decoration: none;
+    color: #cfd3dc;
+}
+a.icon-btn:hover {
+    background: rgba(110, 231, 167, 0.15);
+    border-color: var(--green);
+    color: var(--green);
+}
+
 /* ============ АДАПТИВ ============ */
+@media (max-width: 900px) {
+    #clanView header { padding: 0 180px; }
+}
+
 @media (max-width: 700px) {
-    #clanView header { padding: 80px 0 0; }
-    .back-btn { top: -40px; }
+    #clanView header { padding: 90px 0 0; }
+    .back-btn { top: -50px; }
     #clanView .auth-box {
         position: static;
         justify-content: center;
