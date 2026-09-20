@@ -99,6 +99,22 @@
         </div>
     </div>
 
+    <!-- Модалка редактирования -->
+    <div id="editModal" class="modal" hidden>
+        <div class="modal-content">
+            <h2>✏️ Редактировать запись</h2>
+            <input type="text" id="editPlayerGuild" placeholder="Гильдия игрока" maxlength="40">
+            <input type="text" id="editNickname" placeholder="Никнейм игрока" maxlength="32">
+            <input type="text" id="editFaction" placeholder="Фракция" maxlength="40">
+            <input type="text" id="editNote" placeholder="Заметка (необязательно)" maxlength="120">
+            <p id="editError" class="error"></p>
+            <div class="modal-actions">
+                <button id="saveEdit">💾 Сохранить</button>
+                <button id="cancelEdit" class="secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Модалка перемещения -->
     <div id="moveModal" class="modal" hidden>
         <div class="modal-content">
