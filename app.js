@@ -4,9 +4,20 @@ import { supabase } from './supabase.js';
    КОНФИГ ГИЛЬДИЙ
    ============================================================ */
 const CLANS = {
-    clan1: { name: 'Гильдия АОВ', image: 'images/aov.png' },
-    clan2: { name: 'Гильдия -К-', image: 'images/k.png' },
+    clan1: {
+        name: 'Гильдия АОВ',
+        image: 'images/aov.png',
+        bg: 'images/bg-aov.jpg'
+    },
+    clan2: {
+        name: 'Гильдия -К-',
+        image: 'images/k.png',
+        bg: 'images/bg-k.jpg'
+    },
 };
+
+// общий фон на экране выбора гильдии
+const MAIN_BG = 'images/bg-main.jpg';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const CLAN_STORAGE_KEY = 'guild_current_clan';
@@ -101,6 +112,9 @@ function openClan(clanId) {
     clanIcon.src = CLANS[clanId].image;
     clanIcon.alt = CLANS[clanId].name;
 
+    // 👇 меняем фон на фон гильдии
+    document.body.style.backgroundImage = `url('${CLANS[clanId].bg}')`;
+
     landing.hidden = true;
     clanView.hidden = false;
 
@@ -119,6 +133,9 @@ function closeClan() {
     localStorage.removeItem(CLAN_STORAGE_KEY);
     clanView.hidden = true;
     landing.hidden = false;
+
+    // 👇 возвращаем общий фон
+    document.body.style.backgroundImage = `url('${MAIN_BG}')`;
 }
 
 /* ============================================================
@@ -305,6 +322,8 @@ function escapeHtml(str) {
 
     const savedClan = localStorage.getItem(CLAN_STORAGE_KEY);
     if (savedClan && CLANS[savedClan]) {
-        openClan(savedClan);
+        openClan(savedClan);           // выставит фон гильдии
+    } else {
+        document.body.style.backgroundImage = `url('${MAIN_BG}')`;
     }
 })();
