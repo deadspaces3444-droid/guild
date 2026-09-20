@@ -12,6 +12,8 @@
     <div id="landing" class="landing">
         <div class="auth-box landing-auth">
             <span id="userInfo"></span>
+            <button id="bgChangeBtn" class="icon-btn admin-only" hidden title="Сменить фон">🎨</button>
+            <button id="bgResetBtn"  class="icon-btn admin-only" hidden title="Сбросить фон">↺</button>
             <button id="loginBtn">🔐 Войти</button>
             <button id="logoutBtn" hidden>🚪 Выйти</button>
         </div>
@@ -40,6 +42,8 @@
             </h1>
             <div class="auth-box">
                 <span id="userInfo2"></span>
+                <button id="bgChangeBtn2" class="icon-btn admin-only" hidden title="Сменить фон">🎨</button>
+                <button id="bgResetBtn2"  class="icon-btn admin-only" hidden title="Сбросить фон">↺</button>
                 <button id="logoutBtn2" hidden>🚪 Выйти</button>
             </div>
         </header>
@@ -53,11 +57,13 @@
 
         <main>
             <section class="add-form admin-only" hidden>
+                <input type="text" id="playerGuild" placeholder="Гильдия игрока" maxlength="40">
                 <input type="text" id="nickname" placeholder="Никнейм игрока" maxlength="32">
                 <input type="text" id="note" placeholder="Заметка (необязательно)" maxlength="120">
                 <button id="addBtn">➕ Добавить</button>
                 <span id="status"></span>
             </section>
+            <p class="hint admin-only" hidden>💡 Достаточно заполнить <b>Гильдию</b> или <b>Никнейм</b> — хотя бы одно из двух.</p>
 
             <section id="tab-enemies" class="tab-content active">
                 <h2>🔴 Враги гильдии</h2>
@@ -107,6 +113,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Скрытый file input для загрузки фона -->
+    <input type="file" id="bgFileInput" accept="image/*" hidden>
 
     <script type="module" src="app.js"></script>
 </body>
