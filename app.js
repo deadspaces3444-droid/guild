@@ -1,26 +1,26 @@
 import { supabase } from './supabase.js';
 
 /* ============================================================
-   ⚙️ КОНФИГ
+   ⚙️ КОНФИГ ГИЛЬДИЙ
    ============================================================ */
-
 const CLANS = {
     clan1: {
         name: 'Гильдия АОВ',
         image: 'images/aov.png',
-        bg: 'images/bg-aov.jpg'
+        bg: 'images/bg-aov.jpg',
+        description: 'Охота за головами, войны за территории и PvP-контроль. Закрытый список для своих — враги, союзники и нейтралы в одном месте.'
     },
     clan2: {
         name: 'Гильдия -К-',
         image: 'images/k.png',
-        bg: 'images/bg-k.jpg'
+        bg: 'images/bg-k.jpg',
+        description: 'Дипломатия, союзы и торговля. Открытая политика, нейтралитет к большинству. Списки друзей и врагов ведутся отдельно.'
     },
 };
 
 const MAIN_BG = 'images/bg-main.jpg';
 
-// ⚠️ АДМИНЫ — email'ы с правами редактирования (в нижнем регистре!).
-// Должны совпадать со списком в RLS-политике SQL!
+// Email'ы с правами редактирования (в нижнем регистре!)
 const ADMIN_EMAILS = [
     'kolibri@wosb.ru'
 ];
@@ -29,24 +29,26 @@ const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const CLAN_STORAGE_KEY = 'guild_current_clan';
 const BG_STORAGE_KEY   = 'guild_bg_overrides';
 
-let currentClan = null;
-let currentTab  = 'enemies';
-let currentUser = null;
-let isAdmin     = false;
-let movingItem  = null;
-let editingItem = null;
+let currentClan  = null;
+let currentTab   = 'enemies';
+let currentUser  = null;
+let isAdmin      = false;
+let movingItem   = null;
+let editingItem  = null;
+let authMode     = 'login';
+let pendingClanId = null;
 
 /* ============================================================
    DOM
    ============================================================ */
 const $ = id => document.getElementById(id);
 
-const landing     = $('landing');
-const clanView    = $('clanView');
-const clanTitle   = $('clanTitle');
-const clanIcon    = $('clanIcon');
-const bgFileInput = $('bgFileInput');
+const screenHome = $('screen-home');
+const screenClan = $('screen-clan');
+const clanView   = $('clanView');
+
 const authModal   = $('authModal');
+const bgFileInput = $('bgFileInput');
 
 /* ============================================================
    ФОНЫ
@@ -64,18 +66,13 @@ function setOverride(key, dataUrl) {
         localStorage.setItem(BG_STORAGE_KEY, JSON.stringify(all));
         return true;
     } catch (e) {
-        alert('Не удалось сохранить фон: файл слишком большой. Возьми картинку поменьше (до 1 МБ).');
+        alert('Не удалось сохранить фон: файл слишком большой.');
         return false;
     }
 }
 
-function currentBgKey() {
-    return currentClan ? currentClan : 'main';
-}
-
-function currentBgFallback() {
-    return currentClan ? CLANS[currentClan].bg : MAIN_BG;
-}
+function currentBgKey()      { return currentClan ? currentClan : 'main'; }
+function currentBgFallback() { return currentClan ? CLANS[currentClan].bg : MAIN_BG; }
 
 function applyBg() {
     const key = currentBgKey();
@@ -107,54 +104,40 @@ function compressImage(file, maxW = 1920, quality = 0.8) {
     });
 }
 
-async function changeBg() {
+$('bgChangeBtn').addEventListener('click', () => {
     if (!isAdmin) return;
     bgFileInput.value = '';
     bgFileInput.click();
-}
+});
 
 bgFileInput.addEventListener('change', async () => {
     const file = bgFileInput.files[0];
     if (!file) return;
     try {
         const dataUrl = await compressImage(file);
-        const key = currentBgKey();
-        if (setOverride(key, dataUrl)) applyBg();
+        if (setOverride(currentBgKey(), dataUrl)) applyBg();
     } catch (err) {
-        alert('Не удалось обработать картинку: ' + err.message);
+        alert('Не удалось обработать: ' + err.message);
     }
 });
 
-function resetBg() {
+$('bgResetBtn').addEventListener('click', () => {
     if (!isAdmin) return;
     const key = currentBgKey();
-    if (!getOverrides()[key]) {
-        alert('Уже стоит стандартный фон.');
-        return;
-    }
+    if (!getOverrides()[key]) return alert('Уже стоит стандартный фон.');
     if (!confirm('Вернуть стандартный фон?')) return;
     setOverride(key, null);
     applyBg();
-}
-
-['bgChangeBtn', 'bgChangeBtn2'].forEach(id => {
-    const el = $(id);
-    if (el) el.addEventListener('click', changeBg);
-});
-['bgResetBtn', 'bgResetBtn2'].forEach(id => {
-    const el = $(id);
-    if (el) el.addEventListener('click', resetBg);
 });
 
 /* ============================================================
-   АВТОРИЗАЦИЯ / РЕГИСТРАЦИЯ
+   AUTH
    ============================================================ */
-let authMode = 'login';
-
 function openAuth(mode) {
     authMode = mode;
     authModal.hidden = false;
     $('authError').textContent = '';
+    $('authError').style.color = '';
 
     if (mode === 'login') {
         $('tabLogin').classList.add('active');
@@ -183,10 +166,12 @@ function closeAuth() {
 
 $('loginBtn').addEventListener('click', () => openAuth('login'));
 $('registerBtn').addEventListener('click', () => openAuth('register'));
-$('cancelAuth').addEventListener('click', closeAuth);
-
 $('tabLogin').addEventListener('click', () => openAuth('login'));
 $('tabRegister').addEventListener('click', () => openAuth('register'));
+$('cancelAuth').addEventListener('click', () => {
+    closeAuth();
+    pendingClanId = null;
+});
 
 $('doAuth').addEventListener('click', async () => {
     const err = $('authError');
@@ -208,23 +193,19 @@ $('doAuth').addEventListener('click', async () => {
 
         if (error) { err.textContent = error.message; return; }
         closeAuth();
+        if (pendingClanId) {
+            const cid = pendingClanId;
+            pendingClanId = null;
+            openClan(cid);
+        }
     } else {
         const email = $('regEmail').value.trim();
         const p1 = $('regPassword').value;
         const p2 = $('regPassword2').value;
 
-        if (!email || !p1) {
-            err.textContent = 'Заполни email и пароль';
-            return;
-        }
-        if (p1.length < 6) {
-            err.textContent = 'Пароль должен быть не короче 6 символов';
-            return;
-        }
-        if (p1 !== p2) {
-            err.textContent = 'Пароли не совпадают';
-            return;
-        }
+        if (!email || !p1) { err.textContent = 'Заполни email и пароль'; return; }
+        if (p1.length < 6) { err.textContent = 'Пароль должен быть не короче 6 символов'; return; }
+        if (p1 !== p2)     { err.textContent = 'Пароли не совпадают'; return; }
 
         $('doAuth').disabled = true;
         const { error } = await supabase.auth.signUp({ email, password: p1 });
@@ -235,9 +216,14 @@ $('doAuth').addEventListener('click', async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
             closeAuth();
+            if (pendingClanId) {
+                const cid = pendingClanId;
+                pendingClanId = null;
+                openClan(cid);
+            }
         } else {
             err.style.color = '#6ee7a7';
-            err.textContent = '✔ Проверь почту — мы отправили ссылку для подтверждения';
+            err.textContent = '✔ Проверь почту — мы отправили ссылку';
             setTimeout(closeAuth, 4000);
         }
     }
@@ -252,15 +238,30 @@ $('doAuth').addEventListener('click', async () => {
 
 async function doLogout() {
     await supabase.auth.signOut();
+    authModal.hidden = true;
+    currentClan = null;
+    localStorage.removeItem(CLAN_STORAGE_KEY);
+    showScreen('home');
 }
 $('logoutBtn').addEventListener('click', doLogout);
 $('logoutBtn2').addEventListener('click', doLogout);
+$('logoutBtn3').addEventListener('click', doLogout);
 
 supabase.auth.onAuthStateChange((_e, session) => {
     currentUser = session?.user || null;
     isAdmin = !!currentUser && ADMIN_EMAILS.includes((currentUser.email || '').toLowerCase());
     applyAuthUI();
 });
+
+/* ============================================================
+   ПОКАЗ ЭКРАНОВ
+   ============================================================ */
+function showScreen(name) {
+    screenHome.hidden = name !== 'home';
+    screenClan.hidden = name !== 'clan';
+    clanView.hidden   = name !== 'lists';
+    window.scrollTo(0, 0);
+}
 
 function applyAuthUI() {
     const logged = !!currentUser;
@@ -269,18 +270,17 @@ function applyAuthUI() {
     $('registerBtn').hidden = logged;
     $('logoutBtn').hidden   = !logged;
     $('logoutBtn2').hidden  = !logged;
-
-    document.querySelectorAll('.logged-only').forEach(el => {
-        el.hidden = !logged;
-    });
+    $('logoutBtn3').hidden  = !logged;
 
     const label = logged
         ? (isAdmin ? '👑 ' + currentUser.email : '👤 ' + currentUser.email)
         : '';
     $('userInfo').textContent  = label;
     $('userInfo2').textContent = label;
+    $('userInfo3').textContent = label;
     $('userInfo').classList.toggle('admin', isAdmin);
     $('userInfo2').classList.toggle('admin', isAdmin);
+    $('userInfo3').classList.toggle('admin', isAdmin);
 
     document.querySelectorAll('.admin-only').forEach(el => {
         el.hidden = !isAdmin;
@@ -290,30 +290,77 @@ function applyAuthUI() {
         el.style.display = isAdmin ? 'flex' : 'none';
     });
 
+    if (!logged && currentClan) {
+        currentClan = null;
+        localStorage.removeItem(CLAN_STORAGE_KEY);
+        showScreen('home');
+        applyBg();
+    }
+
     renderAll();
 }
 
 /* ============================================================
-   ВЫБОР ГИЛЬДИИ
+   ГЛАВНАЯ: КЛИК ПО КНОПКЕ ГИЛЬДИИ
    ============================================================ */
-document.querySelectorAll('.clan-card').forEach(btn => {
-    btn.addEventListener('click', () => openClan(btn.dataset.clan));
+document.querySelectorAll('.clan-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const clanId = btn.dataset.clan;
+        if (!CLANS[clanId]) return;
+
+        if (currentUser) {
+            openClan(clanId);
+            return;
+        }
+        openClanInfo(clanId);
+    });
 });
 
-$('backBtn').addEventListener('click', closeClan);
+function openClanInfo(clanId) {
+    const clan = CLANS[clanId];
+    if (!clan) return;
 
+    pendingClanId = clanId;
+
+    $('clanInfoLogo').src = clan.image;
+    $('clanInfoLogo').alt = clan.name;
+    $('clanInfoName').textContent = clan.name;
+    $('clanInfoDesc').textContent = clan.description || '';
+
+    showScreen('clan');
+}
+
+$('backToHomeBtn').addEventListener('click', () => {
+    pendingClanId = null;
+    showScreen('home');
+});
+
+$('clanLoginBtn').addEventListener('click', () => {
+    if (currentUser) {
+        if (pendingClanId) openClan(pendingClanId);
+        return;
+    }
+    openAuth('login');
+});
+
+/* ============================================================
+   ОТКРЫТИЕ СПИСКОВ
+   ============================================================ */
 function openClan(clanId) {
     if (!CLANS[clanId]) return;
+    if (!currentUser) {
+        openClanInfo(clanId);
+        return;
+    }
+
     currentClan = clanId;
     localStorage.setItem(CLAN_STORAGE_KEY, clanId);
 
-    clanTitle.textContent = CLANS[clanId].name;
-    clanIcon.src = CLANS[clanId].image;
-    clanIcon.alt = CLANS[clanId].name;
+    $('clanTitle').textContent = CLANS[clanId].name;
+    $('clanIcon').src = CLANS[clanId].image;
+    $('clanIcon').alt = CLANS[clanId].name;
 
-    landing.hidden = true;
-    clanView.hidden = false;
-
+    showScreen('lists');
     applyBg();
 
     currentTab = 'enemies';
@@ -326,13 +373,14 @@ function openClan(clanId) {
     renderAll();
 }
 
-function closeClan() {
-    currentClan = null;
-    localStorage.removeItem(CLAN_STORAGE_KEY);
-    clanView.hidden = true;
-    landing.hidden = false;
-    applyBg();
-}
+$('backBtn').addEventListener('click', () => {
+    if (currentClan && CLANS[currentClan]) {
+        pendingClanId = currentClan;
+        openClanInfo(currentClan);
+    } else {
+        showScreen('home');
+    }
+});
 
 /* ============================================================
    ВКЛАДКИ
@@ -348,15 +396,15 @@ document.querySelectorAll('.tab').forEach(btn => {
 });
 
 /* ============================================================
-   ЗАГРУЗКА
+   ЗАГРУЗКА СПИСКОВ
    ============================================================ */
 function renderAll() {
-    if (!currentClan) return;
+    if (!currentClan || !currentUser) return;
     TABS.forEach(loadList);
 }
 
 async function loadList(tab) {
-    if (!currentClan) return;
+    if (!currentClan || !currentUser) return;
 
     const ul = document.querySelector(`[data-list="${tab}"]`);
     if (!ul) return;
@@ -599,12 +647,19 @@ function escapeHtml(str) {
     const { data: { session } } = await supabase.auth.getSession();
     currentUser = session?.user || null;
     isAdmin = !!currentUser && ADMIN_EMAILS.includes((currentUser.email || '').toLowerCase());
+
     applyAuthUI();
 
-    const savedClan = localStorage.getItem(CLAN_STORAGE_KEY);
-    if (savedClan && CLANS[savedClan]) {
-        openClan(savedClan);
+    if (currentUser) {
+        const savedClan = localStorage.getItem(CLAN_STORAGE_KEY);
+        if (savedClan && CLANS[savedClan]) {
+            openClan(savedClan);
+        } else {
+            showScreen('home');
+            applyBg();
+        }
     } else {
+        showScreen('home');
         applyBg();
     }
 })();
