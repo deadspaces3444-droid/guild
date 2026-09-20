@@ -25,7 +25,8 @@ const BG_STORAGE_KEY   = 'guild_bg_overrides';
 let currentClan = null;
 let currentTab  = 'enemies';
 let isAdmin     = false;
-let movingItem  = null;
+let movingItem  = null;   // { fromTab, id }
+let editingItem = null;   // { tab, id }
 
 /* ============================================================
    DOM
@@ -290,14 +291,14 @@ async function loadList(tab) {
     data.forEach(item => {
         const li = document.createElement('li');
 
-        // Ник + Гильдия + Фракция в одну строку
         const mainRowParts = [];
-        if (item.nickname)    mainRowParts.push(`<span class="nick">${escapeHtml(item.nickname)}</span>`);
+        if (item.nickname)     mainRowParts.push(`<span class="nick">${escapeHtml(item.nickname)}</span>`);
         if (item.player_guild) mainRowParts.push(`<span class="guild">${escapeHtml(item.player_guild)}</span>`);
-        if (item.faction)     mainRowParts.push(`<span class="faction">${escapeHtml(item.faction)}</span>`);
+        if (item.faction)      mainRowParts.push(`<span class="faction">${escapeHtml(item.faction)}</span>`);
 
         const actions = isAdmin ? `
             <div class="actions">
+                <button class="edit" title="Редактировать">✏️</button>
                 <button class="move" title="Переместить">↔</button>
                 <button class="delete" title="Удалить">🗑</button>
             </div>` : '';
@@ -310,13 +311,75 @@ async function loadList(tab) {
             ${actions}`;
 
         if (isAdmin) {
-            li.querySelector('.move').addEventListener('click', () => openMoveModal(tab, item.id));
+            li.querySelector('.edit').addEventListener('click',   () => openEditModal(tab, item));
+            li.querySelector('.move').addEventListener('click',   () => openMoveModal(tab, item.id));
             li.querySelector('.delete').addEventListener('click', () => deleteItem(tab, item.id));
         }
 
         ul.appendChild(li);
     });
 }
+
+/* ============================================================
+   РЕДАКТИРОВАНИЕ
+   ============================================================ */
+function openEditModal(tab, item) {
+    editingItem = { tab, id: item.id };
+    $('editPlayerGuild').value = item.player_guild || '';
+    $('editNickname').value    = item.nickname     || '';
+    $('editFaction').value     = item.faction      || '';
+    $('editNote').value        = item.note         || '';
+    $('editError').textContent = '';
+    $('editModal').hidden = false;
+    $('editPlayerGuild').focus();
+}
+
+$('cancelEdit').addEventListener('click', () => {
+    $('editModal').hidden = true;
+    editingItem = null;
+});
+
+$('saveEdit').addEventListener('click', async () => {
+    if (!editingItem) return;
+
+    const playerGuild = $('editPlayerGuild').value.trim();
+    const nickname    = $('editNickname').value.trim();
+    const faction     = $('editFaction').value.trim();
+    const note        = $('editNote').value.trim();
+
+    if (!playerGuild && !nickname) {
+        $('editError').textContent = 'Заполни Гильдию или Никнейм';
+        return;
+    }
+
+    const { tab, id } = editingItem;
+
+    const { error } = await supabase
+        .from(tab)
+        .update({
+            nickname:     nickname || null,
+            player_guild: playerGuild || null,
+            faction:      faction || null,
+            note:         note || null
+        })
+        .eq('id', id);
+
+    if (error) {
+        $('editError').textContent = 'Ошибка: ' + error.message;
+        return;
+    }
+
+    $('editModal').hidden = true;
+    editingItem = null;
+    loadList(tab);
+});
+
+// Enter в полях редактирования = сохранить
+['editPlayerGuild', 'editNickname', 'editFaction', 'editNote'].forEach(id => {
+    $(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') $('saveEdit').click();
+    });
+});
 
 /* ============================================================
    ДОБАВЛЕНИЕ
