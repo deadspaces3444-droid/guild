@@ -433,30 +433,42 @@ function renderAdminClanSelect() {
         sel.appendChild(opt);
     });
     if (currentValue && clansCache[currentValue]) sel.value = currentValue;
-    updateAdminCurrentPass();
+    updateAdminFields();
 }
 
-$('adminClanSelect').addEventListener('change', updateAdminCurrentPass);
+$('adminClanSelect').addEventListener('change', updateAdminFields);
 
-function updateAdminCurrentPass() {
+function updateAdminFields() {
     const cid = $('adminClanSelect').value;
     const clan = clansCache[cid];
     $('adminCurrentPass').value = clan?.password || '—';
     $('adminNewPass').value = '';
+    $('adminRules').value = clan?.rules || '';
     $('adminPanelMsg').textContent = '';
+    $('adminPanelMsg').style.color = '';
 }
 
-$('saveAdminPass').addEventListener('click', async () => {
+$('saveAdminSettings').addEventListener('click', async () => {
     const cid = $('adminClanSelect').value;
     const newPass = $('adminNewPass').value.trim();
+    const newRules = $('adminRules').value;
     const msg = $('adminPanelMsg');
 
-    if (!cid) { msg.textContent = 'Выбери гильдию'; return; }
-    if (!newPass) { msg.textContent = 'Введи новый пароль'; msg.style.color = '#ff7a7a'; return; }
+    if (!cid) { msg.textContent = 'Выбери гильдию'; msg.style.color = '#ff7a7a'; return; }
+
+    const clan = clansCache[cid];
+    if (!clan) { msg.textContent = 'Гильдия не найдена'; msg.style.color = '#ff7a7a'; return; }
+
+    const payload = {
+        rules: newRules,
+        updated_at: new Date().toISOString()
+    };
+
+    if (newPass) payload.password = newPass;
 
     const { error } = await supabase
         .from('clans')
-        .update({ password: newPass, updated_at: new Date().toISOString() })
+        .update(payload)
         .eq('id', cid);
 
     if (error) {
@@ -465,11 +477,18 @@ $('saveAdminPass').addEventListener('click', async () => {
         return;
     }
 
-    clansCache[cid].password = newPass;
-    msg.textContent = '✔ Пароль обновлён';
+    clansCache[cid].rules = newRules;
+    if (newPass) clansCache[cid].password = newPass;
+
+    msg.textContent = newPass ? '✔ Пароль и правила обновлены' : '✔ Правила обновлены';
     msg.style.color = '#6ee7a7';
+
     $('adminNewPass').value = '';
-    updateAdminCurrentPass();
+    updateAdminFields();
+
+    if (pendingClanId === cid) {
+        $('clanInfoRules').textContent = newRules || 'Правила не заданы.';
+    }
 });
 
 /* ============================================================
