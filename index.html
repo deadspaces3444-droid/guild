@@ -12,9 +12,14 @@
     <div id="landing" class="landing">
         <div class="auth-box landing-auth">
             <span id="userInfo"></span>
+            <a id="downloadBtn" class="icon-btn logged-only"
+               href="https://github.com/Flowseal/zapret-discord-youtube/releases/download/1.10.3/zapret-discord-youtube-1.10.3.rar"
+               target="_blank" rel="noopener"
+               hidden title="Скачать zapret">⬇️</a>
             <button id="bgChangeBtn" class="icon-btn admin-only" hidden title="Сменить фон">🎨</button>
             <button id="bgResetBtn"  class="icon-btn admin-only" hidden title="Сбросить фон">↺</button>
             <button id="loginBtn">🔐 Войти</button>
+            <button id="registerBtn">📝 Регистрация</button>
             <button id="logoutBtn" hidden>🚪 Выйти</button>
         </div>
 
@@ -42,6 +47,10 @@
             </h1>
             <div class="auth-box">
                 <span id="userInfo2"></span>
+                <a id="downloadBtn2" class="icon-btn logged-only"
+                   href="https://github.com/Flowseal/zapret-discord-youtube/releases/download/1.10.3/zapret-discord-youtube-1.10.3.rar"
+                   target="_blank" rel="noopener"
+                   hidden title="Скачать zapret">⬇️</a>
                 <button id="bgChangeBtn2" class="icon-btn admin-only" hidden title="Сменить фон">🎨</button>
                 <button id="bgResetBtn2"  class="icon-btn admin-only" hidden title="Сбросить фон">↺</button>
                 <button id="logoutBtn2" hidden>🚪 Выйти</button>
@@ -85,17 +94,31 @@
         </main>
     </div>
 
-    <!-- Модалка входа -->
-    <div id="loginModal" class="modal" hidden>
+    <!-- Модалка входа / регистрации -->
+    <div id="authModal" class="modal" hidden>
         <div class="modal-content">
-            <h2>🔐 Вход администратора</h2>
-            <input type="email" id="email" placeholder="Email" autocomplete="username">
-            <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
-            <div class="modal-actions">
-                <button id="doLogin">Войти</button>
-                <button id="cancelLogin" class="secondary">Отмена</button>
+            <div class="auth-tabs">
+                <button id="tabLogin" class="auth-tab active">Вход</button>
+                <button id="tabRegister" class="auth-tab">Регистрация</button>
             </div>
-            <p id="loginError" class="error"></p>
+
+            <div id="loginForm">
+                <input type="email" id="email" placeholder="Email" autocomplete="username">
+                <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
+            </div>
+
+            <div id="registerForm" hidden>
+                <input type="email" id="regEmail" placeholder="Email" autocomplete="username">
+                <input type="password" id="regPassword" placeholder="Пароль (мин. 6 символов)" autocomplete="new-password">
+                <input type="password" id="regPassword2" placeholder="Повтори пароль" autocomplete="new-password">
+            </div>
+
+            <p id="authError" class="error"></p>
+
+            <div class="modal-actions">
+                <button id="doAuth">Войти</button>
+                <button id="cancelAuth" class="secondary">Отмена</button>
+            </div>
         </div>
     </div>
 
