@@ -279,7 +279,7 @@ h2 {
     flex: 1;
 }
 
-/* ===== НИК + ГИЛЬДИЯ В ОДНУ СТРОКУ ===== */
+/* ===== НИК + ГИЛЬДИЯ + ФРАКЦИЯ В ОДНУ СТРОКУ ===== */
 .player-list li .row-main {
     display: flex;
     align-items: center;
@@ -287,6 +287,7 @@ h2 {
     flex-wrap: wrap;
 }
 
+/* Ник — без плашки, просто жирный белый */
 .player-list li .nick {
     font-weight: 700;
     font-size: 16px;
@@ -294,25 +295,27 @@ h2 {
     word-break: break-word;
 }
 
+/* Гильдия — ЖЁЛТАЯ плашка */
 .player-list li .guild {
     display: inline-block;
     font-size: 12px;
     font-weight: 600;
     color: #ffd479;
-    background: rgba(255, 212, 121, 0.1);
-    border: 1px solid rgba(255, 212, 121, 0.35);
+    background: rgba(255, 212, 121, 0.12);
+    border: 1px solid rgba(255, 212, 121, 0.4);
     padding: 3px 10px;
     border-radius: 10px;
     white-space: nowrap;
 }
 
+/* Фракция — СИНЯЯ плашка */
 .player-list li .faction {
     display: inline-block;
     font-size: 12px;
     font-weight: 600;
-    color: #a5b4ff;
-    background: rgba(165, 180, 255, 0.1);
-    border: 1px solid rgba(165, 180, 255, 0.35);
+    color: #7db9ff;
+    background: rgba(125, 185, 255, 0.12);
+    border: 1px solid rgba(125, 185, 255, 0.4);
     padding: 3px 10px;
     border-radius: 10px;
     white-space: nowrap;
@@ -337,6 +340,7 @@ h2 {
     font-size: 14px;
 }
 .player-list li .actions button:hover { background: #2a2f3a; }
+.player-list li .actions button.edit:hover   { color: #ffd479; border-color: #ffd479; }
 .player-list li .actions button.move:hover   { color: var(--green); border-color: var(--green); }
 .player-list li .actions button.delete:hover { color: var(--red);   border-color: var(--red); }
 
@@ -364,7 +368,7 @@ h2 {
     border-radius: 12px;
     border: 1px solid var(--border);
     width: 100%;
-    max-width: 380px;
+    max-width: 420px;
     display: flex;
     flex-direction: column;
     gap: 12px;
