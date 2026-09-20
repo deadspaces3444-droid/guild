@@ -16,10 +16,26 @@
 
 body {
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: var(--bg);
     color: var(--text);
     min-height: 100vh;
     padding: 20px;
+
+    background-color: var(--bg);
+    background-image: url('images/bg-main.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
+/* Затемнение фона, чтобы текст читался */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: -1;
+    pointer-events: none;
 }
 
 /* ============ ЛЕНДИНГ ============ */
@@ -37,6 +53,7 @@ body {
     font-size: 32px;
     margin-bottom: 40px;
     text-align: center;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .8);
 }
 
 .landing-auth {
@@ -55,7 +72,8 @@ body {
 
 .clan-card {
     aspect-ratio: 1 / 1;
-    background: var(--panel);
+    background: rgba(23, 26, 33, 0.85);
+    backdrop-filter: blur(6px);
     border: 2px solid var(--border);
     border-radius: 20px;
     display: flex;
@@ -71,9 +89,9 @@ body {
 
 .clan-card:hover {
     border-color: var(--accent);
-    background: var(--panel-2);
+    background: rgba(20, 24, 33, 0.95);
     transform: translateY(-4px);
-    box-shadow: 0 8px 32px rgba(43, 108, 176, 0.25);
+    box-shadow: 0 8px 32px rgba(43, 108, 176, 0.4);
 }
 
 .clan-image {
@@ -82,7 +100,7 @@ body {
     object-fit: contain;
     border-radius: 12px;
     transition: transform .2s ease;
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .4));
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .6));
 }
 
 .clan-card:hover .clan-image {
@@ -109,6 +127,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .8);
 }
 
 .clan-icon-small {
@@ -123,14 +142,15 @@ body {
     top: 0;
     left: 0;
     padding: 6px 14px;
-    background: var(--panel);
+    background: rgba(23, 26, 33, 0.85);
+    backdrop-filter: blur(6px);
     border: 1px solid var(--border);
     color: #cfd3dc;
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
 }
-.back-btn:hover { background: #1f2430; }
+.back-btn:hover { background: rgba(31, 36, 48, 0.95); }
 
 /* ============ AUTH BOX ============ */
 .auth-box {
@@ -147,14 +167,15 @@ body {
 #userInfo, #userInfo2 { color: var(--green); }
 .auth-box button {
     padding: 6px 12px;
-    background: var(--panel);
+    background: rgba(23, 26, 33, 0.85);
+    backdrop-filter: blur(6px);
     border: 1px solid var(--border);
     color: #cfd3dc;
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
 }
-.auth-box button:hover { background: #1f2430; }
+.auth-box button:hover { background: rgba(31, 36, 48, 0.95); }
 
 /* ============ ВКЛАДКИ ============ */
 .tabs {
@@ -167,14 +188,15 @@ body {
 .tab {
     padding: 10px 18px;
     border: 1px solid var(--border);
-    background: var(--panel);
+    background: rgba(23, 26, 33, 0.85);
+    backdrop-filter: blur(6px);
     color: #cfd3dc;
     border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
     transition: all .15s;
 }
-.tab:hover { background: #1f2430; }
+.tab:hover { background: rgba(31, 36, 48, 0.95); }
 .tab.active {
     background: var(--accent);
     color: #fff;
@@ -190,7 +212,8 @@ main { max-width: 900px; margin: 0 auto; }
     flex-wrap: wrap;
     margin-bottom: 24px;
     padding: 14px;
-    background: var(--panel-2);
+    background: rgba(20, 24, 33, 0.85);
+    backdrop-filter: blur(6px);
     border: 1px dashed var(--accent);
     border-radius: 10px;
 }
@@ -220,7 +243,11 @@ main { max-width: 900px; margin: 0 auto; }
 /* ============ КОНТЕНТ ВКЛАДОК ============ */
 .tab-content { display: none; }
 .tab-content.active { display: block; }
-h2 { margin-bottom: 14px; font-size: 20px; }
+h2 {
+    margin-bottom: 14px;
+    font-size: 20px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, .8);
+}
 
 .player-list {
     list-style: none;
@@ -233,7 +260,8 @@ h2 { margin-bottom: 14px; font-size: 20px; }
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background: var(--panel);
+    background: rgba(23, 26, 33, 0.9);
+    backdrop-filter: blur(6px);
     border: 1px solid var(--border);
     border-radius: 8px;
 }
@@ -256,13 +284,19 @@ h2 { margin-bottom: 14px; font-size: 20px; }
 .player-list li .actions button.move:hover   { color: var(--green); border-color: var(--green); }
 .player-list li .actions button.delete:hover { color: var(--red);   border-color: var(--red); }
 
-.empty { color: var(--muted); font-style: italic; padding: 12px; }
+.empty {
+    color: var(--muted);
+    font-style: italic;
+    padding: 12px;
+    background: rgba(23, 26, 33, 0.7);
+    border-radius: 8px;
+}
 
 /* ============ МОДАЛКИ ============ */
 .modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, .7);
+    background: rgba(0, 0, 0, .75);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -279,7 +313,7 @@ h2 { margin-bottom: 14px; font-size: 20px; }
     flex-direction: column;
     gap: 12px;
 }
-.modal-content h2 { font-size: 18px; margin-bottom: 6px; }
+.modal-content h2 { font-size: 18px; margin-bottom: 6px; text-shadow: none; }
 .modal-content input {
     padding: 10px 14px;
     background: var(--bg);
