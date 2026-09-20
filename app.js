@@ -16,11 +16,11 @@ const CLANS = {
     },
 };
 
-// общий фон на экране выбора гильдии
 const MAIN_BG = 'images/bg-main.jpg';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const CLAN_STORAGE_KEY = 'guild_current_clan';
+const BG_STORAGE_KEY   = 'guild_bg_overrides';
 
 let currentClan = null;
 let currentTab  = 'enemies';
@@ -32,10 +32,109 @@ let movingItem  = null;
    ============================================================ */
 const $ = id => document.getElementById(id);
 
-const landing   = $('landing');
-const clanView  = $('clanView');
-const clanTitle = $('clanTitle');
-const clanIcon  = $('clanIcon');
+const landing     = $('landing');
+const clanView    = $('clanView');
+const clanTitle   = $('clanTitle');
+const clanIcon    = $('clanIcon');
+const bgFileInput = $('bgFileInput');
+
+/* ============================================================
+   ФОНЫ
+   ============================================================ */
+function getOverrides() {
+    try { return JSON.parse(localStorage.getItem(BG_STORAGE_KEY) || '{}'); }
+    catch { return {}; }
+}
+
+function setOverride(key, dataUrl) {
+    const all = getOverrides();
+    if (dataUrl) all[key] = dataUrl;
+    else delete all[key];
+    try {
+        localStorage.setItem(BG_STORAGE_KEY, JSON.stringify(all));
+        return true;
+    } catch (e) {
+        alert('Не удалось сохранить фон: файл слишком большой. Возьми картинку поменьше (до 1 МБ).');
+        return false;
+    }
+}
+
+function currentBgKey() {
+    return currentClan ? currentClan : 'main';
+}
+
+function currentBgFallback() {
+    return currentClan ? CLANS[currentClan].bg : MAIN_BG;
+}
+
+function applyBg() {
+    const key = currentBgKey();
+    const overrides = getOverrides();
+    const url = overrides[key] || currentBgFallback();
+    document.body.style.backgroundImage = `url('${url}')`;
+}
+
+function compressImage(file, maxW = 1920, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+                const scale = img.width > maxW ? maxW / img.width : 1;
+                const w = Math.round(img.width * scale);
+                const h = Math.round(img.height * scale);
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function changeBg() {
+    if (!isAdmin) return;
+    bgFileInput.value = '';
+    bgFileInput.click();
+}
+
+bgFileInput.addEventListener('change', async () => {
+    const file = bgFileInput.files[0];
+    if (!file) return;
+    try {
+        const dataUrl = await compressImage(file);
+        const key = currentBgKey();
+        if (setOverride(key, dataUrl)) applyBg();
+    } catch (err) {
+        alert('Не удалось обработать картинку: ' + err.message);
+    }
+});
+
+function resetBg() {
+    if (!isAdmin) return;
+    const key = currentBgKey();
+    if (!getOverrides()[key]) {
+        alert('Уже стоит стандартный фон.');
+        return;
+    }
+    if (!confirm('Вернуть стандартный фон?')) return;
+    setOverride(key, null);
+    applyBg();
+}
+
+['bgChangeBtn', 'bgChangeBtn2'].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('click', changeBg);
+});
+['bgResetBtn', 'bgResetBtn2'].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('click', resetBg);
+});
 
 /* ============================================================
    АДМИН
@@ -50,7 +149,15 @@ function applyAdminUI() {
     $('logoutBtn2').hidden = !logged;
     $('userInfo2').textContent = logged ? '✔ Админ' : '';
 
-    document.querySelectorAll('.admin-only').forEach(el => el.hidden = !logged);
+    document.querySelectorAll('.admin-only').forEach(el => {
+        el.hidden = !logged;
+        if (!logged) el.style.display = '';
+    });
+
+    // форма добавления должна быть flex при показе
+    document.querySelectorAll('.add-form.admin-only').forEach(el => {
+        el.style.display = logged ? 'flex' : 'none';
+    });
 
     renderAll();
 }
@@ -112,11 +219,10 @@ function openClan(clanId) {
     clanIcon.src = CLANS[clanId].image;
     clanIcon.alt = CLANS[clanId].name;
 
-    // 👇 меняем фон на фон гильдии
-    document.body.style.backgroundImage = `url('${CLANS[clanId].bg}')`;
-
     landing.hidden = true;
     clanView.hidden = false;
+
+    applyBg();
 
     currentTab = 'enemies';
     document.querySelectorAll('.tab').forEach(b =>
@@ -133,9 +239,7 @@ function closeClan() {
     localStorage.removeItem(CLAN_STORAGE_KEY);
     clanView.hidden = true;
     landing.hidden = false;
-
-    // 👇 возвращаем общий фон
-    document.body.style.backgroundImage = `url('${MAIN_BG}')`;
+    applyBg();
 }
 
 /* ============================================================
@@ -194,7 +298,8 @@ async function loadList(tab) {
 
         li.innerHTML = `
             <div class="info">
-                <span class="nick">${escapeHtml(item.nickname)}</span>
+                ${item.player_guild ? `<span class="guild">${escapeHtml(item.player_guild)}</span>` : ''}
+                ${item.nickname ? `<span class="nick">${escapeHtml(item.nickname)}</span>` : ''}
                 ${item.note ? `<span class="note">${escapeHtml(item.note)}</span>` : ''}
             </div>
             ${actions}`;
@@ -214,31 +319,38 @@ async function loadList(tab) {
 $('addBtn').addEventListener('click', async () => {
     if (!isAdmin || !currentClan) return;
 
-    const nickname = $('nickname').value.trim();
-    const note = $('note').value.trim();
+    const playerGuild = $('playerGuild').value.trim();
+    const nickname    = $('nickname').value.trim();
+    const note        = $('note').value.trim();
 
-    if (!nickname) {
-        flashStatus('Введите никнейм', '#ff7a7a');
+    if (!playerGuild && !nickname) {
+        flashStatus('Заполни Гильдию или Никнейм', '#ff7a7a');
         return;
     }
 
     const { error } = await supabase
         .from(currentTab)
-        .insert({ nickname, note: note || null, clan: currentClan });
+        .insert({
+            nickname: nickname || null,
+            player_guild: playerGuild || null,
+            note: note || null,
+            clan: currentClan
+        });
 
     if (error) {
         flashStatus('Ошибка: ' + error.message, '#ff7a7a');
         return;
     }
 
+    $('playerGuild').value = '';
     $('nickname').value = '';
     $('note').value = '';
-    $('nickname').focus();
+    $('playerGuild').focus();
     flashStatus('✔ Добавлено', '#6ee7a7');
     loadList(currentTab);
 });
 
-[$('nickname'), $('note')].forEach(inp => {
+[$('playerGuild'), $('nickname'), $('note')].forEach(inp => {
     inp.addEventListener('keydown', e => {
         if (e.key === 'Enter') $('addBtn').click();
     });
@@ -292,7 +404,12 @@ document.querySelectorAll('#moveModal [data-target]').forEach(btn => {
 
         const { error: insErr } = await supabase
             .from(toTab)
-            .insert({ nickname: data.nickname, note: data.note, clan: currentClan });
+            .insert({
+                nickname: data.nickname,
+                player_guild: data.player_guild,
+                note: data.note,
+                clan: currentClan
+            });
         if (insErr) return alert(insErr.message);
 
         const { error: delErr } = await supabase.from(fromTab).delete().eq('id', id);
@@ -322,8 +439,8 @@ function escapeHtml(str) {
 
     const savedClan = localStorage.getItem(CLAN_STORAGE_KEY);
     if (savedClan && CLANS[savedClan]) {
-        openClan(savedClan);           // выставит фон гильдии
+        openClan(savedClan);
     } else {
-        document.body.style.backgroundImage = `url('${MAIN_BG}')`;
+        applyBg();
     }
 })();
