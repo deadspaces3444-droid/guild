@@ -3,41 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Гильдия — Списки</title>
+    <title>Гильдии — Списки</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- ЭКРАН ВЫБОРА ГИЛЬДИИ -->
-    <div id="landing" class="landing">
-        <div class="auth-box landing-auth">
+    <!-- ═══════════ ЭКРАН 1: ГЛАВНАЯ С ВИДЕО ═══════════ -->
+    <div id="screen-home" class="screen">
+
+        <div class="auth-box top-right">
             <span id="userInfo"></span>
-            <a id="downloadBtn" class="icon-btn logged-only"
-               href="https://github.com/Flowseal/zapret-discord-youtube/releases/download/1.10.3/zapret-discord-youtube-1.10.3.rar"
-               target="_blank" rel="noopener"
-               hidden title="Скачать zapret">⬇️</a>
-            <button id="bgChangeBtn" class="icon-btn admin-only" hidden title="Сменить фон">🎨</button>
-            <button id="bgResetBtn"  class="icon-btn admin-only" hidden title="Сбросить фон">↺</button>
             <button id="loginBtn">🔐 Войти</button>
             <button id="registerBtn">📝 Регистрация</button>
             <button id="logoutBtn" hidden>🚪 Выйти</button>
         </div>
 
-        <h1 class="landing-title">⚔️ Выбери свою гильдию</h1>
+        <div class="home-wrap">
+            <div class="hero-video">
+                <video autoplay muted loop playsinline preload="auto">
+                    <source src="videoshero.mp4" type="video/mp4">
+                </video>
+                <div class="hero-overlay"></div>
+                <div class="hero-text">
+                    <h1>⚔️ Добро пожаловать</h1>
+                    <p>Выбери свою гильдию, чтобы продолжить</p>
+                </div>
+            </div>
 
-        <div class="clan-grid">
-            <button class="clan-card" data-clan="clan1">
-                <img class="clan-image" src="images/aov.png" alt="Гильдия АОВ">
-                <span class="clan-name">Гильдия АОВ</span>
-            </button>
-            <button class="clan-card" data-clan="clan2">
-                <img class="clan-image" src="images/k.png" alt="Гильдия -К-">
-                <span class="clan-name">Гильдия -К-</span>
-            </button>
+            <div class="clan-buttons">
+                <button class="clan-btn" data-clan="clan1">
+                    <img src="images/aov.png" alt="Гильдия АОВ">
+                    <span>Гильдия АОВ</span>
+                </button>
+                <button class="clan-btn" data-clan="clan2">
+                    <img src="images/k.png" alt="Гильдия -К-">
+                    <span>Гильдия -К-</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- ЭКРАН ГИЛЬДИИ -->
+    <!-- ═══════════ ЭКРАН 2: ОПИСАНИЕ ГИЛЬДИИ ═══════════ -->
+    <div id="screen-clan" class="screen" hidden>
+
+        <div class="auth-box top-right">
+            <span id="userInfo2"></span>
+            <button id="logoutBtn2" hidden>🚪 Выйти</button>
+        </div>
+
+        <button id="backToHomeBtn" class="back-btn">← Назад</button>
+
+        <div class="clan-info-wrap">
+            <div class="clan-info">
+                <img id="clanInfoLogo" class="clan-info-logo" src="" alt="">
+                <h1 id="clanInfoName" class="clan-info-name"></h1>
+                <p id="clanInfoDesc" class="clan-info-desc"></p>
+
+                <div class="clan-info-actions">
+                    <button id="clanLoginBtn" class="big-btn primary">🔐 Войти в гильдию</button>
+                    <a id="clanDownloadBtn"
+                       class="big-btn secondary"
+                       href="https://github.com/Flowseal/zapret-discord-youtube/releases/download/1.10.3/zapret-discord-youtube-1.10.3.rar"
+                       target="_blank" rel="noopener">
+                        ⬇️ Скачать zapret
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ ЭКРАН 3: СПИСКИ ГИЛЬДИИ ═══════════ -->
     <div id="clanView" hidden>
         <header>
             <button id="backBtn" class="back-btn">← Назад</button>
@@ -45,15 +80,14 @@
                 <img id="clanIcon" class="clan-icon-small" src="" alt="">
                 <span id="clanTitle"></span>
             </h1>
-            <div class="auth-box">
-                <span id="userInfo2"></span>
-                <a id="downloadBtn2" class="icon-btn logged-only"
+            <div class="auth-box top-right">
+                <span id="userInfo3"></span>
+                <a id="downloadBtn" class="icon-btn"
                    href="https://github.com/Flowseal/zapret-discord-youtube/releases/download/1.10.3/zapret-discord-youtube-1.10.3.rar"
-                   target="_blank" rel="noopener"
-                   hidden title="Скачать zapret">⬇️</a>
-                <button id="bgChangeBtn2" class="icon-btn admin-only" hidden title="Сменить фон">🎨</button>
-                <button id="bgResetBtn2"  class="icon-btn admin-only" hidden title="Сбросить фон">↺</button>
-                <button id="logoutBtn2" hidden>🚪 Выйти</button>
+                   target="_blank" rel="noopener" title="Скачать zapret">⬇️</a>
+                <button id="bgChangeBtn" class="icon-btn admin-only" hidden title="Сменить фон">🎨</button>
+                <button id="bgResetBtn"  class="icon-btn admin-only" hidden title="Сбросить фон">↺</button>
+                <button id="logoutBtn3" hidden>🚪 Выйти</button>
             </div>
         </header>
 
@@ -94,7 +128,8 @@
         </main>
     </div>
 
-    <!-- Модалка входа / регистрации -->
+    <!-- ═══════════ МОДАЛКИ ═══════════ -->
+
     <div id="authModal" class="modal" hidden>
         <div class="modal-content">
             <div class="auth-tabs">
@@ -122,7 +157,6 @@
         </div>
     </div>
 
-    <!-- Модалка редактирования -->
     <div id="editModal" class="modal" hidden>
         <div class="modal-content">
             <h2>✏️ Редактировать запись</h2>
@@ -138,7 +172,6 @@
         </div>
     </div>
 
-    <!-- Модалка перемещения -->
     <div id="moveModal" class="modal" hidden>
         <div class="modal-content">
             <h2>↔ Переместить в…</h2>
