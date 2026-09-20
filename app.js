@@ -1,67 +1,20 @@
-/* ============================================================
-   КОНФИГ
-   ============================================================ */
-const CONFIG = {
-    password: 'guild123',          // ← СМЕНИ ПАРОЛЬ ЗДЕСЬ
-    storageKey: 'guild_lists_v1'
-};
+import { supabase } from './supabase.js';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 
-/* ============================================================
-   СОСТОЯНИЕ
-   ============================================================ */
-let state = loadState();
 let currentTab = 'enemies';
-let isAdmin = sessionStorage.getItem('guild_admin') === '1';
+let isAdmin = false;
 let movingItem = null; // { fromTab, id }
 
-/* ============================================================
-   ХРАНИЛИЩЕ
-   ============================================================ */
-function emptyState() {
-    return { enemies: [], friends: [], neutral: [], personal: [] };
-}
-
-function loadState() {
-    try {
-        const raw = localStorage.getItem(CONFIG.storageKey);
-        if (!raw) return emptyState();
-        const parsed = JSON.parse(raw);
-        TABS.forEach(t => { if (!Array.isArray(parsed[t])) parsed[t] = []; });
-        return parsed;
-    } catch {
-        return emptyState();
-    }
-}
-
-function saveState() {
-    localStorage.setItem(CONFIG.storageKey, JSON.stringify(state));
-}
-
-function uid() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-}
-
-/* ============================================================
-   DOM
-   ============================================================ */
+// ================== DOM ==================
 const $ = id => document.getElementById(id);
+const loginBtn    = $('loginBtn');
+const logoutBtn   = $('logoutBtn');
+const userInfo    = $('userInfo');
+const loginModal  = $('loginModal');
+const moveModal   = $('moveModal');
 
-const loginBtn   = $('loginBtn');
-const logoutBtn  = $('logoutBtn');
-const userInfo   = $('userInfo');
-const loginModal = $('loginModal');
-const moveModal  = $('moveModal');
-
-const nicknameInput = $('nickname');
-const noteInput     = $('note');
-const addBtn        = $('addBtn');
-const statusEl      = $('status');
-
-/* ============================================================
-   АДМИН
-   ============================================================ */
+// ================== АДМИН ==================
 function applyAdminUI() {
     if (isAdmin) {
         loginBtn.hidden = true;
@@ -80,65 +33,73 @@ function applyAdminUI() {
 loginBtn.addEventListener('click', () => {
     loginModal.hidden = false;
     $('loginError').textContent = '';
+    $('email').value = '';
     $('password').value = '';
-    $('password').focus();
+    $('email').focus();
 });
 
 $('cancelLogin').addEventListener('click', () => { loginModal.hidden = true; });
 
-$('doLogin').addEventListener('click', () => {
-    if ($('password').value === CONFIG.password) {
-        isAdmin = true;
-        sessionStorage.setItem('guild_admin', '1');
-        loginModal.hidden = true;
-        applyAdminUI();
-    } else {
-        $('loginError').textContent = 'Неверный пароль';
+$('doLogin').addEventListener('click', async () => {
+    const email = $('email').value.trim();
+    const password = $('password').value;
+    $('loginError').textContent = '';
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+        $('loginError').textContent = error.message;
+        return;
     }
+    loginModal.hidden = true;
 });
 
 $('password').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('doLogin').click();
 });
 
-logoutBtn.addEventListener('click', () => {
-    isAdmin = false;
-    sessionStorage.removeItem('guild_admin');
+logoutBtn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+});
+
+// ================== СЕССИЯ ==================
+supabase.auth.onAuthStateChange((_event, session) => {
+    isAdmin = !!session;
     applyAdminUI();
 });
 
-/* ============================================================
-   ВКЛАДКИ
-   ============================================================ */
+// ================== ВКЛАДКИ ==================
 document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
         currentTab = btn.dataset.tab;
-        document.getElementById('tab-' + currentTab).classList.add('active');
+        $('tab-' + currentTab).classList.add('active');
     });
 });
 
-/* ============================================================
-   РЕНДЕР
-   ============================================================ */
-function renderAll() {
-    TABS.forEach(renderList);
-}
+// ================== ЗАГРУЗКА ==================
+async function loadList(tab) {
+    const { data, error } = await supabase
+        .from(tab)
+        .select('*')
+        .order('created_at', { ascending: false });
 
-function renderList(tab) {
     const ul = document.querySelector(`[data-list="${tab}"]`);
     if (!ul) return;
-    const items = state[tab] || [];
     ul.innerHTML = '';
 
-    if (items.length === 0) {
+    if (error) {
+        ul.innerHTML = `<li class="empty">Ошибка: ${error.message}</li>`;
+        return;
+    }
+    if (!data || data.length === 0) {
         ul.innerHTML = `<li class="empty">Список пуст</li>`;
         return;
     }
 
-    items.slice().reverse().forEach(item => {
+    data.forEach(item => {
         const li = document.createElement('li');
         const actions = isAdmin ? `
             <div class="actions">
@@ -162,62 +123,61 @@ function renderList(tab) {
     });
 }
 
-/* ============================================================
-   ДОБАВЛЕНИЕ
-   ============================================================ */
-addBtn.addEventListener('click', () => {
+function renderAll() {
+    TABS.forEach(loadList);
+}
+
+// ================== ДОБАВЛЕНИЕ ==================
+$('addBtn').addEventListener('click', async () => {
     if (!isAdmin) return;
 
-    const nickname = nicknameInput.value.trim();
-    const note = noteInput.value.trim();
+    const nickname = $('nickname').value.trim();
+    const note = $('note').value.trim();
 
     if (!nickname) {
         flashStatus('Введите никнейм', '#ff7a7a');
         return;
     }
 
-    state[currentTab].push({
-        id: uid(),
-        nickname,
-        note: note || '',
-        created: Date.now()
-    });
-    saveState();
+    const { error } = await supabase
+        .from(currentTab)
+        .insert({ nickname, note: note || null });
 
-    nicknameInput.value = '';
-    noteInput.value = '';
-    nicknameInput.focus();
+    if (error) {
+        flashStatus('Ошибка: ' + error.message, '#ff7a7a');
+        return;
+    }
 
+    $('nickname').value = '';
+    $('note').value = '';
+    $('nickname').focus();
     flashStatus('✔ Добавлено', '#6ee7a7');
-    renderList(currentTab);
+    loadList(currentTab);
 });
 
-[nicknameInput, noteInput].forEach(inp => {
+[$('nickname'), $('note')].forEach(inp => {
     inp.addEventListener('keydown', e => {
-        if (e.key === 'Enter') addBtn.click();
+        if (e.key === 'Enter') $('addBtn').click();
     });
 });
 
 function flashStatus(text, color) {
-    statusEl.textContent = text;
-    statusEl.style.color = color;
+    const el = $('status');
+    el.textContent = text;
+    el.style.color = color;
     clearTimeout(flashStatus._t);
-    flashStatus._t = setTimeout(() => statusEl.textContent = '', 2000);
+    flashStatus._t = setTimeout(() => el.textContent = '', 2000);
 }
 
-/* ============================================================
-   УДАЛЕНИЕ
-   ============================================================ */
-function deleteItem(tab, id) {
+// ================== УДАЛЕНИЕ ==================
+async function deleteItem(tab, id) {
     if (!confirm('Удалить запись?')) return;
-    state[tab] = state[tab].filter(x => x.id !== id);
-    saveState();
-    renderList(tab);
+    const { error } = await supabase.from(tab).delete().eq('id', id);
+    if (error) return alert(error.message);
+    loadList(tab);
 }
 
-/* ============================================================
-   ПЕРЕМЕЩЕНИЕ
-   ============================================================ */
+// ================== ПЕРЕМЕЩЕНИЕ ==================
 function openMoveModal(fromTab, id) {
     movingItem = { fromTab, id };
     moveModal.hidden = false;
@@ -229,7 +189,7 @@ $('cancelMove').addEventListener('click', () => {
 });
 
 document.querySelectorAll('#moveModal [data-target]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
         if (!movingItem) return;
         const { fromTab, id } = movingItem;
         const toTab = btn.dataset.target;
@@ -239,29 +199,32 @@ document.querySelectorAll('#moveModal [data-target]').forEach(btn => {
 
         if (toTab === fromTab) return;
 
-        const idx = state[fromTab].findIndex(x => x.id === id);
-        if (idx === -1) return;
+        const { data, error } = await supabase.from(fromTab).select('*').eq('id', id).single();
+        if (error) return alert(error.message);
 
-        const [item] = state[fromTab].splice(idx, 1);
-        item.created = Date.now();
-        state[toTab].push(item);
-        saveState();
+        const { error: insErr } = await supabase
+            .from(toTab)
+            .insert({ nickname: data.nickname, note: data.note });
+        if (insErr) return alert(insErr.message);
 
-        renderList(fromTab);
-        renderList(toTab);
+        const { error: delErr } = await supabase.from(fromTab).delete().eq('id', id);
+        if (delErr) return alert(delErr.message);
+
+        loadList(fromTab);
+        loadList(toTab);
     });
 });
 
-/* ============================================================
-   УТИЛИТЫ
-   ============================================================ */
+// ================== УТИЛИТА ==================
 function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, c => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
 }
 
-/* ============================================================
-   СТАРТ
-   ============================================================ */
-applyAdminUI();
+// ================== СТАРТ ==================
+(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    isAdmin = !!session;
+    applyAdminUI();
+})();
