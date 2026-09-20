@@ -58,6 +58,7 @@ body::before {
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
+    font-family: inherit;
 }
 .top-right button:hover { background: rgba(31, 36, 48, 0.95); }
 
@@ -84,6 +85,7 @@ body::before {
     cursor: pointer;
     font-size: 14px;
     z-index: 10;
+    font-family: inherit;
 }
 .back-btn:hover { background: rgba(31, 36, 48, 0.95); }
 
@@ -97,7 +99,6 @@ body::before {
     gap: 40px;
 }
 
-/* Видео */
 .hero-video {
     position: relative;
     width: 100%;
@@ -141,7 +142,6 @@ body::before {
     text-shadow: 0 2px 8px rgba(0, 0, 0, .9);
 }
 
-/* Заголовок раздела */
 .section-title {
     font-size: 24px;
     text-align: center;
@@ -149,7 +149,6 @@ body::before {
     margin-top: 10px;
 }
 
-/* Сетка карточек */
 .clan-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -495,7 +494,8 @@ h2 {
 }
 .modal-content h2 { font-size: 18px; margin-bottom: 6px; text-shadow: none; }
 .modal-content input,
-.modal-content select {
+.modal-content select,
+.modal-content textarea {
     padding: 10px 14px;
     background: var(--bg);
     border: 1px solid var(--border);
@@ -505,7 +505,8 @@ h2 {
     font-family: inherit;
 }
 .modal-content input:focus,
-.modal-content select:focus { outline: none; border-color: var(--accent); }
+.modal-content select:focus,
+.modal-content textarea:focus { outline: none; border-color: var(--accent); }
 .modal-content input[readonly] { opacity: .7; cursor: not-allowed; }
 
 .auth-clan-name {
@@ -532,6 +533,14 @@ h2 {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .5px;
+}
+
+.admin-panel-wide { max-width: 520px; }
+
+.admin-field textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.5;
 }
 
 .modal-actions { display: flex; gap: 8px; margin-top: 6px; }
@@ -580,6 +589,7 @@ a.icon-btn,
     font-size: 15px;
     text-decoration: none;
     transition: all .15s;
+    font-family: inherit;
 }
 .icon-btn:hover {
     background: rgba(43, 108, 176, 0.9);
