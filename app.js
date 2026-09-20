@@ -6,8 +6,9 @@ import { supabase } from './supabase.js';
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
-const SESSION_CLAN_KEY = 'guild_authed_clan';
-const BG_STORAGE_KEY   = 'guild_bg_overrides';
+const UNLOCK_KEY = 'guild_unlocked';        // '1' — пароль введён
+const LAST_CLAN_KEY = 'guild_last_clan';    // id последней открытой гильдии
+const BG_STORAGE_KEY = 'guild_bg_overrides';
 
 let clansCache    = {};
 let currentClan   = null;
@@ -117,7 +118,7 @@ function showScreen(name) {
 }
 
 /* ============================================================
-   АДМИН-АВТОРИЗАЦИЯ
+   АДМИН
    ============================================================ */
 function openAdminAuth() {
     $('adminAuthModal').hidden = false;
@@ -126,9 +127,7 @@ function openAdminAuth() {
     $('adminPassword').value = '';
     $('adminEmail').focus();
 }
-function closeAdminAuth() {
-    $('adminAuthModal').hidden = true;
-}
+function closeAdminAuth() { $('adminAuthModal').hidden = true; }
 $('adminLoginBtn').addEventListener('click', openAdminAuth);
 $('cancelAdminLogin').addEventListener('click', closeAdminAuth);
 
@@ -137,7 +136,6 @@ $('doAdminLogin').addEventListener('click', async () => {
     const password = $('adminPassword').value;
     const err = $('adminAuthError');
     err.textContent = '';
-
     if (!email || !password) { err.textContent = 'Заполни email и пароль'; return; }
 
     $('doAdminLogin').disabled = true;
@@ -212,14 +210,26 @@ function renderHomeCards() {
         btn.className = 'clan-card';
         btn.dataset.clan = clan.id;
         btn.innerHTML = `
-            <img src="${escapeHtml(clan.image)}" alt="${escapeHtml(clan.name)}">
+            <img src="${escapeHtml(clan.image || '')}" alt="${escapeHtml(clan.name)}">
             <span class="clan-name">${escapeHtml(clan.name)}</span>
             <span class="clan-desc">${escapeHtml(clan.description || '')}</span>
             <span class="clan-more">Подробнее →</span>
         `;
-        btn.addEventListener('click', () => openClanInfo(clan.id));
+        btn.addEventListener('click', () => handleClanClick(clan.id));
         grid.appendChild(btn);
     });
+}
+
+function isUnlocked() {
+    return isAdmin || localStorage.getItem(UNLOCK_KEY) === '1';
+}
+
+function handleClanClick(clanId) {
+    if (isUnlocked()) {
+        openClan(clanId);
+    } else {
+        openClanInfo(clanId);
+    }
 }
 
 /* ============================================================
@@ -230,11 +240,20 @@ function openClanInfo(clanId) {
     if (!clan) return;
     pendingClanId = clanId;
 
-    $('clanInfoLogo').src = clan.image;
+    $('clanInfoLogo').src = clan.image || '';
     $('clanInfoLogo').alt = clan.name;
     $('clanInfoName').textContent = clan.name;
     $('clanInfoDesc').textContent = clan.description || '';
     $('clanInfoRules').textContent = clan.rules || 'Правила не заданы.';
+
+    // Кнопка "Войти" или "Открыть списки"
+    if (isUnlocked()) {
+        $('clanLoginBtn').hidden = true;
+        $('clanViewBtn').hidden = false;
+    } else {
+        $('clanLoginBtn').hidden = false;
+        $('clanViewBtn').hidden = true;
+    }
 
     showScreen('clan');
 }
@@ -242,6 +261,10 @@ function openClanInfo(clanId) {
 $('backToHomeBtn').addEventListener('click', () => {
     pendingClanId = null;
     showScreen('home');
+});
+
+$('clanViewBtn').addEventListener('click', () => {
+    if (pendingClanId) openClan(pendingClanId);
 });
 
 /* ============================================================
@@ -269,7 +292,8 @@ $('doClanLogin').addEventListener('click', () => {
     if (!entered) { $('clanPassError').textContent = 'Введите пароль'; return; }
     if (entered !== clan.password) { $('clanPassError').textContent = 'Неверный пароль'; return; }
 
-    localStorage.setItem(SESSION_CLAN_KEY, pendingClanId);
+    // Успех — открываем доступ ко всем гильдиям
+    localStorage.setItem(UNLOCK_KEY, '1');
     $('clanPassModal').hidden = true;
     const cid = pendingClanId;
     pendingClanId = null;
@@ -287,14 +311,16 @@ function openClan(clanId) {
     const clan = clansCache[clanId];
     if (!clan) return;
 
-    if (localStorage.getItem(SESSION_CLAN_KEY) !== clanId) {
+    if (!isUnlocked()) {
         openClanInfo(clanId);
         return;
     }
 
     currentClan = clanId;
+    localStorage.setItem(LAST_CLAN_KEY, clanId);
+
     $('clanTitle').textContent = clan.name;
-    $('clanIcon').src = clan.image;
+    $('clanIcon').src = clan.image || '';
     $('clanIcon').alt = clan.name;
 
     showScreen('lists');
@@ -311,17 +337,13 @@ function openClan(clanId) {
 }
 
 $('backBtn').addEventListener('click', () => {
-    if (currentClan && clansCache[currentClan]) {
-        pendingClanId = currentClan;
-        openClanInfo(currentClan);
-    } else {
-        showScreen('home');
-    }
+    showScreen('home');
 });
 
 $('clanLeaveBtn').addEventListener('click', () => {
-    if (!confirm('Выйти из гильдии? Пароль потребуется ввести снова.')) return;
-    localStorage.removeItem(SESSION_CLAN_KEY);
+    if (!confirm('Заблокировать просмотр списков? Пароль потребуется ввести снова.')) return;
+    localStorage.removeItem(UNLOCK_KEY);
+    localStorage.removeItem(LAST_CLAN_KEY);
     currentClan = null;
     showScreen('home');
     applyBg();
@@ -463,14 +485,9 @@ $('saveAdminSettings').addEventListener('click', async () => {
         rules: newRules,
         updated_at: new Date().toISOString()
     };
-
     if (newPass) payload.password = newPass;
 
-    const { error } = await supabase
-        .from('clans')
-        .update(payload)
-        .eq('id', cid);
-
+    const { error } = await supabase.from('clans').update(payload).eq('id', cid);
     if (error) {
         msg.textContent = 'Ошибка: ' + error.message;
         msg.style.color = '#ff7a7a';
@@ -482,13 +499,74 @@ $('saveAdminSettings').addEventListener('click', async () => {
 
     msg.textContent = newPass ? '✔ Пароль и правила обновлены' : '✔ Правила обновлены';
     msg.style.color = '#6ee7a7';
-
     $('adminNewPass').value = '';
     updateAdminFields();
 
     if (pendingClanId === cid) {
         $('clanInfoRules').textContent = newRules || 'Правила не заданы.';
     }
+});
+
+/* ============================================================
+   ДОБАВЛЕНИЕ ГИЛЬДИИ
+   ============================================================ */
+$('openAddClan').addEventListener('click', () => {
+    // Очистить поля
+    ['newClanId','newClanName','newClanDesc','newClanRules','newClanPass','newClanImage','newClanBg']
+        .forEach(id => { const el = $(id); if (el) el.value = ''; });
+    $('addClanMsg').textContent = '';
+    $('addClanMsg').style.color = '';
+    $('addClanModal').hidden = false;
+    $('newClanId').focus();
+});
+
+$('cancelAddClan').addEventListener('click', () => {
+    $('addClanModal').hidden = true;
+});
+
+$('saveNewClan').addEventListener('click', async () => {
+    const id = $('newClanId').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    const name = $('newClanName').value.trim();
+    const desc = $('newClanDesc').value.trim();
+    const rules = $('newClanRules').value;
+    const pass = $('newClanPass').value.trim();
+    const image = $('newClanImage').value.trim();
+    const bg = $('newClanBg').value.trim();
+    const msg = $('addClanMsg');
+
+    msg.style.color = '';
+
+    if (!id) { msg.textContent = 'Укажи ID (латиница)'; msg.style.color = '#ff7a7a'; return; }
+    if (!name) { msg.textContent = 'Укажи название'; msg.style.color = '#ff7a7a'; return; }
+    if (!pass) { msg.textContent = 'Укажи пароль'; msg.style.color = '#ff7a7a'; return; }
+    if (clansCache[id]) { msg.textContent = 'Гильдия с таким ID уже есть'; msg.style.color = '#ff7a7a'; return; }
+
+    const payload = {
+        id,
+        name,
+        description: desc,
+        rules,
+        password: pass,
+        image: image || 'images/aov.png',
+        bg: bg || 'images/bg-main.jpg'
+    };
+
+    const { error } = await supabase.from('clans').insert(payload);
+    if (error) {
+        msg.textContent = 'Ошибка: ' + error.message;
+        msg.style.color = '#ff7a7a';
+        return;
+    }
+
+    clansCache[id] = payload;
+    renderHomeCards();
+    renderAdminClanSelect();
+
+    msg.textContent = '✔ Гильдия создана';
+    msg.style.color = '#6ee7a7';
+    setTimeout(() => {
+        $('addClanModal').hidden = true;
+    }, 800);
 });
 
 /* ============================================================
@@ -537,7 +615,7 @@ $('saveEdit').addEventListener('click', async () => {
 });
 
 /* ============================================================
-   ДОБАВЛЕНИЕ
+   ДОБАВЛЕНИЕ ЗАПИСИ
    ============================================================ */
 $('addBtn').addEventListener('click', async () => {
     if (!isAdmin || !currentClan) return;
@@ -647,11 +725,7 @@ function escapeHtml(str) {
     isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
     applyAdminUI();
 
-    const savedClan = localStorage.getItem(SESSION_CLAN_KEY);
-    if (savedClan && clansCache[savedClan]) {
-        openClan(savedClan);
-    } else {
-        showScreen('home');
-        applyBg();
-    }
+    // Показываем главную
+    showScreen('home');
+    applyBg();
 })();
