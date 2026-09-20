@@ -49,10 +49,10 @@
         </section>
     </main>
 
-    <!-- Модалка входа -->
     <div id="loginModal" class="modal" hidden>
         <div class="modal-content">
             <h2>🔐 Вход администратора</h2>
+            <input type="email" id="email" placeholder="Email" autocomplete="username">
             <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
             <div class="modal-actions">
                 <button id="doLogin">Войти</button>
@@ -62,7 +62,6 @@
         </div>
     </div>
 
-    <!-- Модалка перемещения -->
     <div id="moveModal" class="modal" hidden>
         <div class="modal-content">
             <h2>↔ Переместить в…</h2>
@@ -78,6 +77,6 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
