@@ -30,9 +30,7 @@
             </div>
 
             <h2 class="section-title">Гильдии</h2>
-            <div id="clanGrid" class="clan-grid">
-                <!-- карточки рендерятся из JS -->
-            </div>
+            <div id="clanGrid" class="clan-grid"></div>
         </div>
     </div>
 
@@ -157,9 +155,9 @@
 
     <!-- ═══════════ МОДАЛКА: АДМИН-ПАНЕЛЬ ═══════════ -->
     <div id="adminPanelModal" class="modal" hidden>
-        <div class="modal-content">
+        <div class="modal-content admin-panel-wide">
             <h2>⚙️ Админ-панель</h2>
-            <p class="hint admin-hint">Настройка паролей гильдий</p>
+            <p class="hint admin-hint">Управление паролем и правилами гильдии</p>
 
             <div class="admin-field">
                 <label>Гильдия</label>
@@ -173,13 +171,18 @@
 
             <div class="admin-field">
                 <label>Новый пароль</label>
-                <input type="text" id="adminNewPass" placeholder="Введите новый пароль">
+                <input type="text" id="adminNewPass" placeholder="Оставь пустым, чтобы не менять">
+            </div>
+
+            <div class="admin-field">
+                <label>Правила гильдии</label>
+                <textarea id="adminRules" placeholder="Каждое правило с новой строки..." rows="8"></textarea>
             </div>
 
             <p id="adminPanelMsg" class="error"></p>
 
             <div class="modal-actions">
-                <button id="saveAdminPass">💾 Сохранить</button>
+                <button id="saveAdminSettings">💾 Сохранить</button>
                 <button id="closeAdminPanel" class="secondary">Закрыть</button>
             </div>
         </div>
