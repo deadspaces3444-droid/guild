@@ -154,7 +154,6 @@ function applyAdminUI() {
         if (!logged) el.style.display = '';
     });
 
-    // форма добавления должна быть flex при показе
     document.querySelectorAll('.add-form.admin-only').forEach(el => {
         el.style.display = logged ? 'flex' : 'none';
     });
@@ -290,6 +289,13 @@ async function loadList(tab) {
 
     data.forEach(item => {
         const li = document.createElement('li');
+
+        // Ник + Гильдия + Фракция в одну строку
+        const mainRowParts = [];
+        if (item.nickname)    mainRowParts.push(`<span class="nick">${escapeHtml(item.nickname)}</span>`);
+        if (item.player_guild) mainRowParts.push(`<span class="guild">${escapeHtml(item.player_guild)}</span>`);
+        if (item.faction)     mainRowParts.push(`<span class="faction">${escapeHtml(item.faction)}</span>`);
+
         const actions = isAdmin ? `
             <div class="actions">
                 <button class="move" title="Переместить">↔</button>
@@ -298,8 +304,7 @@ async function loadList(tab) {
 
         li.innerHTML = `
             <div class="info">
-                ${item.player_guild ? `<span class="guild">${escapeHtml(item.player_guild)}</span>` : ''}
-                ${item.nickname ? `<span class="nick">${escapeHtml(item.nickname)}</span>` : ''}
+                <div class="row-main">${mainRowParts.join('')}</div>
                 ${item.note ? `<span class="note">${escapeHtml(item.note)}</span>` : ''}
             </div>
             ${actions}`;
@@ -321,6 +326,7 @@ $('addBtn').addEventListener('click', async () => {
 
     const playerGuild = $('playerGuild').value.trim();
     const nickname    = $('nickname').value.trim();
+    const faction     = $('faction').value.trim();
     const note        = $('note').value.trim();
 
     if (!playerGuild && !nickname) {
@@ -331,10 +337,11 @@ $('addBtn').addEventListener('click', async () => {
     const { error } = await supabase
         .from(currentTab)
         .insert({
-            nickname: nickname || null,
+            nickname:     nickname || null,
             player_guild: playerGuild || null,
-            note: note || null,
-            clan: currentClan
+            faction:      faction || null,
+            note:         note || null,
+            clan:         currentClan
         });
 
     if (error) {
@@ -344,13 +351,14 @@ $('addBtn').addEventListener('click', async () => {
 
     $('playerGuild').value = '';
     $('nickname').value = '';
+    $('faction').value = '';
     $('note').value = '';
     $('playerGuild').focus();
     flashStatus('✔ Добавлено', '#6ee7a7');
     loadList(currentTab);
 });
 
-[$('playerGuild'), $('nickname'), $('note')].forEach(inp => {
+[$('playerGuild'), $('nickname'), $('faction'), $('note')].forEach(inp => {
     inp.addEventListener('keydown', e => {
         if (e.key === 'Enter') $('addBtn').click();
     });
@@ -405,10 +413,11 @@ document.querySelectorAll('#moveModal [data-target]').forEach(btn => {
         const { error: insErr } = await supabase
             .from(toTab)
             .insert({
-                nickname: data.nickname,
+                nickname:     data.nickname,
                 player_guild: data.player_guild,
-                note: data.note,
-                clan: currentClan
+                faction:      data.faction,
+                note:         data.note,
+                clan:         currentClan
             });
         if (insErr) return alert(insErr.message);
 
