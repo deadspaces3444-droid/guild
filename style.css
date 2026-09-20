@@ -216,7 +216,7 @@ main { max-width: 900px; margin: 0 auto; }
 }
 .add-form input {
     flex: 1;
-    min-width: 160px;
+    min-width: 140px;
     padding: 10px 14px;
     background: var(--panel);
     border: 1px solid var(--border);
@@ -274,13 +274,23 @@ h2 {
 .player-list li .info {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     min-width: 0;
+    flex: 1;
+}
+
+/* ===== НИК + ГИЛЬДИЯ В ОДНУ СТРОКУ ===== */
+.player-list li .row-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .player-list li .nick {
-    font-weight: 600;
-    font-size: 15px;
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
     word-break: break-word;
 }
 
@@ -290,10 +300,22 @@ h2 {
     font-weight: 600;
     color: #ffd479;
     background: rgba(255, 212, 121, 0.1);
-    border: 1px solid rgba(255, 212, 121, 0.3);
-    padding: 2px 8px;
+    border: 1px solid rgba(255, 212, 121, 0.35);
+    padding: 3px 10px;
     border-radius: 10px;
-    width: fit-content;
+    white-space: nowrap;
+}
+
+.player-list li .faction {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #a5b4ff;
+    background: rgba(165, 180, 255, 0.1);
+    border: 1px solid rgba(165, 180, 255, 0.35);
+    padding: 3px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
 }
 
 .player-list li .note {
