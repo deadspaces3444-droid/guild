@@ -1,8 +1,9 @@
 import { supabase } from './supabase.js';
 
 /* ============================================================
-   КОНФИГ ГИЛЬДИЙ
+   ⚙️ КОНФИГ
    ============================================================ */
+
 const CLANS = {
     clan1: {
         name: 'Гильдия АОВ',
@@ -18,15 +19,22 @@ const CLANS = {
 
 const MAIN_BG = 'images/bg-main.jpg';
 
+// ⚠️ АДМИНЫ — email'ы с правами редактирования.
+// Должны совпадать со списком в RLS-политике SQL!
+const ADMIN_EMAILS = [
+    'admin@guild.local'
+];
+
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const CLAN_STORAGE_KEY = 'guild_current_clan';
 const BG_STORAGE_KEY   = 'guild_bg_overrides';
 
 let currentClan = null;
 let currentTab  = 'enemies';
+let currentUser = null;
 let isAdmin     = false;
-let movingItem  = null;   // { fromTab, id }
-let editingItem = null;   // { tab, id }
+let movingItem  = null;
+let editingItem = null;
 
 /* ============================================================
    DOM
@@ -38,6 +46,7 @@ const clanView    = $('clanView');
 const clanTitle   = $('clanTitle');
 const clanIcon    = $('clanIcon');
 const bgFileInput = $('bgFileInput');
+const authModal   = $('authModal');
 
 /* ============================================================
    ФОНЫ
@@ -138,56 +147,107 @@ function resetBg() {
 });
 
 /* ============================================================
-   АДМИН
+   АВТОРИЗАЦИЯ / РЕГИСТРАЦИЯ
    ============================================================ */
-function applyAdminUI() {
-    const logged = isAdmin;
+let authMode = 'login';
 
-    $('loginBtn').hidden  = logged;
-    $('logoutBtn').hidden = !logged;
-    $('userInfo').textContent = logged ? '✔ Админ' : '';
+function openAuth(mode) {
+    authMode = mode;
+    authModal.hidden = false;
+    $('authError').textContent = '';
 
-    $('logoutBtn2').hidden = !logged;
-    $('userInfo2').textContent = logged ? '✔ Админ' : '';
-
-    document.querySelectorAll('.admin-only').forEach(el => {
-        el.hidden = !logged;
-        if (!logged) el.style.display = '';
-    });
-
-    document.querySelectorAll('.add-form.admin-only').forEach(el => {
-        el.style.display = logged ? 'flex' : 'none';
-    });
-
-    renderAll();
+    if (mode === 'login') {
+        $('tabLogin').classList.add('active');
+        $('tabRegister').classList.remove('active');
+        $('loginForm').hidden = false;
+        $('registerForm').hidden = true;
+        $('doAuth').textContent = 'Войти';
+        $('email').focus();
+    } else {
+        $('tabRegister').classList.add('active');
+        $('tabLogin').classList.remove('active');
+        $('loginForm').hidden = true;
+        $('registerForm').hidden = false;
+        $('doAuth').textContent = 'Зарегистрироваться';
+        $('regEmail').focus();
+    }
 }
 
-$('loginBtn').addEventListener('click', () => {
-    $('loginModal').hidden = false;
-    $('loginError').textContent = '';
-    $('email').value = '';
-    $('password').value = '';
-    $('email').focus();
-});
+function closeAuth() {
+    authModal.hidden = true;
+    $('authError').textContent = '';
+    ['email', 'password', 'regEmail', 'regPassword', 'regPassword2'].forEach(id => {
+        const el = $(id); if (el) el.value = '';
+    });
+}
 
-$('cancelLogin').addEventListener('click', () => { $('loginModal').hidden = true; });
+$('loginBtn').addEventListener('click', () => openAuth('login'));
+$('registerBtn').addEventListener('click', () => openAuth('register'));
+$('cancelAuth').addEventListener('click', closeAuth);
 
-$('doLogin').addEventListener('click', async () => {
-    const email = $('email').value.trim();
-    const password = $('password').value;
-    $('loginError').textContent = '';
+$('tabLogin').addEventListener('click', () => openAuth('login'));
+$('tabRegister').addEventListener('click', () => openAuth('register'));
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+$('doAuth').addEventListener('click', async () => {
+    const err = $('authError');
+    err.textContent = '';
 
-    if (error) {
-        $('loginError').textContent = error.message;
-        return;
+    if (authMode === 'login') {
+        const email = $('email').value.trim();
+        const password = $('password').value;
+
+        if (!email || !password) {
+            err.textContent = 'Заполни email и пароль';
+            return;
+        }
+
+        $('doAuth').disabled = true;
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        $('doAuth').disabled = false;
+
+        if (error) { err.textContent = error.message; return; }
+        closeAuth();
+    } else {
+        const email = $('regEmail').value.trim();
+        const p1 = $('regPassword').value;
+        const p2 = $('regPassword2').value;
+
+        if (!email || !p1) {
+            err.textContent = 'Заполни email и пароль';
+            return;
+        }
+        if (p1.length < 6) {
+            err.textContent = 'Пароль должен быть не короче 6 символов';
+            return;
+        }
+        if (p1 !== p2) {
+            err.textContent = 'Пароли не совпадают';
+            return;
+        }
+
+        $('doAuth').disabled = true;
+        const { error } = await supabase.auth.signUp({ email, password: p1 });
+        $('doAuth').disabled = false;
+
+        if (error) { err.textContent = error.message; return; }
+
+        // Проверяем — сразу залогинен или нужно подтверждать email
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            closeAuth();
+        } else {
+            err.style.color = '#6ee7a7';
+            err.textContent = '✔ Проверь почту — мы отправили ссылку для подтверждения';
+            setTimeout(closeAuth, 4000);
+        }
     }
-    $('loginModal').hidden = true;
 });
 
-$('password').addEventListener('keydown', e => {
-    if (e.key === 'Enter') $('doLogin').click();
+['email', 'password', 'regEmail', 'regPassword', 'regPassword2'].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('keydown', e => {
+        if (e.key === 'Enter') $('doAuth').click();
+    });
 });
 
 async function doLogout() {
@@ -197,9 +257,45 @@ $('logoutBtn').addEventListener('click', doLogout);
 $('logoutBtn2').addEventListener('click', doLogout);
 
 supabase.auth.onAuthStateChange((_e, session) => {
-    isAdmin = !!session;
-    applyAdminUI();
+    currentUser = session?.user || null;
+    isAdmin = !!currentUser && ADMIN_EMAILS.includes((currentUser.email || '').toLowerCase());
+    applyAuthUI();
 });
+
+function applyAuthUI() {
+    const logged = !!currentUser;
+
+    // кнопки входа/регистрации/выхода
+    $('loginBtn').hidden    = logged;
+    $('registerBtn').hidden = logged;
+    $('logoutBtn').hidden   = !logged;
+    $('logoutBtn2').hidden  = !logged;
+
+    // кнопка скачивания .rar — доступна всем залогиненным
+    document.querySelectorAll('.logged-only').forEach(el => {
+        el.hidden = !logged;
+    });
+
+    // текст в углу
+    const label = logged
+        ? (isAdmin ? '👑 ' + currentUser.email : '👤 ' + currentUser.email)
+        : '';
+    $('userInfo').textContent  = label;
+    $('userInfo2').textContent = label;
+    $('userInfo').classList.toggle('admin', isAdmin);
+    $('userInfo2').classList.toggle('admin', isAdmin);
+
+    // админские элементы
+    document.querySelectorAll('.admin-only').forEach(el => {
+        el.hidden = !isAdmin;
+        if (!isAdmin) el.style.display = '';
+    });
+    document.querySelectorAll('.add-form.admin-only').forEach(el => {
+        el.style.display = isAdmin ? 'flex' : 'none';
+    });
+
+    renderAll();
+}
 
 /* ============================================================
    ВЫБОР ГИЛЬДИИ
@@ -230,7 +326,7 @@ function openClan(clanId) {
     document.querySelectorAll('.tab-content').forEach(c =>
         c.classList.toggle('active', c.id === 'tab-enemies'));
 
-    applyAdminUI();
+    applyAuthUI();
     renderAll();
 }
 
@@ -374,7 +470,6 @@ $('saveEdit').addEventListener('click', async () => {
     loadList(tab);
 });
 
-// Enter в полях редактирования = сохранить
 ['editPlayerGuild', 'editNickname', 'editFaction', 'editNote'].forEach(id => {
     $(id).addEventListener('keydown', e => {
         if (e.key === 'Enter') $('saveEdit').click();
@@ -506,8 +601,9 @@ function escapeHtml(str) {
    ============================================================ */
 (async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    isAdmin = !!session;
-    applyAdminUI();
+    currentUser = session?.user || null;
+    isAdmin = !!currentUser && ADMIN_EMAILS.includes((currentUser.email || '').toLowerCase());
+    applyAuthUI();
 
     const savedClan = localStorage.getItem(CLAN_STORAGE_KEY);
     if (savedClan && CLANS[savedClan]) {
