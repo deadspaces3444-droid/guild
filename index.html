@@ -63,6 +63,7 @@
                         ⬇️ Скачать zapret
                     </a>
                     <button id="clanLoginBtn" class="big-btn primary">🔐 Войти в гильдию</button>
+                    <button id="clanViewBtn" class="big-btn primary" hidden>👁 Открыть списки</button>
                 </div>
             </div>
         </div>
@@ -84,7 +85,7 @@
                    target="_blank" rel="noopener" title="Скачать zapret">⬇️</a>
                 <button id="bgChangeBtn" class="icon-btn admin-only" hidden title="Сменить фон">🎨</button>
                 <button id="bgResetBtn"  class="icon-btn admin-only" hidden title="Сбросить фон">↺</button>
-                <button id="clanLeaveBtn" title="Выйти из гильдии">🚪</button>
+                <button id="clanLeaveBtn" title="Заблокировать просмотр">🚪</button>
             </div>
         </header>
 
@@ -157,7 +158,7 @@
     <div id="adminPanelModal" class="modal" hidden>
         <div class="modal-content admin-panel-wide">
             <h2>⚙️ Админ-панель</h2>
-            <p class="hint admin-hint">Управление паролем и правилами гильдии</p>
+            <p class="hint admin-hint">Управление гильдиями</p>
 
             <div class="admin-field">
                 <label>Гильдия</label>
@@ -183,7 +184,58 @@
 
             <div class="modal-actions">
                 <button id="saveAdminSettings">💾 Сохранить</button>
+                <button id="openAddClan" class="secondary">➕ Новая гильдия</button>
                 <button id="closeAdminPanel" class="secondary">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ МОДАЛКА: ДОБАВИТЬ ГИЛЬДИЮ ═══════════ -->
+    <div id="addClanModal" class="modal" hidden>
+        <div class="modal-content admin-panel-wide">
+            <h2>➕ Новая гильдия</h2>
+            <p class="hint admin-hint">ID и название обязательны</p>
+
+            <div class="admin-field">
+                <label>ID (латиница, без пробелов)</label>
+                <input type="text" id="newClanId" placeholder="clan3" maxlength="20">
+            </div>
+
+            <div class="admin-field">
+                <label>Название</label>
+                <input type="text" id="newClanName" placeholder="Гильдия Орлов" maxlength="60">
+            </div>
+
+            <div class="admin-field">
+                <label>Описание</label>
+                <textarea id="newClanDesc" placeholder="Кратко о гильдии..." rows="3"></textarea>
+            </div>
+
+            <div class="admin-field">
+                <label>Правила</label>
+                <textarea id="newClanRules" placeholder="1. Правило..." rows="5"></textarea>
+            </div>
+
+            <div class="admin-field">
+                <label>Пароль для входа</label>
+                <input type="text" id="newClanPass" placeholder="Пароль гильдии">
+            </div>
+
+            <div class="admin-field">
+                <label>Путь к логотипу</label>
+                <input type="text" id="newClanImage" placeholder="images/clan3.png">
+            </div>
+
+            <div class="admin-field">
+                <label>Путь к фону</label>
+                <input type="text" id="newClanBg" placeholder="images/bg-clan3.jpg">
+            </div>
+
+            <p id="addClanMsg" class="error"></p>
+
+            <div class="modal-actions">
+                <button id="saveNewClan">💾 Создать</button>
+                <button id="cancelAddClan" class="secondary">Отмена</button>
             </div>
         </div>
     </div>
@@ -221,6 +273,9 @@
     </div>
 
     <input type="file" id="bgFileInput" accept="image/*" hidden>
+
+    <!-- Подпись внизу -->
+    <footer class="site-footer">Mist Time — Сергеев С.В</footer>
 
     <script type="module" src="app.js"></script>
 </body>
