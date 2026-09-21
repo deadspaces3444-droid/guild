@@ -31,6 +31,41 @@
 
             <h2 class="section-title">Гильдии</h2>
             <div id="clanGrid" class="clan-grid"></div>
+
+            <!-- РЕКЛАМНЫЙ БЛОК: YOUTUBE -->
+            <section id="promoSection" class="promo-section" hidden>
+                <h2 class="section-title">📺 Наш YouTube</h2>
+
+                <a id="ytPromoCard" class="promo-card" href="#" target="_blank" rel="noopener">
+                    <img id="ytLogo"
+                         class="promo-logo"
+                         src=""
+                         alt="YouTube канал"
+                         onerror="this.onerror=null;this.classList.add('promo-logo-fallback');this.src='images/aov.png';">
+                    <div class="promo-info">
+                        <div id="ytName" class="promo-name">YouTube</div>
+                        <div id="ytDesc" class="promo-desc"></div>
+                        <div class="promo-btn">▶ Смотреть на YouTube</div>
+                    </div>
+                </a>
+            </section>
+
+            <!-- БЛОК БЛАГОДАРНОСТЕЙ -->
+            <section class="thanks-section">
+                <h2 class="section-title">🙏 Благодарности</h2>
+                <div class="thanks-card">
+                    <p class="thanks-text">
+                        Спасибо всем участникам гильдий <b>АОВ</b> и <b>-К-</b> за активность и поддержку проекта.
+                    </p>
+                    <p class="thanks-text">
+                        Отдельная благодарность — администрации и совету гильдий за помощь в развитии сайта, составлении правил и тестировании функционала.
+                    </p>
+                    <p class="thanks-text thanks-final">
+                        Этот сайт — для вас. <span class="thanks-heart">❤️</span>
+                    </p>
+                    <div class="thanks-sign">Mist Time — Сергеев С.В</div>
+                </div>
+            </section>
         </div>
     </div>
 
@@ -76,9 +111,7 @@
 
     <!-- ЭКРАН 3: ВНУТРИ ГИЛЬДИИ -->
     <div id="clanView" hidden>
-
-        <!-- IP-ВИДЖЕТ -->
-        <div id="ipWidget" class="ip-widget" hidden>
+        <div id="ipWidget" class="ip-widget" style="display:none" hidden>
             <div class="ip-line">
                 <span class="ip-label">Ваш IP:</span>
                 <span id="ipValue" class="ip-value">…</span>
@@ -129,7 +162,6 @@
             </aside>
 
             <div class="clan-main">
-
                 <div id="section-lists" class="clan-section active">
                     <nav class="tabs">
                         <button class="tab active" data-tab="enemies">🔴 Враги</button>
@@ -258,38 +290,74 @@
     <div id="adminPanelModal" class="modal" hidden>
         <div class="modal-content admin-panel-wide">
             <h2>⚙️ Админ-панель</h2>
-            <p class="hint admin-hint">Управление гильдиями</p>
 
-            <div class="admin-field">
-                <label>Гильдия</label>
-                <select id="adminClanSelect"></select>
-            </div>
-            <div class="admin-field">
-                <label>Текущий пароль</label>
-                <input type="text" id="adminCurrentPass" readonly>
-            </div>
-            <div class="admin-field">
-                <label>Новый пароль</label>
-                <input type="text" id="adminNewPass" placeholder="Оставь пустым, чтобы не менять">
-            </div>
-            <div class="admin-field">
-                <label>Discord-ссылка гильдии</label>
-                <input type="text" id="adminDiscord" placeholder="https://discord.gg/xxxxx" maxlength="200">
-            </div>
-            <div class="admin-field">
-                <label>Новости гильдии</label>
-                <textarea id="adminNews" placeholder="Общие новости..." rows="5"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Правила гильдии</label>
-                <textarea id="adminRules" placeholder="Каждое правило с новой строки..." rows="8"></textarea>
+            <div class="admin-tabs">
+                <button class="admin-tab active" data-atab="clans">🏰 Гильдии</button>
+                <button class="admin-tab" data-atab="site">📺 Сайт</button>
             </div>
 
-            <p id="adminPanelMsg" class="error"></p>
+            <!-- ВКЛАДКА: ГИЛЬДИИ -->
+            <div id="atab-clans" class="admin-tab-content active">
+                <p class="hint admin-hint">Управление гильдиями</p>
+
+                <div class="admin-field">
+                    <label>Гильдия</label>
+                    <select id="adminClanSelect"></select>
+                </div>
+                <div class="admin-field">
+                    <label>Текущий пароль</label>
+                    <input type="text" id="adminCurrentPass" readonly>
+                </div>
+                <div class="admin-field">
+                    <label>Новый пароль</label>
+                    <input type="text" id="adminNewPass" placeholder="Оставь пустым, чтобы не менять">
+                </div>
+                <div class="admin-field">
+                    <label>Discord-ссылка гильдии</label>
+                    <input type="text" id="adminDiscord" placeholder="https://discord.gg/xxxxx" maxlength="200">
+                </div>
+                <div class="admin-field">
+                    <label>Новости гильдии</label>
+                    <textarea id="adminNews" placeholder="Общие новости..." rows="5"></textarea>
+                </div>
+                <div class="admin-field">
+                    <label>Правила гильдии</label>
+                    <textarea id="adminRules" placeholder="Каждое правило с новой строки..." rows="8"></textarea>
+                </div>
+
+                <p id="adminPanelMsg" class="error"></p>
+
+                <div class="modal-actions">
+                    <button id="saveAdminSettings">💾 Сохранить</button>
+                    <button id="openAddClan" class="secondary">➕ Новая гильдия</button>
+                </div>
+            </div>
+
+            <!-- ВКЛАДКА: САЙТ -->
+            <div id="atab-site" class="admin-tab-content">
+                <p class="hint admin-hint">Настройки главной страницы</p>
+
+                <div class="admin-field">
+                    <label>YouTube — ссылка на канал</label>
+                    <input type="text" id="adminYoutubeUrl" placeholder="https://youtube.com/@ВашКанал" maxlength="300">
+                </div>
+                <div class="admin-field">
+                    <label>YouTube — название канала</label>
+                    <input type="text" id="adminYoutubeName" placeholder="Название канала" maxlength="100">
+                </div>
+                <div class="admin-field">
+                    <label>YouTube — описание под каналом</label>
+                    <textarea id="adminYoutubeDesc" placeholder="Краткое описание..." rows="3"></textarea>
+                </div>
+
+                <p id="adminSiteMsg" class="error"></p>
+
+                <div class="modal-actions">
+                    <button id="saveSiteSettings">💾 Сохранить</button>
+                </div>
+            </div>
 
             <div class="modal-actions">
-                <button id="saveAdminSettings">💾 Сохранить</button>
-                <button id="openAddClan" class="secondary">➕ Новая гильдия</button>
                 <button id="closeAdminPanel" class="secondary">Закрыть</button>
             </div>
         </div>
@@ -368,7 +436,6 @@
                 <label>Ранг</label>
                 <textarea id="buildEditRank" rows="1" maxlength="10"></textarea>
             </div>
-
             <div class="admin-field">
                 <label>Название корабля</label>
                 <textarea id="buildEditShip" rows="1" maxlength="60"></textarea>
@@ -428,14 +495,11 @@
         <div class="modal-content">
             <h2>📋 Дублировать билд</h2>
             <p id="buildDupName" class="auth-clan-name"></p>
-
             <div class="admin-field">
                 <label>Куда скопировать</label>
                 <select id="buildDupScope"></select>
             </div>
-
             <p id="buildDupMsg" class="error"></p>
-
             <div class="modal-actions">
                 <button id="doBuildDup">📋 Создать копию</button>
                 <button id="cancelBuildDup" class="secondary">Отмена</button>
@@ -463,7 +527,7 @@
 
     <footer class="site-footer">
         <span class="footer-left">Mist Time — Сергеев С.В</span>
-        <span class="footer-right">v1.3.1</span>
+        <span class="footer-right">v1.3.2</span>
     </footer>
 
     <script type="module" src="app.js"></script>
