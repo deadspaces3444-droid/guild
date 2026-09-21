@@ -4,6 +4,7 @@ import { supabase } from './supabase.js';
    КОНФИГ
    ============================================================ */
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
+const APP_VERSION = '1.2.2';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const UNLOCK_KEY = 'guild_unlocked';
@@ -142,6 +143,8 @@ document.querySelectorAll('.side-item').forEach(btn => {
             renderBuilds('pvp');
         } else if (section === 'pb') {
             renderBuilds('pb');
+        } else if (section === 'contacts') {
+            renderContacts();
         }
     });
 });
@@ -275,6 +278,15 @@ function openClanInfo(clanId) {
     $('clanInfoDesc').textContent = clan.description || '';
     $('clanInfoRules').textContent = clan.rules || 'Правила не заданы.';
 
+    const newsWrap = $('clanInfoNewsWrap');
+    if (clan.news && clan.news.trim()) {
+        newsWrap.hidden = false;
+        $('clanInfoNews').textContent = clan.news;
+    } else {
+        newsWrap.hidden = true;
+        $('clanInfoNews').textContent = '';
+    }
+
     if (isUnlocked()) {
         $('clanLoginBtn').hidden = true;
         $('clanViewBtn').hidden = false;
@@ -369,6 +381,7 @@ function openClan(clanId) {
     renderAll();
     renderBuilds('pvp');
     renderBuilds('pb');
+    renderContacts();
 }
 
 $('backBtn').addEventListener('click', () => {
@@ -715,6 +728,41 @@ async function deleteBuild(id, type) {
 }
 
 /* ============================================================
+   КОНТАКТЫ
+   ============================================================ */
+function renderContacts() {
+    const container = $('contactsList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const clans = Object.values(clansCache);
+    if (clans.length === 0) {
+        container.innerHTML = '<div class="empty">Гильдий пока нет</div>';
+        return;
+    }
+
+    clans.forEach(clan => {
+        const card = document.createElement('div');
+        card.className = 'contact-card';
+
+        const hasLink = clan.discord && clan.discord.trim();
+        const btnHtml = hasLink
+            ? `<a class="contact-btn" href="${escapeHtml(clan.discord)}" target="_blank" rel="noopener">💬 Discord</a>`
+            : `<span class="contact-btn disabled">💬 Нет ссылки</span>`;
+
+        card.innerHTML = `
+            <img src="${escapeHtml(clan.image || '')}" alt="${escapeHtml(clan.name)}">
+            <div class="contact-info">
+                <div class="contact-name">${escapeHtml(clan.name)}</div>
+                <div class="contact-discord">${hasLink ? escapeHtml(clan.discord) : 'Ссылка не указана'}</div>
+            </div>
+            ${btnHtml}
+        `;
+        container.appendChild(card);
+    });
+}
+
+/* ============================================================
    АДМИН-ПАНЕЛЬ
    ============================================================ */
 function openAdminPanel() {
@@ -755,6 +803,8 @@ function updateAdminFields() {
     const clan = clansCache[cid];
     $('adminCurrentPass').value = clan?.password || '—';
     $('adminNewPass').value = '';
+    $('adminDiscord').value = clan?.discord || '';
+    $('adminNews').value = clan?.news || '';
     $('adminRules').value = clan?.rules || '';
     $('adminPanelMsg').textContent = '';
     $('adminPanelMsg').style.color = '';
@@ -763,6 +813,8 @@ function updateAdminFields() {
 $('saveAdminSettings').addEventListener('click', async () => {
     const cid = $('adminClanSelect').value;
     const newPass = $('adminNewPass').value.trim();
+    const newDiscord = $('adminDiscord').value.trim();
+    const newNews = $('adminNews').value;
     const newRules = $('adminRules').value;
     const msg = $('adminPanelMsg');
 
@@ -772,6 +824,8 @@ $('saveAdminSettings').addEventListener('click', async () => {
     if (!clan) { msg.textContent = 'Гильдия не найдена'; msg.style.color = '#ff7a7a'; return; }
 
     const payload = {
+        discord: newDiscord || null,
+        news: newNews || null,
         rules: newRules,
         updated_at: new Date().toISOString()
     };
@@ -784,24 +838,34 @@ $('saveAdminSettings').addEventListener('click', async () => {
         return;
     }
 
+    clansCache[cid].discord = newDiscord || null;
+    clansCache[cid].news = newNews || null;
     clansCache[cid].rules = newRules;
     if (newPass) clansCache[cid].password = newPass;
 
-    msg.textContent = newPass ? '✔ Пароль и правила обновлены' : '✔ Правила обновлены';
+    msg.textContent = '✔ Изменения сохранены';
     msg.style.color = '#6ee7a7';
     $('adminNewPass').value = '';
     updateAdminFields();
 
     if (pendingClanId === cid) {
         $('clanInfoRules').textContent = newRules || 'Правила не заданы.';
+        const newsWrap = $('clanInfoNewsWrap');
+        if (newNews && newNews.trim()) {
+            newsWrap.hidden = false;
+            $('clanInfoNews').textContent = newNews;
+        } else {
+            newsWrap.hidden = true;
+        }
     }
+    renderContacts();
 });
 
 /* ============================================================
    ДОБАВЛЕНИЕ ГИЛЬДИИ
    ============================================================ */
 $('openAddClan').addEventListener('click', () => {
-    ['newClanId','newClanName','newClanDesc','newClanRules','newClanPass','newClanImage','newClanBg']
+    ['newClanId','newClanName','newClanDesc','newClanRules','newClanPass','newClanDiscord','newClanImage','newClanBg']
         .forEach(id => { const el = $(id); if (el) el.value = ''; });
     $('addClanMsg').textContent = '';
     $('addClanMsg').style.color = '';
@@ -819,6 +883,7 @@ $('saveNewClan').addEventListener('click', async () => {
     const desc = $('newClanDesc').value.trim();
     const rules = $('newClanRules').value;
     const pass = $('newClanPass').value.trim();
+    const discord = $('newClanDiscord').value.trim();
     const image = $('newClanImage').value.trim();
     const bg = $('newClanBg').value.trim();
     const msg = $('addClanMsg');
@@ -836,6 +901,7 @@ $('saveNewClan').addEventListener('click', async () => {
         description: desc,
         rules,
         password: pass,
+        discord: discord || null,
         image: image || 'images/aov.png',
         bg: bg || 'images/bg-main.jpg'
     };
@@ -850,6 +916,7 @@ $('saveNewClan').addEventListener('click', async () => {
     clansCache[id] = payload;
     renderHomeCards();
     renderAdminClanSelect();
+    renderContacts();
 
     msg.textContent = '✔ Гильдия создана';
     msg.style.color = '#6ee7a7';
@@ -1008,6 +1075,9 @@ function escapeHtml(str) {
    СТАРТ
    ============================================================ */
 (async () => {
+    const verEl = document.querySelector('.footer-right');
+    if (verEl) verEl.textContent = 'v' + APP_VERSION;
+
     await loadClans();
 
     const { data: { session } } = await supabase.auth.getSession();
