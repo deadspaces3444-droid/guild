@@ -76,6 +76,20 @@
 
     <!-- ЭКРАН 3: ВНУТРИ ГИЛЬДИИ -->
     <div id="clanView" hidden>
+
+        <!-- IP-ВИДЖЕТ -->
+        <div id="ipWidget" class="ip-widget" hidden>
+            <div class="ip-line">
+                <span class="ip-label">Ваш IP:</span>
+                <span id="ipValue" class="ip-value">…</span>
+            </div>
+            <div class="ip-warning">⚠️ Помни — тебя всегда можно вычислить по IP</div>
+            <div class="ip-city">
+                <span class="ip-label">Город:</span>
+                <span id="ipCity" class="ip-value">…</span>
+            </div>
+        </div>
+
         <header>
             <button id="backBtn" class="back-btn">← Назад</button>
             <h1>
@@ -449,7 +463,7 @@
 
     <footer class="site-footer">
         <span class="footer-left">Mist Time — Сергеев С.В</span>
-        <span class="footer-right">v1.3.0</span>
+        <span class="footer-right">v1.3.1</span>
     </footer>
 
     <script type="module" src="app.js"></script>
