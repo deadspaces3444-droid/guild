@@ -1,22 +1,24 @@
 import { supabase } from './supabase.js';
 
 /* ============================================================
-   ⚙️ КОНФИГ
+   КОНФИГ
    ============================================================ */
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
-const UNLOCK_KEY = 'guild_unlocked';        // '1' — пароль введён
-const LAST_CLAN_KEY = 'guild_last_clan';    // id последней открытой гильдии
+const UNLOCK_KEY = 'guild_unlocked';
+const LAST_CLAN_KEY = 'guild_last_clan';
 const BG_STORAGE_KEY = 'guild_bg_overrides';
 
 let clansCache    = {};
 let currentClan   = null;
 let pendingClanId = null;
 let currentTab    = 'enemies';
+let currentSection = 'lists';
 let isAdmin       = false;
 let movingItem    = null;
 let editingItem   = null;
+let editingBuild  = null;   // { id, type }
 
 /* ============================================================
    DOM
@@ -51,7 +53,9 @@ function currentBgKey() {
     return currentClan ? currentClan : 'main';
 }
 function currentBgFallback() {
-    if (currentClan && clansCache[currentClan]) return clansCache[currentClan].bg;
+    if (currentClan && clansCache[currentClan] && clansCache[currentClan].bg) {
+        return clansCache[currentClan].bg;
+    }
     return 'images/bg-main.jpg';
 }
 function applyBg() {
@@ -116,6 +120,31 @@ function showScreen(name) {
     clanView.hidden   = name !== 'lists';
     window.scrollTo(0, 0);
 }
+
+/* ============================================================
+   САЙДБАР
+   ============================================================ */
+document.querySelectorAll('.side-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const section = btn.dataset.section;
+        if (!section) return;
+
+        document.querySelectorAll('.side-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.clan-section').forEach(s => s.classList.remove('active'));
+
+        btn.classList.add('active');
+        $('section-' + section).classList.add('active');
+        currentSection = section;
+
+        if (section === 'lists') {
+            TABS.forEach(loadList);
+        } else if (section === 'pvp') {
+            renderBuilds('pvp');
+        } else if (section === 'pb') {
+            renderBuilds('pb');
+        }
+    });
+});
 
 /* ============================================================
    АДМИН
@@ -246,7 +275,6 @@ function openClanInfo(clanId) {
     $('clanInfoDesc').textContent = clan.description || '';
     $('clanInfoRules').textContent = clan.rules || 'Правила не заданы.';
 
-    // Кнопка "Войти" или "Открыть списки"
     if (isUnlocked()) {
         $('clanLoginBtn').hidden = true;
         $('clanViewBtn').hidden = false;
@@ -292,7 +320,6 @@ $('doClanLogin').addEventListener('click', () => {
     if (!entered) { $('clanPassError').textContent = 'Введите пароль'; return; }
     if (entered !== clan.password) { $('clanPassError').textContent = 'Неверный пароль'; return; }
 
-    // Успех — открываем доступ ко всем гильдиям
     localStorage.setItem(UNLOCK_KEY, '1');
     $('clanPassModal').hidden = true;
     const cid = pendingClanId;
@@ -326,6 +353,13 @@ function openClan(clanId) {
     showScreen('lists');
     applyBg();
 
+    // сброс сайдбара на "Списки"
+    currentSection = 'lists';
+    document.querySelectorAll('.side-item').forEach(b =>
+        b.classList.toggle('active', b.dataset.section === 'lists'));
+    document.querySelectorAll('.clan-section').forEach(s =>
+        s.classList.toggle('active', s.id === 'section-lists'));
+
     currentTab = 'enemies';
     document.querySelectorAll('.tab').forEach(b =>
         b.classList.toggle('active', b.dataset.tab === 'enemies'));
@@ -334,6 +368,8 @@ function openClan(clanId) {
 
     applyAdminUI();
     renderAll();
+    renderBuilds('pvp');
+    renderBuilds('pb');
 }
 
 $('backBtn').addEventListener('click', () => {
@@ -350,7 +386,7 @@ $('clanLeaveBtn').addEventListener('click', () => {
 });
 
 /* ============================================================
-   ВКЛАДКИ
+   ВКЛАДКИ СПИСКОВ
    ============================================================ */
 document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -422,6 +458,262 @@ async function loadList(tab) {
         }
         ul.appendChild(li);
     });
+}
+
+/* ============================================================
+   БИЛДЫ
+   ============================================================ */
+async function renderBuilds(type) {
+    if (!currentClan) return;
+    const container = type === 'pvp' ? $('pvpList') : $('pbList');
+    if (!container) return;
+
+    container.innerHTML = '<div class="empty">Загрузка…</div>';
+
+    const { data, error } = await supabase
+        .from('builds')
+        .select('*')
+        .eq('clan', currentClan)
+        .eq('type', type)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`;
+        return;
+    }
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div class="empty">Билды пока не добавлены</div>';
+        return;
+    }
+
+    container.innerHTML = '';
+
+    if (type === 'pb') {
+        // группировка по рангам
+        const groups = {};
+        data.forEach(b => {
+            const r = b.rank || '—';
+            if (!groups[r]) groups[r] = [];
+            groups[r].push(b);
+        });
+
+        const ranks = Object.keys(groups).sort((a, b) => {
+            const na = parseInt(a, 10), nb = parseInt(b, 10);
+            if (isNaN(na) && isNaN(nb)) return a.localeCompare(b);
+            if (isNaN(na)) return 1;
+            if (isNaN(nb)) return -1;
+            return na - nb;
+        });
+
+        ranks.forEach(rank => {
+            const group = document.createElement('div');
+            group.className = 'build-group';
+
+            const title = document.createElement('h3');
+            title.className = 'build-group-title';
+            title.textContent = `Ранг ${rank}`;
+            group.appendChild(title);
+
+            groups[rank].forEach(item => group.appendChild(createBuildCard(item)));
+            container.appendChild(group);
+        });
+    } else {
+        data.forEach(item => container.appendChild(createBuildCard(item)));
+    }
+}
+
+function createBuildCard(item) {
+    const card = document.createElement('div');
+    card.className = 'build-card';
+
+    const consumables = [item.consumable1, item.consumable2, item.consumable3]
+        .filter(Boolean).join(' · ');
+
+    const actions = isAdmin ? `
+        <div class="build-actions">
+            <button class="edit" title="Редактировать">✏️</button>
+            <button class="delete" title="Удалить">🗑</button>
+        </div>` : '';
+
+    const rankBadge = (item.type === 'pb' && item.rank)
+        ? `<span class="build-rank">Ранг ${escapeHtml(item.rank)}</span>`
+        : '';
+
+    card.innerHTML = `
+        <div class="build-header">
+            <h3 class="build-ship">${escapeHtml(item.ship_name)}</h3>
+            ${rankBadge}
+            ${actions}
+        </div>
+        ${item.upgrades ? `
+        <div class="build-row">
+            <span class="build-label">🔧 Апгрейды:</span>
+            <span class="build-value">${escapeHtml(item.upgrades)}</span>
+        </div>` : ''}
+        ${consumables ? `
+        <div class="build-row">
+            <span class="build-label">⚗️ Расходники:</span>
+            <span class="build-value">${escapeHtml(consumables)}</span>
+        </div>` : ''}
+        ${item.cargo ? `
+        <div class="build-row">
+            <span class="build-label">📦 Трюм:</span>
+            <span class="build-value">${escapeHtml(item.cargo)}</span>
+        </div>` : ''}
+    `;
+
+    if (isAdmin) {
+        card.querySelector('.edit').addEventListener('click', () => openBuildEdit(item));
+        card.querySelector('.delete').addEventListener('click', () => deleteBuild(item.id, item.type));
+    }
+
+    return card;
+}
+
+async function addBuild(type) {
+    if (!isAdmin || !currentClan) return;
+
+    const isPvp = type === 'pvp';
+    const rank = isPvp ? null : $('pbRank').value.trim();
+    const ship = (isPvp ? $('pvpShip') : $('pbShip')).value.trim();
+    const upgrades = (isPvp ? $('pvpUpgrades') : $('pbUpgrades')).value.trim();
+    const c1 = (isPvp ? $('pvpCons1') : $('pbCons1')).value.trim();
+    const c2 = (isPvp ? $('pvpCons2') : $('pbCons2')).value.trim();
+    const c3 = (isPvp ? $('pvpCons3') : $('pbCons3')).value.trim();
+    const cargo = (isPvp ? $('pvpCargo') : $('pbCargo')).value.trim();
+    const statusEl = $(isPvp ? 'pvpStatus' : 'pbStatus');
+
+    if (!ship) {
+        flashStatusEl(statusEl, 'Введите название корабля', '#ff7a7a');
+        return;
+    }
+    if (!isPvp && !rank) {
+        flashStatusEl(statusEl, 'Укажите ранг', '#ff7a7a');
+        return;
+    }
+
+    const { error } = await supabase.from('builds').insert({
+        clan: currentClan,
+        type,
+        rank,
+        ship_name: ship,
+        upgrades: upgrades || null,
+        consumable1: c1 || null,
+        consumable2: c2 || null,
+        consumable3: c3 || null,
+        cargo: cargo || null
+    });
+
+    if (error) {
+        flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a');
+        return;
+    }
+
+    if (isPvp) {
+        ['pvpShip','pvpUpgrades','pvpCons1','pvpCons2','pvpCons3','pvpCargo']
+            .forEach(id => $(id).value = '');
+    } else {
+        ['pbRank','pbShip','pbUpgrades','pbCons1','pbCons2','pbCons3','pbCargo']
+            .forEach(id => $(id).value = '');
+    }
+
+    flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
+    renderBuilds(type);
+}
+
+$('pvpAddBtn').addEventListener('click', () => addBuild('pvp'));
+$('pbAddBtn').addEventListener('click', () => addBuild('pb'));
+
+function flashStatusEl(el, text, color) {
+    el.textContent = text;
+    el.style.color = color;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.textContent = '', 2000);
+}
+
+/* ============================================================
+   РЕДАКТИРОВАНИЕ БИЛДА
+   ============================================================ */
+function openBuildEdit(item) {
+    editingBuild = { id: item.id, type: item.type };
+    $('buildEditTitle').textContent = item.type === 'pvp'
+        ? '✏️ Редактировать ПВП-билд'
+        : '✏️ Редактировать ПБ-билд';
+
+    const rankField = $('buildEditRankField');
+    if (item.type === 'pb') {
+        rankField.hidden = false;
+        $('buildEditRank').value = item.rank || '';
+    } else {
+        rankField.hidden = true;
+        $('buildEditRank').value = '';
+    }
+
+    $('buildEditShip').value = item.ship_name || '';
+    $('buildEditUpgrades').value = item.upgrades || '';
+    $('buildEditCons1').value = item.consumable1 || '';
+    $('buildEditCons2').value = item.consumable2 || '';
+    $('buildEditCons3').value = item.consumable3 || '';
+    $('buildEditCargo').value = item.cargo || '';
+    $('buildEditError').textContent = '';
+    $('buildEditModal').hidden = false;
+    $('buildEditShip').focus();
+}
+
+$('cancelBuildEdit').addEventListener('click', () => {
+    $('buildEditModal').hidden = true;
+    editingBuild = null;
+});
+
+$('saveBuildEdit').addEventListener('click', async () => {
+    if (!editingBuild) return;
+
+    const rank = $('buildEditRank').value.trim();
+    const ship = $('buildEditShip').value.trim();
+    const upgrades = $('buildEditUpgrades').value.trim();
+    const c1 = $('buildEditCons1').value.trim();
+    const c2 = $('buildEditCons2').value.trim();
+    const c3 = $('buildEditCons3').value.trim();
+    const cargo = $('buildEditCargo').value.trim();
+
+    if (!ship) {
+        $('buildEditError').textContent = 'Введите название корабля';
+        return;
+    }
+    if (editingBuild.type === 'pb' && !rank) {
+        $('buildEditError').textContent = 'Укажите ранг';
+        return;
+    }
+
+    const { error } = await supabase
+        .from('builds')
+        .update({
+            rank: editingBuild.type === 'pb' ? rank : null,
+            ship_name: ship,
+            upgrades: upgrades || null,
+            consumable1: c1 || null,
+            consumable2: c2 || null,
+            consumable3: c3 || null,
+            cargo: cargo || null
+        })
+        .eq('id', editingBuild.id);
+
+    if (error) {
+        $('buildEditError').textContent = 'Ошибка: ' + error.message;
+        return;
+    }
+
+    const type = editingBuild.type;
+    $('buildEditModal').hidden = true;
+    editingBuild = null;
+    renderBuilds(type);
+});
+
+async function deleteBuild(id, type) {
+    if (!confirm('Удалить билд?')) return;
+    const { error } = await supabase.from('builds').delete().eq('id', id);
+    if (error) return alert(error.message);
+    renderBuilds(type);
 }
 
 /* ============================================================
@@ -511,7 +803,6 @@ $('saveAdminSettings').addEventListener('click', async () => {
    ДОБАВЛЕНИЕ ГИЛЬДИИ
    ============================================================ */
 $('openAddClan').addEventListener('click', () => {
-    // Очистить поля
     ['newClanId','newClanName','newClanDesc','newClanRules','newClanPass','newClanImage','newClanBg']
         .forEach(id => { const el = $(id); if (el) el.value = ''; });
     $('addClanMsg').textContent = '';
@@ -570,7 +861,7 @@ $('saveNewClan').addEventListener('click', async () => {
 });
 
 /* ============================================================
-   РЕДАКТИРОВАНИЕ ЗАПИСЕЙ
+   РЕДАКТИРОВАНИЕ ЗАПИСЕЙ СПИСКА
    ============================================================ */
 function openEditModal(tab, item) {
     editingItem = { tab, id: item.id };
@@ -615,7 +906,7 @@ $('saveEdit').addEventListener('click', async () => {
 });
 
 /* ============================================================
-   ДОБАВЛЕНИЕ ЗАПИСИ
+   ДОБАВЛЕНИЕ ЗАПИСИ В СПИСОК
    ============================================================ */
 $('addBtn').addEventListener('click', async () => {
     if (!isAdmin || !currentClan) return;
@@ -657,7 +948,7 @@ function flashStatus(text, color) {
 }
 
 /* ============================================================
-   УДАЛЕНИЕ
+   УДАЛЕНИЕ ЗАПИСИ СПИСКА
    ============================================================ */
 async function deleteItem(tab, id) {
     if (!confirm('Удалить запись?')) return;
@@ -667,7 +958,7 @@ async function deleteItem(tab, id) {
 }
 
 /* ============================================================
-   ПЕРЕМЕЩЕНИЕ
+   ПЕРЕМЕЩЕНИЕ ЗАПИСИ СПИСКА
    ============================================================ */
 function openMoveModal(fromTab, id) {
     movingItem = { fromTab, id };
@@ -725,7 +1016,6 @@ function escapeHtml(str) {
     isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
     applyAdminUI();
 
-    // Показываем главную
     showScreen('home');
     applyBg();
 })();
