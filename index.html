@@ -29,13 +29,11 @@
                 </div>
             </div>
 
-            <!-- СЧЁТЧИКИ -->
             <div id="statsRow" class="stats-row"></div>
 
             <h2 class="section-title">Гильдии</h2>
             <div id="clanGrid" class="clan-grid"></div>
 
-            <!-- ФОРМА ЗАЯВКИ -->
             <section id="applySection" class="apply-section">
                 <h2 class="section-title">📝 Подать заявку в гильдию</h2>
                 <div class="apply-card">
@@ -52,7 +50,7 @@
                         </div>
                         <div class="admin-field">
                             <label>Опыт в игре</label>
-                            <input type="text" id="applyExp" placeholder="Например: 500 часов, 3 года" maxlength="100">
+                            <input type="text" id="applyExp" placeholder="Например: 500 часов" maxlength="100">
                         </div>
                         <div class="admin-field">
                             <label>Связь (Discord / Telegram)</label>
@@ -76,13 +74,11 @@
                 </div>
             </section>
 
-            <!-- FAQ -->
             <section class="faq-section">
                 <h2 class="section-title">❓ Часто задаваемые вопросы</h2>
                 <div id="faqList" class="faq-list"></div>
             </section>
 
-            <!-- YOUTUBE -->
             <section id="promoSection" class="promo-section" hidden>
                 <h2 class="section-title">📺 Наш YouTube</h2>
                 <a id="ytPromoCard" class="promo-card" href="#" target="_blank" rel="noopener">
@@ -96,7 +92,6 @@
                 </a>
             </section>
 
-            <!-- БЛАГОДАРНОСТИ -->
             <section class="thanks-section">
                 <h2 class="section-title">🙏 Благодарности</h2>
                 <div class="thanks-card">
@@ -205,7 +200,6 @@
 
             <div class="clan-main">
 
-                <!-- СПИСКИ -->
                 <div id="section-lists" class="clan-section active">
                     <nav class="tabs">
                         <button class="tab active" data-tab="enemies">🔴 Враги</button>
@@ -244,7 +238,6 @@
                     </section>
                 </div>
 
-                <!-- СОБЫТИЯ -->
                 <div id="section-events" class="clan-section">
                     <h2>📅 События гильдии</h2>
 
@@ -263,7 +256,6 @@
                     <div id="eventsList" class="events-list"></div>
                 </div>
 
-                <!-- КАЗНА -->
                 <div id="section-treasury" class="clan-section">
                     <h2>💰 Казна гильдии</h2>
 
@@ -278,25 +270,24 @@
                             <option value="out">➖ Расход</option>
                         </select>
                         <input type="number" id="trAmount" placeholder="Сумма" min="0" step="1">
-                        <input type="text" id="trDesc" placeholder="Описание (кто, за что)" maxlength="200">
+                        <input type="text" id="trDesc" placeholder="Описание" maxlength="200">
                         <button id="trAddBtn">➕ Добавить</button>
                         <span id="trStatus"></span>
                     </section>
-                    <p class="hint admin-only" hidden>💡 Указывай сумму и краткое описание операции.</p>
+                    <p class="hint admin-only" hidden>💡 Указывай сумму и описание операции.</p>
 
                     <div id="treasuryList" class="treasury-list"></div>
                 </div>
 
-                <!-- БИЛДЫ ПВП -->
                 <div id="section-pvp" class="clan-section">
                     <h2>⚔️ Билды для ПВП</h2>
 
                     <section class="add-form admin-only" hidden>
                         <textarea id="pvpShip" placeholder="Название корабля" rows="1" maxlength="60"></textarea>
                         <textarea id="pvpUpgrades" placeholder="Апгрейды — каждый с новой строки" rows="3"></textarea>
-                        <textarea id="pvpWeapS" placeholder="Малые пушки (до 12 фунтов) — каждая с новой строки" rows="2"></textarea>
-                        <textarea id="pvpWeapM" placeholder="Средние пушки (до 24 фунтов) — каждая с новой строки" rows="2"></textarea>
-                        <textarea id="pvpWeapL" placeholder="Большие пушки (до 48 фунтов) — каждая с новой строки" rows="2"></textarea>
+                        <textarea id="pvpWeapS" placeholder="Малые пушки (до 12 фунтов)" rows="2"></textarea>
+                        <textarea id="pvpWeapM" placeholder="Средние пушки (до 24 фунтов)" rows="2"></textarea>
+                        <textarea id="pvpWeapL" placeholder="Большие пушки (до 48 фунтов)" rows="2"></textarea>
                         <input type="text" id="pvpCons1" placeholder="Расходник 1" maxlength="40">
                         <input type="text" id="pvpCons2" placeholder="Расходник 2" maxlength="40">
                         <input type="text" id="pvpCons3" placeholder="Расходник 3" maxlength="40">
@@ -310,7 +301,6 @@
                     <div id="pvpList" class="builds-list"></div>
                 </div>
 
-                <!-- БИЛДЫ ПБ -->
                 <div id="section-pb" class="clan-section">
                     <h2>🛡 Билды для ПБ</h2>
 
@@ -334,16 +324,14 @@
                     <div id="pbList" class="builds-list"></div>
                 </div>
 
-                <!-- КОНТАКТЫ -->
                 <div id="section-contacts" class="clan-section">
                     <h2>💬 Контакты гильдий</h2>
                     <div id="contactsList" class="contacts-list"></div>
                 </div>
 
-                <!-- ЗАЯВКИ (только админ) -->
                 <div id="section-applications" class="clan-section">
                     <h2>📝 Заявки в гильдию</h2>
-                    <p class="hint">Все новые заявки, отправленные через форму на главной</p>
+                    <p class="hint">Все заявки, отправленные через форму на главной</p>
                     <div id="applicationsList" class="applications-list"></div>
                 </div>
             </div>
@@ -389,7 +377,6 @@
                 <button class="admin-tab" data-atab="site">📺 Сайт</button>
             </div>
 
-            <!-- ГИЛЬДИИ -->
             <div id="atab-clans" class="admin-tab-content active">
                 <div class="admin-field">
                     <label>Гильдия</label>
@@ -424,7 +411,6 @@
                 </div>
             </div>
 
-            <!-- FAQ -->
             <div id="atab-faq" class="admin-tab-content">
                 <p class="hint admin-hint">Вопросы и ответы на главной</p>
 
@@ -437,7 +423,6 @@
                 <div id="faqAdminList" class="faq-admin-list"></div>
             </div>
 
-            <!-- САЙТ -->
             <div id="atab-site" class="admin-tab-content">
                 <div class="admin-field">
                     <label>YouTube — ссылка</label>
@@ -452,7 +437,7 @@
                     <textarea id="adminYoutubeDesc" rows="3"></textarea>
                 </div>
                 <div class="admin-field">
-                    <label>Discord Webhook URL (для уведомлений)</label>
+                    <label>Discord Webhook URL</label>
                     <input type="text" id="adminWebhook" placeholder="https://discord.com/api/webhooks/..." maxlength="400">
                 </div>
 
@@ -473,42 +458,15 @@
     <div id="addClanModal" class="modal" hidden>
         <div class="modal-content admin-panel-wide">
             <h2>➕ Новая гильдия</h2>
-
-            <div class="admin-field">
-                <label>ID (латиница)</label>
-                <input type="text" id="newClanId" placeholder="clan3" maxlength="20">
-            </div>
-            <div class="admin-field">
-                <label>Название</label>
-                <input type="text" id="newClanName" maxlength="60">
-            </div>
-            <div class="admin-field">
-                <label>Описание</label>
-                <textarea id="newClanDesc" rows="3"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Правила</label>
-                <textarea id="newClanRules" rows="5"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Пароль</label>
-                <input type="text" id="newClanPass">
-            </div>
-            <div class="admin-field">
-                <label>Discord</label>
-                <input type="text" id="newClanDiscord" placeholder="https://discord.gg/xxxxx">
-            </div>
-            <div class="admin-field">
-                <label>Логотип</label>
-                <input type="text" id="newClanImage" placeholder="images/clan3.png">
-            </div>
-            <div class="admin-field">
-                <label>Фон</label>
-                <input type="text" id="newClanBg" placeholder="images/bg-clan3.jpg">
-            </div>
-
+            <div class="admin-field"><label>ID (латиница)</label><input type="text" id="newClanId" placeholder="clan3" maxlength="20"></div>
+            <div class="admin-field"><label>Название</label><input type="text" id="newClanName" maxlength="60"></div>
+            <div class="admin-field"><label>Описание</label><textarea id="newClanDesc" rows="3"></textarea></div>
+            <div class="admin-field"><label>Правила</label><textarea id="newClanRules" rows="5"></textarea></div>
+            <div class="admin-field"><label>Пароль</label><input type="text" id="newClanPass"></div>
+            <div class="admin-field"><label>Discord</label><input type="text" id="newClanDiscord" placeholder="https://discord.gg/xxxxx"></div>
+            <div class="admin-field"><label>Логотип</label><input type="text" id="newClanImage" placeholder="images/clan3.png"></div>
+            <div class="admin-field"><label>Фон</label><input type="text" id="newClanBg" placeholder="images/bg-clan3.jpg"></div>
             <p id="addClanMsg" class="error"></p>
-
             <div class="modal-actions">
                 <button id="saveNewClan">💾 Создать</button>
                 <button id="cancelAddClan" class="secondary">Отмена</button>
@@ -536,58 +494,19 @@
     <div id="buildEditModal" class="modal" hidden>
         <div class="modal-content admin-panel-wide">
             <h2 id="buildEditTitle">✏️ Редактировать билд</h2>
-
-            <div class="admin-field" id="buildEditRankField" hidden>
-                <label>Ранг</label>
-                <textarea id="buildEditRank" rows="1" maxlength="10"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Название корабля</label>
-                <textarea id="buildEditShip" rows="1" maxlength="60"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Апгрейды</label>
-                <textarea id="buildEditUpgrades" rows="3"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Малые пушки (до 12ф)</label>
-                <textarea id="buildEditWeapS" rows="2"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Средние пушки (до 24ф)</label>
-                <textarea id="buildEditWeapM" rows="2"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Большие пушки (до 48ф)</label>
-                <textarea id="buildEditWeapL" rows="2"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Расходник 1</label>
-                <textarea id="buildEditCons1" rows="1" maxlength="40"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Расходник 2</label>
-                <textarea id="buildEditCons2" rows="1" maxlength="40"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Расходник 3</label>
-                <textarea id="buildEditCons3" rows="1" maxlength="40"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Трюм</label>
-                <textarea id="buildEditCargo" rows="2"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Специалисты</label>
-                <textarea id="buildEditSpecs" rows="4"></textarea>
-            </div>
-            <div class="admin-field">
-                <label>Привязать к</label>
-                <select id="buildEditScope"></select>
-            </div>
-
+            <div class="admin-field" id="buildEditRankField" hidden><label>Ранг</label><textarea id="buildEditRank" rows="1" maxlength="10"></textarea></div>
+            <div class="admin-field"><label>Название корабля</label><textarea id="buildEditShip" rows="1" maxlength="60"></textarea></div>
+            <div class="admin-field"><label>Апгрейды</label><textarea id="buildEditUpgrades" rows="3"></textarea></div>
+            <div class="admin-field"><label>Малые пушки (до 12ф)</label><textarea id="buildEditWeapS" rows="2"></textarea></div>
+            <div class="admin-field"><label>Средние пушки (до 24ф)</label><textarea id="buildEditWeapM" rows="2"></textarea></div>
+            <div class="admin-field"><label>Большие пушки (до 48ф)</label><textarea id="buildEditWeapL" rows="2"></textarea></div>
+            <div class="admin-field"><label>Расходник 1</label><textarea id="buildEditCons1" rows="1" maxlength="40"></textarea></div>
+            <div class="admin-field"><label>Расходник 2</label><textarea id="buildEditCons2" rows="1" maxlength="40"></textarea></div>
+            <div class="admin-field"><label>Расходник 3</label><textarea id="buildEditCons3" rows="1" maxlength="40"></textarea></div>
+            <div class="admin-field"><label>Трюм</label><textarea id="buildEditCargo" rows="2"></textarea></div>
+            <div class="admin-field"><label>Специалисты</label><textarea id="buildEditSpecs" rows="4"></textarea></div>
+            <div class="admin-field"><label>Привязать к</label><select id="buildEditScope"></select></div>
             <p id="buildEditError" class="error"></p>
-
             <div class="modal-actions">
                 <button id="saveBuildEdit">💾 Сохранить</button>
                 <button id="cancelBuildEdit" class="secondary">Отмена</button>
@@ -600,10 +519,7 @@
         <div class="modal-content">
             <h2>📋 Дублировать билд</h2>
             <p id="buildDupName" class="auth-clan-name"></p>
-            <div class="admin-field">
-                <label>Куда скопировать</label>
-                <select id="buildDupScope"></select>
-            </div>
+            <div class="admin-field"><label>Куда скопировать</label><select id="buildDupScope"></select></div>
             <p id="buildDupMsg" class="error"></p>
             <div class="modal-actions">
                 <button id="doBuildDup">📋 Создать копию</button>
