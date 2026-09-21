@@ -8,7 +8,7 @@
 </head>
 <body>
 
-    <!-- ═══════════ ЭКРАН 1: ГЛАВНАЯ ═══════════ -->
+    <!-- ЭКРАН 1: ГЛАВНАЯ -->
     <div id="screen-home" class="screen">
         <div class="top-right">
             <span id="adminInfo"></span>
@@ -34,7 +34,7 @@
         </div>
     </div>
 
-    <!-- ═══════════ ЭКРАН 2: ОПИСАНИЕ ГИЛЬДИИ ═══════════ -->
+    <!-- ЭКРАН 2: ОПИСАНИЕ ГИЛЬДИИ -->
     <div id="screen-clan" class="screen" hidden>
         <div class="top-right">
             <span id="adminInfo2"></span>
@@ -69,7 +69,7 @@
         </div>
     </div>
 
-    <!-- ═══════════ ЭКРАН 3: СПИСКИ ═══════════ -->
+    <!-- ЭКРАН 3: ВНУТРИ ГИЛЬДИИ (со сайдбаром) -->
     <div id="clanView" hidden>
         <header>
             <button id="backBtn" class="back-btn">← Назад</button>
@@ -89,44 +89,106 @@
             </div>
         </header>
 
-        <nav class="tabs">
-            <button class="tab active" data-tab="enemies">🔴 Враги гильдии</button>
-            <button class="tab" data-tab="friends">🟢 Друзья (содействие)</button>
-            <button class="tab" data-tab="neutral">⚪ Нейтралитет</button>
-            <button class="tab" data-tab="personal">🟡 Не трогать</button>
-        </nav>
+        <div class="clan-layout">
+            <!-- САЙДБАР -->
+            <aside class="sidebar">
+                <button class="side-item active" data-section="lists">
+                    <span class="side-ico">📋</span>
+                    <span>Списки</span>
+                </button>
+                <button class="side-item" data-section="pvp">
+                    <span class="side-ico">⚔️</span>
+                    <span>Билды для ПВП</span>
+                </button>
+                <button class="side-item" data-section="pb">
+                    <span class="side-ico">🛡</span>
+                    <span>Билды для ПБ</span>
+                </button>
+            </aside>
 
-        <main>
-            <section class="add-form admin-only" hidden>
-                <input type="text" id="playerGuild" placeholder="Гильдия игрока" maxlength="40">
-                <input type="text" id="nickname" placeholder="Никнейм игрока" maxlength="32">
-                <input type="text" id="faction" placeholder="Фракция" maxlength="40">
-                <input type="text" id="note" placeholder="Заметка (необязательно)" maxlength="120">
-                <button id="addBtn">➕ Добавить</button>
-                <span id="status"></span>
-            </section>
-            <p class="hint admin-only" hidden>💡 Достаточно заполнить <b>Гильдию</b> или <b>Никнейм</b>.</p>
+            <!-- КОНТЕНТ -->
+            <div class="clan-main">
 
-            <section id="tab-enemies" class="tab-content active">
-                <h2>🔴 Враги гильдии</h2>
-                <ul class="player-list" data-list="enemies"></ul>
-            </section>
-            <section id="tab-friends" class="tab-content">
-                <h2>🟢 Друзья гильдии — полное содействие</h2>
-                <ul class="player-list" data-list="friends"></ul>
-            </section>
-            <section id="tab-neutral" class="tab-content">
-                <h2>⚪ Нейтралитет</h2>
-                <ul class="player-list" data-list="neutral"></ul>
-            </section>
-            <section id="tab-personal" class="tab-content">
-                <h2>🟡 Индивидуальный список — не трогать</h2>
-                <ul class="player-list" data-list="personal"></ul>
-            </section>
-        </main>
+                <!-- СЕКЦИЯ: СПИСКИ -->
+                <div id="section-lists" class="clan-section active">
+                    <nav class="tabs">
+                        <button class="tab active" data-tab="enemies">🔴 Враги</button>
+                        <button class="tab" data-tab="friends">🟢 Друзья</button>
+                        <button class="tab" data-tab="neutral">⚪ Нейтралитет</button>
+                        <button class="tab" data-tab="personal">🟡 Не трогать</button>
+                    </nav>
+
+                    <section class="add-form admin-only" hidden>
+                        <input type="text" id="playerGuild" placeholder="Гильдия игрока" maxlength="40">
+                        <input type="text" id="nickname" placeholder="Никнейм игрока" maxlength="32">
+                        <input type="text" id="faction" placeholder="Фракция" maxlength="40">
+                        <input type="text" id="note" placeholder="Заметка (необязательно)" maxlength="120">
+                        <button id="addBtn">➕ Добавить</button>
+                        <span id="status"></span>
+                    </section>
+                    <p class="hint admin-only" hidden>💡 Достаточно заполнить <b>Гильдию</b> или <b>Никнейм</b>.</p>
+
+                    <section id="tab-enemies" class="tab-content active">
+                        <h2>🔴 Враги гильдии</h2>
+                        <ul class="player-list" data-list="enemies"></ul>
+                    </section>
+                    <section id="tab-friends" class="tab-content">
+                        <h2>🟢 Друзья — полное содействие</h2>
+                        <ul class="player-list" data-list="friends"></ul>
+                    </section>
+                    <section id="tab-neutral" class="tab-content">
+                        <h2>⚪ Нейтралитет</h2>
+                        <ul class="player-list" data-list="neutral"></ul>
+                    </section>
+                    <section id="tab-personal" class="tab-content">
+                        <h2>🟡 Не трогать</h2>
+                        <ul class="player-list" data-list="personal"></ul>
+                    </section>
+                </div>
+
+                <!-- СЕКЦИЯ: БИЛДЫ ПВП -->
+                <div id="section-pvp" class="clan-section">
+                    <h2>⚔️ Билды для ПВП</h2>
+
+                    <section class="add-form admin-only" hidden>
+                        <input type="text" id="pvpShip" placeholder="Название корабля" maxlength="60">
+                        <input type="text" id="pvpUpgrades" placeholder="Апгрейды (через запятую)" maxlength="200">
+                        <input type="text" id="pvpCons1" placeholder="Расходник 1" maxlength="40">
+                        <input type="text" id="pvpCons2" placeholder="Расходник 2" maxlength="40">
+                        <input type="text" id="pvpCons3" placeholder="Расходник 3" maxlength="40">
+                        <input type="text" id="pvpCargo" placeholder="Наполнение трюма" maxlength="200">
+                        <button id="pvpAddBtn">➕ Добавить</button>
+                        <span id="pvpStatus"></span>
+                    </section>
+                    <p class="hint admin-only" hidden>💡 Название корабля — обязательно. Остальное — опционально.</p>
+
+                    <div id="pvpList" class="builds-list"></div>
+                </div>
+
+                <!-- СЕКЦИЯ: БИЛДЫ ПБ -->
+                <div id="section-pb" class="clan-section">
+                    <h2>🛡 Билды для ПБ</h2>
+
+                    <section class="add-form admin-only" hidden>
+                        <input type="text" id="pbRank" placeholder="Ранг (1-6)" maxlength="10">
+                        <input type="text" id="pbShip" placeholder="Название корабля" maxlength="60">
+                        <input type="text" id="pbUpgrades" placeholder="Апгрейды (через запятую)" maxlength="200">
+                        <input type="text" id="pbCons1" placeholder="Расходник 1" maxlength="40">
+                        <input type="text" id="pbCons2" placeholder="Расходник 2" maxlength="40">
+                        <input type="text" id="pbCons3" placeholder="Расходник 3" maxlength="40">
+                        <input type="text" id="pbCargo" placeholder="Наполнение трюма" maxlength="200">
+                        <button id="pbAddBtn">➕ Добавить</button>
+                        <span id="pbStatus"></span>
+                    </section>
+                    <p class="hint admin-only" hidden>💡 Ранг и название корабля — обязательны.</p>
+
+                    <div id="pbList" class="builds-list"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- ═══════════ МОДАЛКА: ПАРОЛЬ ГИЛЬДИИ ═══════════ -->
+    <!-- МОДАЛКА: ПАРОЛЬ ГИЛЬДИИ -->
     <div id="clanPassModal" class="modal" hidden>
         <div class="modal-content">
             <h2>🔐 Вход в гильдию</h2>
@@ -140,7 +202,7 @@
         </div>
     </div>
 
-    <!-- ═══════════ МОДАЛКА: ВХОД АДМИНА ═══════════ -->
+    <!-- МОДАЛКА: ВХОД АДМИНА -->
     <div id="adminAuthModal" class="modal" hidden>
         <div class="modal-content">
             <h2>🔐 Вход администратора</h2>
@@ -154,7 +216,7 @@
         </div>
     </div>
 
-    <!-- ═══════════ МОДАЛКА: АДМИН-ПАНЕЛЬ ═══════════ -->
+    <!-- МОДАЛКА: АДМИН-ПАНЕЛЬ -->
     <div id="adminPanelModal" class="modal" hidden>
         <div class="modal-content admin-panel-wide">
             <h2>⚙️ Админ-панель</h2>
@@ -190,7 +252,7 @@
         </div>
     </div>
 
-    <!-- ═══════════ МОДАЛКА: ДОБАВИТЬ ГИЛЬДИЮ ═══════════ -->
+    <!-- МОДАЛКА: ДОБАВИТЬ ГИЛЬДИЮ -->
     <div id="addClanModal" class="modal" hidden>
         <div class="modal-content admin-panel-wide">
             <h2>➕ Новая гильдия</h2>
@@ -240,7 +302,7 @@
         </div>
     </div>
 
-    <!-- ═══════════ МОДАЛКА: РЕДАКТИРОВАНИЕ ═══════════ -->
+    <!-- МОДАЛКА: РЕДАКТИРОВАНИЕ ЗАПИСИ СПИСКА -->
     <div id="editModal" class="modal" hidden>
         <div class="modal-content">
             <h2>✏️ Редактировать запись</h2>
@@ -256,7 +318,56 @@
         </div>
     </div>
 
-    <!-- ═══════════ МОДАЛКА: ПЕРЕМЕЩЕНИЕ ═══════════ -->
+    <!-- МОДАЛКА: РЕДАКТИРОВАНИЕ БИЛДА -->
+    <div id="buildEditModal" class="modal" hidden>
+        <div class="modal-content admin-panel-wide">
+            <h2 id="buildEditTitle">✏️ Редактировать билд</h2>
+
+            <div class="admin-field" id="buildEditRankField" hidden>
+                <label>Ранг</label>
+                <input type="text" id="buildEditRank" placeholder="1-6" maxlength="10">
+            </div>
+
+            <div class="admin-field">
+                <label>Название корабля</label>
+                <input type="text" id="buildEditShip" maxlength="60">
+            </div>
+
+            <div class="admin-field">
+                <label>Апгрейды</label>
+                <textarea id="buildEditUpgrades" rows="3" placeholder="Апгрейды через запятую"></textarea>
+            </div>
+
+            <div class="admin-field">
+                <label>Расходник 1</label>
+                <input type="text" id="buildEditCons1" maxlength="40">
+            </div>
+
+            <div class="admin-field">
+                <label>Расходник 2</label>
+                <input type="text" id="buildEditCons2" maxlength="40">
+            </div>
+
+            <div class="admin-field">
+                <label>Расходник 3</label>
+                <input type="text" id="buildEditCons3" maxlength="40">
+            </div>
+
+            <div class="admin-field">
+                <label>Наполнение трюма</label>
+                <textarea id="buildEditCargo" rows="2" placeholder="Что везём"></textarea>
+            </div>
+
+            <p id="buildEditError" class="error"></p>
+
+            <div class="modal-actions">
+                <button id="saveBuildEdit">💾 Сохранить</button>
+                <button id="cancelBuildEdit" class="secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: ПЕРЕМЕЩЕНИЕ -->
     <div id="moveModal" class="modal" hidden>
         <div class="modal-content">
             <h2>↔ Переместить в…</h2>
@@ -274,7 +385,6 @@
 
     <input type="file" id="bgFileInput" accept="image/*" hidden>
 
-    <!-- Подпись внизу -->
     <footer class="site-footer">Mist Time — Сергеев С.В</footer>
 
     <script type="module" src="app.js"></script>
