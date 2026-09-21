@@ -79,17 +79,9 @@
                 <div id="faqList" class="faq-list"></div>
             </section>
 
-            <section id="promoSection" class="promo-section" hidden>
-                <h2 class="section-title">📺 Наш YouTube</h2>
-                <a id="ytPromoCard" class="promo-card" href="#" target="_blank" rel="noopener">
-                    <img id="ytLogo" class="promo-logo" src="" alt="YouTube канал"
-                         onerror="this.onerror=null;this.classList.add('promo-logo-fallback');this.src='images/aov.png';">
-                    <div class="promo-info">
-                        <div id="ytName" class="promo-name">YouTube</div>
-                        <div id="ytDesc" class="promo-desc"></div>
-                        <div class="promo-btn">▶ Смотреть на YouTube</div>
-                    </div>
-                </a>
+            <section id="partnersSection" class="promo-section" hidden>
+                <h2 class="section-title">🤝 Партнёры и Реклама</h2>
+                <div id="partnersList" class="partners-list"></div>
             </section>
 
             <section class="thanks-section">
@@ -240,30 +232,24 @@
 
                 <div id="section-events" class="clan-section">
                     <h2>📅 События гильдии</h2>
-
                     <section class="add-form admin-only" hidden>
                         <input type="text" id="evTitle" placeholder="Название события" maxlength="100">
                         <input type="datetime-local" id="evDate">
                         <textarea id="evDesc" placeholder="Описание" rows="2"></textarea>
-                        <select id="evScope">
-                            <option value="__shared__">🌐 Общий</option>
-                        </select>
+                        <select id="evScope"><option value="__shared__">🌐 Общий</option></select>
                         <button id="evAddBtn">➕ Добавить</button>
                         <span id="evStatus"></span>
                     </section>
                     <p class="hint admin-only" hidden>💡 Название и дата — обязательны.</p>
-
                     <div id="eventsList" class="events-list"></div>
                 </div>
 
                 <div id="section-treasury" class="clan-section">
                     <h2>💰 Казна гильдии</h2>
-
                     <div class="treasury-balance">
                         <div class="treasury-balance-label">Текущий баланс:</div>
                         <div id="treasuryBalance" class="treasury-balance-value">0</div>
                     </div>
-
                     <section class="add-form admin-only" hidden>
                         <select id="trType">
                             <option value="in">➕ Доход</option>
@@ -274,14 +260,12 @@
                         <button id="trAddBtn">➕ Добавить</button>
                         <span id="trStatus"></span>
                     </section>
-                    <p class="hint admin-only" hidden>💡 Указывай сумму и описание операции.</p>
-
+                    <p class="hint admin-only" hidden>💡 Указывай сумму и описание.</p>
                     <div id="treasuryList" class="treasury-list"></div>
                 </div>
 
                 <div id="section-pvp" class="clan-section">
                     <h2>⚔️ Билды для ПВП</h2>
-
                     <section class="add-form admin-only" hidden>
                         <textarea id="pvpShip" placeholder="Название корабля" rows="1" maxlength="60"></textarea>
                         <textarea id="pvpUpgrades" placeholder="Апгрейды — каждый с новой строки" rows="3"></textarea>
@@ -297,13 +281,11 @@
                         <button id="pvpAddBtn">➕ Добавить</button>
                         <span id="pvpStatus"></span>
                     </section>
-
                     <div id="pvpList" class="builds-list"></div>
                 </div>
 
                 <div id="section-pb" class="clan-section">
                     <h2>🛡 Билды для ПБ</h2>
-
                     <section class="add-form admin-only" hidden>
                         <textarea id="pbRank" placeholder="Ранг (1-6)" rows="1" maxlength="10"></textarea>
                         <textarea id="pbShip" placeholder="Название корабля" rows="1" maxlength="60"></textarea>
@@ -320,7 +302,6 @@
                         <button id="pbAddBtn">➕ Добавить</button>
                         <span id="pbStatus"></span>
                     </section>
-
                     <div id="pbList" class="builds-list"></div>
                 </div>
 
@@ -373,8 +354,9 @@
 
             <div class="admin-tabs">
                 <button class="admin-tab active" data-atab="clans">🏰 Гильдии</button>
+                <button class="admin-tab" data-atab="partners">🤝 Партнёры</button>
                 <button class="admin-tab" data-atab="faq">❓ FAQ</button>
-                <button class="admin-tab" data-atab="site">📺 Сайт</button>
+                <button class="admin-tab" data-atab="site">⚙️ Настройки</button>
             </div>
 
             <div id="atab-clans" class="admin-tab-content active">
@@ -411,6 +393,21 @@
                 </div>
             </div>
 
+            <div id="atab-partners" class="admin-tab-content">
+                <p class="hint admin-hint">Партнёры и рекламодатели на главной</p>
+
+                <div class="add-form" style="border-style:solid">
+                    <input type="text" id="partnerName" placeholder="Название *" maxlength="80">
+                    <input type="text" id="partnerUrl" placeholder="Ссылка * (https://...)" maxlength="300">
+                    <input type="text" id="partnerLogo" placeholder="URL логотипа (необязательно)" maxlength="300">
+                    <textarea id="partnerDesc" placeholder="Краткое описание" rows="2" maxlength="300"></textarea>
+                    <button id="partnerAddBtn">➕ Добавить</button>
+                    <span id="partnerStatus"></span>
+                </div>
+
+                <div id="partnersAdminList" class="partners-admin-list"></div>
+            </div>
+
             <div id="atab-faq" class="admin-tab-content">
                 <p class="hint admin-hint">Вопросы и ответы на главной</p>
 
@@ -424,18 +421,6 @@
             </div>
 
             <div id="atab-site" class="admin-tab-content">
-                <div class="admin-field">
-                    <label>YouTube — ссылка</label>
-                    <input type="text" id="adminYoutubeUrl" placeholder="https://youtube.com/@ВашКанал" maxlength="300">
-                </div>
-                <div class="admin-field">
-                    <label>YouTube — название</label>
-                    <input type="text" id="adminYoutubeName" maxlength="100">
-                </div>
-                <div class="admin-field">
-                    <label>YouTube — описание</label>
-                    <textarea id="adminYoutubeDesc" rows="3"></textarea>
-                </div>
                 <div class="admin-field">
                     <label>Discord Webhook URL</label>
                     <input type="text" id="adminWebhook" placeholder="https://discord.com/api/webhooks/..." maxlength="400">
@@ -548,7 +533,7 @@
 
     <footer class="site-footer">
         <span class="footer-left">Mist Time — Сергеев С.В</span>
-        <span class="footer-right">v1.4.0</span>
+        <span class="footer-right">v1.4.1</span>
     </footer>
 
     <script type="module" src="app.js"></script>
