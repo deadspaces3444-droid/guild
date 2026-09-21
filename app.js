@@ -18,7 +18,7 @@ let currentSection = 'lists';
 let isAdmin       = false;
 let movingItem    = null;
 let editingItem   = null;
-let editingBuild  = null;   // { id, type }
+let editingBuild  = null;
 
 /* ============================================================
    DOM
@@ -353,7 +353,6 @@ function openClan(clanId) {
     showScreen('lists');
     applyBg();
 
-    // сброс сайдбара на "Списки"
     currentSection = 'lists';
     document.querySelectorAll('.side-item').forEach(b =>
         b.classList.toggle('active', b.dataset.section === 'lists'));
@@ -489,7 +488,6 @@ async function renderBuilds(type) {
     container.innerHTML = '';
 
     if (type === 'pb') {
-        // группировка по рангам
         const groups = {};
         data.forEach(b => {
             const r = b.rank || '—';
