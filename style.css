@@ -35,7 +35,7 @@ body::before {
     pointer-events: none;
 }
 
-/* ПОДПИСЬ */
+/* ============ ПОДПИСЬ ============ */
 .site-footer {
     position: fixed;
     bottom: 0; left: 0; right: 0;
@@ -61,7 +61,7 @@ body::before {
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
-/* ОБЩЕЕ */
+/* ============ ОБЩЕЕ ============ */
 .screen { min-height: 100vh; position: relative; }
 .top-right {
     position: fixed;
@@ -109,7 +109,7 @@ body::before {
 }
 .back-btn:hover { background: rgba(31, 36, 48, 0.95); }
 
-/* ГЛАВНАЯ */
+/* ============ ГЛАВНАЯ ============ */
 .home-wrap {
     display: flex;
     flex-direction: column;
@@ -151,7 +151,73 @@ body::before {
     margin-top: 10px;
 }
 
-/* СЧЁТЧИКИ */
+/* ============ СЕЛЕКТОР ИГР ============ */
+.game-selector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 900px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 16px 20px;
+    background: rgba(23, 26, 33, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+}
+.game-selector-label {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+.game-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+.game-tab {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    background: rgba(15, 17, 21, 0.7);
+    border: 2px solid var(--border);
+    color: #cfd3dc;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all .15s;
+}
+.game-tab:hover {
+    border-color: var(--accent);
+    background: rgba(20, 24, 33, 0.95);
+}
+.game-tab.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 4px 16px rgba(43, 108, 176, 0.5);
+}
+.game-tab img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+.game-tab-emoji {
+    font-size: 20px;
+    line-height: 1;
+}
+
+/* ============ СЧЁТЧИКИ ============ */
 .stats-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -186,7 +252,7 @@ body::before {
     font-weight: 600;
 }
 
-/* ГИЛЬДИИ */
+/* ============ КАРТОЧКИ ГИЛЬДИЙ ============ */
 .clan-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -222,7 +288,7 @@ body::before {
 .clan-card .clan-desc { font-size: 13px; line-height: 1.5; color: var(--muted); }
 .clan-card .clan-more { font-size: 12px; color: var(--accent); margin-top: auto; padding-top: 8px; font-weight: 600; }
 
-/* ЗАЯВКА */
+/* ============ ЗАЯВКА ============ */
 .apply-section {
     display: flex;
     flex-direction: column;
@@ -248,7 +314,7 @@ body::before {
 .apply-hint { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
 .apply-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-/* FAQ */
+/* ============ FAQ ============ */
 .faq-section {
     display: flex;
     flex-direction: column;
@@ -326,7 +392,7 @@ body::before {
     font-size: 12px;
 }
 
-/* ПАРТНЁРЫ */
+/* ============ ПАРТНЁРЫ ============ */
 .promo-section {
     display: flex;
     flex-direction: column;
@@ -343,7 +409,7 @@ body::before {
     width: 100%;
 }
 
-/* ============ YOUTUBE-КАРТОЧКА (крупная) ============ */
+/* ============ YOUTUBE-КАРТОЧКА ============ */
 .yt-promo-card {
     grid-column: 1 / -1;
     display: flex;
@@ -578,7 +644,63 @@ body::before {
     white-space: nowrap;
 }
 
-/* БЛАГОДАРНОСТИ */
+/* ============ АДМИН: ИГРЫ ============ */
+.games-admin-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    align-items: center;
+}
+.games-admin-item .logo-mini {
+    width: 40px; height: 40px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.games-admin-item .logo-mini img { width: 100%; height: 100%; object-fit: cover; }
+.games-admin-item .logo-mini span { font-size: 20px; }
+
+.games-admin-item .txt {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+.games-admin-item .txt b {
+    display: block;
+    color: #fff;
+    margin-bottom: 2px;
+}
+.games-admin-item .txt span {
+    color: var(--muted);
+    font-size: 11px;
+}
+.games-admin-item .actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.games-admin-item .actions button {
+    width: 30px; height: 30px;
+    background: transparent;
+    border: 1px solid #3a4150;
+    color: #cfd3dc;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.games-admin-item .actions button:hover { background: #2a2f3a; }
+.games-admin-item .actions button.edit:hover   { color: #ffd479; border-color: #ffd479; }
+.games-admin-item .actions button.delete:hover { color: var(--red); border-color: var(--red); }
+
+/* ============ БЛАГОДАРНОСТИ ============ */
 .thanks-section {
     display: flex;
     flex-direction: column;
@@ -616,7 +738,7 @@ body::before {
     letter-spacing: .3px;
 }
 
-/* ОПИСАНИЕ ГИЛЬДИИ */
+/* ============ ОПИСАНИЕ ГИЛЬДИИ ============ */
 .clan-info-wrap {
     display: flex;
     align-items: center;
@@ -674,7 +796,7 @@ body::before {
 .big-btn.secondary { background: rgba(23, 26, 33, 0.9); color: #cfd3dc; border: 1px solid var(--border); }
 .big-btn.secondary:hover { background: rgba(31, 36, 48, 0.95); border-color: var(--green); color: var(--green); transform: translateY(-2px); }
 
-/* ЭКРАН ГИЛЬДИИ */
+/* ============ ЭКРАН ГИЛЬДИИ ============ */
 #clanView header {
     display: flex; align-items: center; gap: 16px;
     margin-bottom: 24px; padding: 0 20px;
@@ -718,7 +840,7 @@ body::before {
     margin: 2px 0; line-height: 1.3;
 }
 
-/* LAYOUT С САЙДБАРОМ */
+/* ============ LAYOUT С САЙДБАРОМ ============ */
 .clan-layout {
     display: flex; gap: 24px; max-width: 1240px;
     margin: 0 auto; padding: 0 20px; align-items: flex-start;
@@ -744,7 +866,7 @@ body::before {
 .clan-section { display: none; }
 .clan-section.active { display: block; }
 
-/* ВКЛАДКИ */
+/* ============ ВКЛАДКИ ============ */
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 .tab {
     padding: 10px 18px; border: 1px solid var(--border);
@@ -775,7 +897,7 @@ body::before {
     box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.2);
 }
 
-/* ФОРМЫ */
+/* ============ ФОРМЫ ============ */
 .add-form {
     display: flex; gap: 8px; flex-wrap: wrap;
     margin-bottom: 12px; padding: 14px;
@@ -806,7 +928,7 @@ body::before {
     font-family: inherit; align-self: center;
 }
 .add-form button:hover { background: var(--accent-hover); }
-#status, #pvpStatus, #pbStatus, #evStatus, #trStatus, #partnerStatus {
+#status, #pvpStatus, #pbStatus, #evStatus, #trStatus, #partnerStatus, #gameStatus {
     color: var(--green); font-size: 13px;
     align-self: center; width: 100%; text-align: center;
 }
@@ -816,7 +938,7 @@ body::before {
 .tab-content.active { display: block; }
 h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0, .8); }
 
-/* СПИСКИ */
+/* ============ СПИСКИ ============ */
 .player-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .player-list li {
     display: flex; justify-content: space-between; align-items: center;
@@ -862,7 +984,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     background: rgba(23, 26, 33, 0.7); border-radius: 8px;
 }
 
-/* БИЛДЫ */
+/* ============ БИЛДЫ ============ */
 .builds-list { display: flex; flex-direction: column; gap: 14px; }
 .build-card {
     background: rgba(23, 26, 33, 0.9);
@@ -958,7 +1080,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     margin: 0; text-shadow: none;
 }
 
-/* СОБЫТИЯ */
+/* ============ СОБЫТИЯ ============ */
 .events-list { display: flex; flex-direction: column; gap: 12px; }
 .event-card {
     display: flex; gap: 16px;
@@ -1006,7 +1128,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
 }
 .event-actions button.delete:hover { color: var(--red); border-color: var(--red); }
 
-/* КАЗНА */
+/* ============ КАЗНА ============ */
 .treasury-balance {
     display: flex; align-items: center; justify-content: space-between;
     padding: 20px 24px;
@@ -1054,7 +1176,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
 }
 .treasury-item button:hover { color: var(--red); border-color: var(--red); }
 
-/* ЗАЯВКИ */
+/* ============ ЗАЯВКИ ============ */
 .applications-list { display: flex; flex-direction: column; gap: 12px; }
 .application-card {
     padding: 16px 20px;
@@ -1103,7 +1225,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
 .application-actions button.reject:hover  { color: var(--red); border-color: var(--red); }
 .application-actions button.delete:hover  { color: var(--red); border-color: var(--red); }
 
-/* КОНТАКТЫ */
+/* ============ КОНТАКТЫ ============ */
 .contacts-list { display: flex; flex-direction: column; gap: 12px; }
 .contact-card {
     display: flex; align-items: center; gap: 16px;
@@ -1131,7 +1253,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     cursor: not-allowed; pointer-events: none; opacity: .6;
 }
 
-/* МОДАЛКИ */
+/* ============ МОДАЛКИ ============ */
 .modal {
     position: fixed; inset: 0;
     background: rgba(0, 0, 0, .75);
@@ -1183,7 +1305,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     flex-wrap: wrap;
 }
 .admin-tab {
-    flex: 1; min-width: 90px; padding: 10px;
+    flex: 1; min-width: 80px; padding: 10px;
     background: transparent; border: none;
     color: var(--muted); border-radius: 7px;
     cursor: pointer; font-size: 13px; font-weight: 600;
@@ -1212,7 +1334,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
 .move-grid button:hover { background: #1f2430; border-color: var(--accent); }
 .error { color: var(--red); font-size: 13px; min-height: 18px; }
 
-/* ИКОНКИ */
+/* ============ ИКОНКИ ============ */
 a.icon-btn,
 .icon-btn {
     width: 34px; height: 34px; padding: 0;
@@ -1234,7 +1356,7 @@ a.icon-btn:hover {
     border-color: var(--green); color: var(--green);
 }
 
-/* АДАПТИВ */
+/* ============ АДАПТИВ ============ */
 @media (max-width: 900px) {
     #clanView header { padding: 0; }
     .clan-layout { flex-direction: column; padding: 0; }
@@ -1246,6 +1368,7 @@ a.icon-btn:hover {
     .side-ico { font-size: 16px; }
     .clan-main { width: 100%; }
 }
+
 @media (max-width: 700px) {
     body { padding: 12px 12px 50px; }
     .top-right { position: static; justify-content: center; margin-bottom: 14px; }
@@ -1311,6 +1434,7 @@ a.icon-btn:hover {
     .yt-promo-btn { align-self: center; }
     .yt-promo-name { font-size: 18px; justify-content: center; }
 }
+
 @media (max-width: 520px) {
     .hero-text h1 { font-size: 18px; }
     .hero-text p { display: none; }
@@ -1319,4 +1443,7 @@ a.icon-btn:hover {
     .side-item span:not(.side-ico) { display: none; }
     .side-item { min-width: auto; padding: 10px 14px; }
     .side-ico { font-size: 20px; }
+    .game-tab { padding: 8px 12px; font-size: 13px; }
+    .game-tab img { width: 24px; height: 24px; }
+    .game-tab-emoji { font-size: 16px; }
 }
