@@ -25,7 +25,6 @@ body {
     background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
-    transition: background-image 0.4s ease;
 }
 body::before {
     content: '';
@@ -110,7 +109,7 @@ body::before {
 }
 .back-btn:hover { background: rgba(31, 36, 48, 0.95); }
 
-/* ============ ИГРОВОЙ ТУЛБАР (фиксированный сверху) ============ */
+/* ============ ИГРОВОЙ ТУЛБАР ============ */
 .game-toolbar {
     position: fixed;
     top: 20px;
@@ -131,10 +130,7 @@ body::before {
 }
 .game-toolbar::-webkit-scrollbar { display: none; }
 
-.game-toolbar-tabs {
-    display: flex;
-    gap: 6px;
-}
+.game-toolbar-tabs { display: flex; gap: 6px; }
 
 .game-tab {
     display: flex;
@@ -171,10 +167,7 @@ body::before {
     border-radius: 5px;
     flex-shrink: 0;
 }
-.game-tab-emoji {
-    font-size: 16px;
-    line-height: 1;
-}
+.game-tab-emoji { font-size: 16px; line-height: 1; }
 
 /* ============ ГЛАВНАЯ ============ */
 .home-wrap {
@@ -816,7 +809,7 @@ body::before {
 #clanView .back-btn { position: static; flex-shrink: 0; margin: 0; }
 #clanView .top-right { position: static; flex-shrink: 0; margin: 0; }
 
-/* IP-виджет (скрыт) */
+/* IP-виджет */
 .ip-widget {
     position: fixed; top: 72px; left: 20px; z-index: 20;
     padding: 10px 14px;
@@ -1324,6 +1317,15 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     background: var(--accent); color: #fff; font-family: inherit;
 }
 .modal-actions button.secondary { background: var(--border); color: #cfd3dc; }
+.modal-actions button.danger {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid var(--red);
+}
+.modal-actions button.danger:hover {
+    background: rgba(255, 122, 122, 0.15);
+    color: #ff9999;
+}
 .move-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .move-grid button {
     padding: 12px;
@@ -1379,11 +1381,7 @@ a.icon-btn:hover {
         padding: 4px;
         border-radius: 12px;
     }
-    .game-tab {
-        padding: 6px 10px;
-        font-size: 12px;
-        gap: 6px;
-    }
+    .game-tab { padding: 6px 10px; font-size: 12px; gap: 6px; }
     .game-tab img { width: 18px; height: 18px; }
     .game-tab-emoji { font-size: 14px; }
 
