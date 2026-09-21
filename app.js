@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
 
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.6.0';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const UNLOCK_KEY = 'guild_unlocked';
@@ -31,6 +31,7 @@ const $ = id => document.getElementById(id);
 const screenHome  = $('screen-home');
 const screenClan  = $('screen-clan');
 const clanView    = $('clanView');
+const adminView   = $('adminView');
 const bgFileInput = $('bgFileInput');
 
 /* ===================== ФОНЫ ===================== */
@@ -100,6 +101,7 @@ function showScreen(name) {
     screenHome.hidden = name !== 'home';
     screenClan.hidden = name !== 'clan';
     clanView.hidden   = name !== 'lists';
+    adminView.hidden  = name !== 'admin';
     window.scrollTo(0, 0);
 }
 
@@ -168,7 +170,7 @@ function selectGame(gameId) {
     applyBg();
 }
 
-/* ===================== САЙДБАР ===================== */
+/* ===================== САЙДБАР ГИЛЬДИИ ===================== */
 document.querySelectorAll('.side-item').forEach(btn => {
     btn.addEventListener('click', () => {
         const section = btn.dataset.section;
@@ -185,6 +187,34 @@ document.querySelectorAll('.side-item').forEach(btn => {
         else if (section === 'contacts') renderContacts();
         else if (section === 'applications') renderApplications();
     });
+});
+
+/* ===================== САЙДБАР АДМИНА ===================== */
+document.querySelectorAll('.admin-nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Неактивные разделы
+        if (btn.classList.contains('wip')) {
+            alert('🚧 В разработке!');
+            return;
+        }
+        const panel = btn.dataset.apanel;
+        if (!panel) return;
+        document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        const section = document.querySelector(`.admin-section[data-apanel="${panel}"]`);
+        if (section) section.classList.add('active');
+
+        if (panel === 'clans') renderAdminClanSelect();
+        if (panel === 'games') renderGamesAdmin();
+        if (panel === 'partners') renderPartnersAdmin();
+        if (panel === 'faq') renderFaqAdmin();
+        if (panel === 'settings') renderSiteFields();
+    });
+});
+
+$('adminBackHome').addEventListener('click', () => {
+    showScreen('home');
 });
 
 /* ===================== АДМИН ===================== */
@@ -211,7 +241,7 @@ $('doAdminLogin').addEventListener('click', async () => {
 $('adminPassword').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('doAdminLogin').click();
 });
-async function adminLogout() { await supabase.auth.signOut(); closeAdminPanel(); }
+async function adminLogout() { await supabase.auth.signOut(); }
 $('adminLogoutBtn').addEventListener('click', adminLogout);
 $('adminLogoutBtn2').addEventListener('click', adminLogout);
 supabase.auth.onAuthStateChange((_e, session) => {
@@ -238,6 +268,18 @@ function applyAdminUI() {
     });
     renderAll();
 }
+
+/* Открытие админ-страницы */
+function openAdminPage() {
+    if (!isAdmin) return;
+    // Активируем вкладку "Гильдии" по умолчанию
+    const firstNav = document.querySelector('.admin-nav-item[data-apanel="clans"]');
+    if (firstNav) firstNav.click();
+    showScreen('admin');
+}
+$('adminPanelBtn').addEventListener('click', openAdminPage);
+$('adminPanelBtn2').addEventListener('click', openAdminPage);
+$('adminPanelBtn3').addEventListener('click', openAdminPage);
 
 /* ===================== ГИЛЬДИИ ===================== */
 async function loadClans() {
@@ -1259,40 +1301,6 @@ async function loadSettings() {
     settingsCache = data;
 }
 
-/* ===================== СЧЁТЧИКИ ===================== */
-async function loadStats() {
-    const row = $('statsRow');
-    if (!row) return;
-    row.innerHTML = '';
-    try {
-        const [e, f, n, p, b1, b2, c] = await Promise.all([
-            supabase.from('enemies').select('id', { count: 'exact', head: true }),
-            supabase.from('friends').select('id', { count: 'exact', head: true }),
-            supabase.from('neutral').select('id', { count: 'exact', head: true }),
-            supabase.from('personal').select('id', { count: 'exact', head: true }),
-            supabase.from('builds').select('id', { count: 'exact', head: true }).eq('type', 'pvp'),
-            supabase.from('builds').select('id', { count: 'exact', head: true }).eq('type', 'pb'),
-            supabase.from('clans').select('id', { count: 'exact', head: true })
-        ]);
-        const stats = [
-            { label: 'Врагов',    value: e.count || 0, ico: '🔴' },
-            { label: 'Друзей',    value: f.count || 0, ico: '🟢' },
-            { label: 'Нейтралов', value: n.count || 0, ico: '⚪' },
-            { label: 'В личном',  value: p.count || 0, ico: '🟡' },
-            { label: 'Билды ПВП', value: b1.count || 0, ico: '⚔️' },
-            { label: 'Билды ПБ',  value: b2.count || 0, ico: '🛡' },
-            { label: 'Гильдий',   value: c.count || 0, ico: '🏰' }
-        ];
-        stats.forEach(s => {
-            const el = document.createElement('div');
-            el.className = 'stat-card';
-            el.innerHTML = `<div class="stat-value">${s.ico} ${s.value}</div>
-                <div class="stat-label">${s.label}</div>`;
-            row.appendChild(el);
-        });
-    } catch (err) { console.warn('Stats error:', err); }
-}
-
 /* ===================== DISCORD ===================== */
 async function sendDiscordWebhook(title, content) {
     const webhookUrl = settingsCache?.discord_webhook;
@@ -1341,39 +1349,7 @@ function renderContacts() {
     });
 }
 
-/* ===================== АДМИН-ПАНЕЛЬ ===================== */
-function openAdminPanel() {
-    if (!isAdmin) return;
-    renderAdminClanSelect();
-    renderSiteFields();
-    renderFaqAdmin();
-    renderPartnersAdmin();
-    renderGamesAdmin();
-    $('adminPanelMsg').textContent = '';
-    $('adminSiteMsg').textContent = '';
-    $('adminNewPass').value = '';
-    $('adminPanelModal').hidden = false;
-}
-$('adminPanelBtn').addEventListener('click', openAdminPanel);
-$('adminPanelBtn2').addEventListener('click', openAdminPanel);
-$('adminPanelBtn3').addEventListener('click', openAdminPanel);
-function closeAdminPanel() { $('adminPanelModal').hidden = true; }
-$('closeAdminPanel').addEventListener('click', closeAdminPanel);
-document.querySelectorAll('.admin-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        const target = tab.dataset.atab;
-        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        $('atab-' + target).classList.add('active');
-        if (target === 'site') renderSiteFields();
-        if (target === 'faq') renderFaqAdmin();
-        if (target === 'partners') renderPartnersAdmin();
-        if (target === 'games') renderGamesAdmin();
-    });
-});
-
-/* ---------- АДМИН: ИГРЫ ---------- */
+/* ===================== АДМИН: ИГРЫ ===================== */
 function renderGamesAdmin() {
     const container = $('gamesAdminList');
     if (!container) return;
@@ -1385,7 +1361,7 @@ function renderGamesAdmin() {
     }
     list.forEach(g => {
         const el = document.createElement('div');
-        el.className = 'games-admin-item';
+        el.className = 'games-admin-item partners-admin-item';
         const logoHtml = g.image
             ? `<img src="${escapeHtml(g.image)}" alt="" onerror="this.outerHTML='<span>🎮</span>'">`
             : `<span>🎮</span>`;
@@ -1404,28 +1380,6 @@ function renderGamesAdmin() {
         container.appendChild(el);
     });
 }
-
-$('gameAddBtn').addEventListener('click', async () => {
-    const id = $('gameId').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-    const name = $('gameName').value.trim();
-    const image = $('gameImage').value.trim();
-    const bg = $('gameBg').value.trim();
-    const statusEl = $('gameStatus');
-    if (!id) { flashStatusEl(statusEl, 'Укажи ID (латиница)', '#ff7a7a'); return; }
-    if (!name) { flashStatusEl(statusEl, 'Укажи название', '#ff7a7a'); return; }
-    if (gamesCache[id]) { flashStatusEl(statusEl, 'ID уже существует', '#ff7a7a'); return; }
-
-    const { error } = await supabase.from('games').insert({
-        id, name,
-        image: image || null,
-        bg: bg || null,
-        sort_order: Object.keys(gamesCache).length
-    });
-    if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
-    ['gameId','gameName','gameImage','gameBg'].forEach(i => $(i).value = '');
-    flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
-    await loadGames();
-});
 
 function openGameEdit(g) {
     editingGame = g;
@@ -1478,7 +1432,7 @@ async function deleteGame(id, name) {
     renderHomeCards();
 }
 
-/* ---------- АДМИН: ГИЛЬДИИ ---------- */
+/* ===================== АДМИН: ГИЛЬДИИ ===================== */
 function renderAdminClanSelect() {
     const sel = $('adminClanSelect');
     if (!sel) return;
@@ -1813,7 +1767,6 @@ function escapeHtml(str) {
     await loadPartners();
     renderApplyClanSelect();
     await loadFaq();
-    loadStats();
 
     const { data: { session } } = await supabase.auth.getSession();
     isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
