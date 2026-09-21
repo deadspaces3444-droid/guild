@@ -2,13 +2,14 @@ import { supabase } from './supabase.js';
 
 /* ===================== КОНФИГ ===================== */
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.3.1';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const UNLOCK_KEY = 'guild_unlocked';
 const LAST_CLAN_KEY = 'guild_last_clan';
 const BG_STORAGE_KEY = 'guild_bg_overrides';
 const SHARED = '__shared__';
+const IP_CACHE_KEY = 'user_ip_cache';
 
 let clansCache = {};
 let currentClan = null;
@@ -137,7 +138,11 @@ $('doAdminLogin').addEventListener('click', async () => {
 $('adminPassword').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('doAdminLogin').click();
 });
-async function adminLogout() { await supabase.auth.signOut(); closeAdminPanel(); }
+async function adminLogout() {
+    await supabase.auth.signOut();
+    closeAdminPanel();
+    hideIpWidget();
+}
 $('adminLogoutBtn').addEventListener('click', adminLogout);
 $('adminLogoutBtn2').addEventListener('click', adminLogout);
 supabase.auth.onAuthStateChange((_e, session) => {
@@ -271,6 +276,60 @@ $('clanPassword').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('doClanLogin').click();
 });
 
+/* ===================== IP-ВИДЖЕТ ===================== */
+async function loadAndShowIP() {
+    const widget = $('ipWidget');
+    if (!widget) return;
+
+    let cached = null;
+    try { cached = JSON.parse(sessionStorage.getItem(IP_CACHE_KEY) || 'null'); }
+    catch {}
+
+    if (cached && cached.ip) {
+        renderIpWidget(cached);
+        return;
+    }
+
+    $('ipValue').textContent = 'определяем…';
+    $('ipCity').textContent = 'определяем…';
+    widget.hidden = false;
+
+    try {
+        const res = await fetch('https://ipwho.is/');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'IP lookup failed');
+
+        const info = {
+            ip: data.ip || '—',
+            city: data.city || '—',
+            region: data.region || '',
+            country: data.country || ''
+        };
+
+        sessionStorage.setItem(IP_CACHE_KEY, JSON.stringify(info));
+        renderIpWidget(info);
+    } catch (err) {
+        console.warn('Не удалось получить IP:', err);
+        $('ipValue').textContent = '—';
+        $('ipCity').textContent = '—';
+    }
+}
+
+function renderIpWidget(info) {
+    const widget = $('ipWidget');
+    if (!widget) return;
+    $('ipValue').textContent = info.ip || '—';
+    const cityParts = [info.city, info.region, info.country].filter(Boolean);
+    $('ipCity').textContent = cityParts.length ? cityParts.join(', ') : '—';
+    widget.hidden = false;
+}
+
+function hideIpWidget() {
+    const widget = $('ipWidget');
+    if (widget) widget.hidden = true;
+}
+
 /* ===================== ОТКРЫТИЕ ГИЛЬДИИ ===================== */
 function openClan(id) {
     const clan = clansCache[id];
@@ -283,6 +342,7 @@ function openClan(id) {
     $('clanIcon').alt = clan.name;
     showScreen('lists');
     applyBg();
+    loadAndShowIP();
     currentSection = 'lists';
     document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b.dataset.section === 'lists'));
     document.querySelectorAll('.clan-section').forEach(s => s.classList.toggle('active', s.id === 'section-lists'));
@@ -296,12 +356,16 @@ function openClan(id) {
     renderBuilds('pb');
     renderContacts();
 }
-$('backBtn').addEventListener('click', () => showScreen('home'));
+$('backBtn').addEventListener('click', () => {
+    hideIpWidget();
+    showScreen('home');
+});
 $('clanLeaveBtn').addEventListener('click', () => {
     if (!confirm('Заблокировать просмотр? Пароль потребуется ввести снова.')) return;
     localStorage.removeItem(UNLOCK_KEY);
     localStorage.removeItem(LAST_CLAN_KEY);
     currentClan = null;
+    hideIpWidget();
     showScreen('home');
     applyBg();
 });
