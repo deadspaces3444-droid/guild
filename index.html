@@ -29,6 +29,12 @@
                 </div>
             </div>
 
+            <!-- ВЫБОР ИГРЫ -->
+            <div id="gameSelector" class="game-selector" hidden>
+                <div class="game-selector-label">🎮 Выберите игру:</div>
+                <div id="gameTabs" class="game-tabs"></div>
+            </div>
+
             <div id="statsRow" class="stats-row"></div>
 
             <h2 class="section-title">Гильдии</h2>
@@ -39,22 +45,10 @@
                 <div class="apply-card">
                     <p class="apply-hint">Заполни форму — совет рассмотрит заявку и свяжется с тобой.</p>
                     <div class="apply-grid">
-                        <div class="admin-field">
-                            <label>Никнейм *</label>
-                            <input type="text" id="applyNick" placeholder="Твой игровой ник" maxlength="40">
-                        </div>
-                        <div class="admin-field">
-                            <label>Возраст</label>
-                            <input type="text" id="applyAge" placeholder="18" maxlength="10">
-                        </div>
-                        <div class="admin-field">
-                            <label>Опыт в игре</label>
-                            <input type="text" id="applyExp" placeholder="Например: 500 часов" maxlength="100">
-                        </div>
-                        <div class="admin-field">
-                            <label>Связь (Discord / Telegram)</label>
-                            <input type="text" id="applyContact" placeholder="@nickname" maxlength="80">
-                        </div>
+                        <div class="admin-field"><label>Никнейм *</label><input type="text" id="applyNick" placeholder="Твой игровой ник" maxlength="40"></div>
+                        <div class="admin-field"><label>Возраст</label><input type="text" id="applyAge" placeholder="18" maxlength="10"></div>
+                        <div class="admin-field"><label>Опыт в игре</label><input type="text" id="applyExp" placeholder="Например: 500 часов" maxlength="100"></div>
+                        <div class="admin-field"><label>Связь (Discord / Telegram)</label><input type="text" id="applyContact" placeholder="@nickname" maxlength="80"></div>
                     </div>
                     <div class="admin-field">
                         <label>Какая гильдия интересует</label>
@@ -104,7 +98,6 @@
             <button id="adminPanelBtn2" hidden>⚙️</button>
             <button id="adminLogoutBtn2" hidden>🚪 Выйти</button>
         </div>
-
         <button id="backToHomeBtn" class="back-btn">← Назад</button>
 
         <div class="clan-info-wrap">
@@ -112,17 +105,14 @@
                 <img id="clanInfoLogo" class="clan-info-logo" src="" alt="">
                 <h1 id="clanInfoName" class="clan-info-name"></h1>
                 <p id="clanInfoDesc" class="clan-info-desc"></p>
-
                 <div id="clanInfoNewsWrap" class="clan-info-news-wrap" hidden>
                     <h3>📰 Новости</h3>
                     <p id="clanInfoNews" class="clan-info-news"></p>
                 </div>
-
                 <div class="clan-info-rules-wrap">
                     <h3>📜 Правила гильдии</h3>
                     <p id="clanInfoRules" class="clan-info-rules"></p>
                 </div>
-
                 <div class="clan-info-actions">
                     <a id="clanDownloadBtn" class="big-btn secondary"
                        href="https://github.com/Flowseal/zapret-discord-youtube/releases/download/1.10.3/zapret-discord-youtube-1.10.3.rar"
@@ -217,10 +207,7 @@
                         <div id="treasuryBalance" class="treasury-balance-value">0</div>
                     </div>
                     <section class="add-form admin-only" hidden>
-                        <select id="trType">
-                            <option value="in">➕ Доход</option>
-                            <option value="out">➖ Расход</option>
-                        </select>
+                        <select id="trType"><option value="in">➕ Доход</option><option value="out">➖ Расход</option></select>
                         <input type="number" id="trAmount" placeholder="Сумма" min="0" step="1">
                         <input type="text" id="trDesc" placeholder="Описание" maxlength="200">
                         <button id="trAddBtn">➕ Добавить</button>
@@ -319,14 +306,38 @@
             <h2>⚙️ Админ-панель</h2>
 
             <div class="admin-tabs">
+                <button class="admin-tab" data-atab="games">🎮 Игры</button>
                 <button class="admin-tab active" data-atab="clans">🏰 Гильдии</button>
                 <button class="admin-tab" data-atab="partners">🤝 Партнёры</button>
                 <button class="admin-tab" data-atab="faq">❓ FAQ</button>
                 <button class="admin-tab" data-atab="site">⚙️ Настройки</button>
             </div>
 
+            <!-- ИГРЫ -->
+            <div id="atab-games" class="admin-tab-content">
+                <p class="hint admin-hint">Игры, для которых ведутся кланы на сайте</p>
+
+                <div class="add-form" style="border-style:solid">
+                    <input type="text" id="gameId" placeholder="ID (латиница, напр. wosb)" maxlength="30">
+                    <input type="text" id="gameName" placeholder="Название игры *" maxlength="80">
+                    <input type="text" id="gameImage" placeholder="Путь к логотипу (images/wosb.png)" maxlength="200">
+                    <button id="gameAddBtn">➕ Добавить</button>
+                    <span id="gameStatus"></span>
+                </div>
+
+                <div id="gamesAdminList" class="partners-admin-list"></div>
+            </div>
+
+            <!-- ГИЛЬДИИ -->
             <div id="atab-clans" class="admin-tab-content active">
-                <div class="admin-field"><label>Гильдия</label><select id="adminClanSelect"></select></div>
+                <div class="admin-field">
+                    <label>Гильдия</label>
+                    <select id="adminClanSelect"></select>
+                </div>
+                <div class="admin-field">
+                    <label>Игра</label>
+                    <select id="adminClanGame"></select>
+                </div>
                 <div class="admin-field"><label>Текущий пароль</label><input type="text" id="adminCurrentPass" readonly></div>
                 <div class="admin-field"><label>Новый пароль</label><input type="text" id="adminNewPass" placeholder="Оставь пустым, чтобы не менять"></div>
                 <div class="admin-field"><label>Discord-ссылка</label><input type="text" id="adminDiscord" placeholder="https://discord.gg/xxxxx" maxlength="200"></div>
@@ -339,17 +350,16 @@
                 </div>
             </div>
 
+            <!-- ПАРТНЁРЫ -->
             <div id="atab-partners" class="admin-tab-content">
                 <p class="hint admin-hint">
                     Для <b>YouTube-ссылок</b> логотип подтягивается автоматически.
                     Для остальных — можно загрузить картинку с диска.
                 </p>
-
                 <div class="add-form" style="border-style:solid">
                     <input type="text" id="partnerName" placeholder="Название *" maxlength="80">
                     <input type="text" id="partnerUrl" placeholder="Ссылка * (https://...)" maxlength="300">
                     <textarea id="partnerDesc" placeholder="Краткое описание" rows="2" maxlength="300"></textarea>
-
                     <div class="logo-upload">
                         <input type="file" id="partnerLogoFile" accept="image/*" hidden>
                         <button type="button" id="partnerLogoPick" class="logo-pick-btn">📷 Свой логотип</button>
@@ -359,14 +369,13 @@
                         </div>
                         <span id="partnerLogoName" class="logo-name"></span>
                     </div>
-
                     <button id="partnerAddBtn">➕ Добавить</button>
                     <span id="partnerStatus"></span>
                 </div>
-
                 <div id="partnersAdminList" class="partners-admin-list"></div>
             </div>
 
+            <!-- FAQ -->
             <div id="atab-faq" class="admin-tab-content">
                 <p class="hint admin-hint">Вопросы и ответы на главной</p>
                 <div class="add-form" style="border-style:solid">
@@ -377,6 +386,7 @@
                 <div id="faqAdminList" class="faq-admin-list"></div>
             </div>
 
+            <!-- НАСТРОЙКИ -->
             <div id="atab-site" class="admin-tab-content">
                 <div class="admin-field">
                     <label>Discord Webhook URL</label>
@@ -398,6 +408,10 @@
     <div id="addClanModal" class="modal" hidden>
         <div class="modal-content admin-panel-wide">
             <h2>➕ Новая гильдия</h2>
+            <div class="admin-field">
+                <label>Игра</label>
+                <select id="newClanGame"></select>
+            </div>
             <div class="admin-field"><label>ID (латиница)</label><input type="text" id="newClanId" placeholder="clan3" maxlength="20"></div>
             <div class="admin-field"><label>Название</label><input type="text" id="newClanName" maxlength="60"></div>
             <div class="admin-field"><label>Описание</label><textarea id="newClanDesc" rows="3"></textarea></div>
@@ -410,6 +424,21 @@
             <div class="modal-actions">
                 <button id="saveNewClan">💾 Создать</button>
                 <button id="cancelAddClan" class="secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: РЕДАКТИРОВАНИЕ ИГРЫ -->
+    <div id="gameEditModal" class="modal" hidden>
+        <div class="modal-content">
+            <h2>✏️ Редактировать игру</h2>
+            <input type="hidden" id="gameEditId">
+            <div class="admin-field"><label>Название</label><input type="text" id="gameEditName" maxlength="80"></div>
+            <div class="admin-field"><label>Путь к логотипу</label><input type="text" id="gameEditImage" maxlength="200"></div>
+            <p id="gameEditMsg" class="error"></p>
+            <div class="modal-actions">
+                <button id="saveGameEdit">💾 Сохранить</button>
+                <button id="cancelGameEdit" class="secondary">Отмена</button>
             </div>
         </div>
     </div>
@@ -488,7 +517,7 @@
 
     <footer class="site-footer">
         <span class="footer-left">Mist Time — Сергеев С.В</span>
-        <span class="footer-right">v1.4.2</span>
+        <span class="footer-right">v1.5.0</span>
     </footer>
 
     <script type="module" src="app.js"></script>
