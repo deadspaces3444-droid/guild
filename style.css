@@ -167,7 +167,7 @@ body::before {
     border-radius: 16px;
 }
 .game-selector-label {
-    font-size: 13px;
+    font-size: 24px;
     color: var(--muted);
     font-weight: 600;
     text-transform: uppercase;
