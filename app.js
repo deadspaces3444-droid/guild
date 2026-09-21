@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
 
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.5.2';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const UNLOCK_KEY = 'guild_unlocked';
@@ -1459,7 +1459,14 @@ $('saveGameEdit').addEventListener('click', async () => {
 });
 
 async function deleteGame(id, name) {
-    if (!confirm(`Удалить игру «${name}»?\n\nГильдии останутся, но пропадут с главной, пока не назначишь им другую игру.`)) return;
+    const count = Object.values(clansCache).filter(c => (c.game_id || 'wosb') === id).length;
+    let msg = `Удалить игру «${name}»?`;
+    if (count > 0) {
+        msg += `\n\n⚠️ К этой игре привязано гильдий: ${count}.\n` +
+               `Они ОСТАНУТСЯ в БД, но пропадут с главной,\n` +
+               `пока ты не назначишь им другую игру.`;
+    }
+    if (!confirm(msg)) return;
     const { error } = await supabase.from('games').delete().eq('id', id);
     if (error) return alert('Ошибка: ' + error.message);
     if (currentGame === id) {
@@ -1553,6 +1560,67 @@ $('saveAdminSettings').addEventListener('click', async () => {
     }
     renderHomeCards();
     renderContacts();
+});
+
+/* ---------- УДАЛЕНИЕ ГИЛЬДИИ ---------- */
+$('deleteClanBtn').addEventListener('click', async () => {
+    const cid = $('adminClanSelect').value;
+    if (!cid) return alert('Выберите гильдию');
+    const clan = clansCache[cid];
+    if (!clan) return alert('Гильдия не найдена');
+
+    const confirmText = `Удалить гильдию «${clan.name}»?\n\n` +
+        `⚠️ Вместе с ней удалятся ВСЕ записи:\n` +
+        `• Списки игроков (враги, друзья, нейтралы, личное)\n` +
+        `• События гильдии\n` +
+        `• Операции казны\n` +
+        `• Билды ПВП и ПБ (только этой гильдии, общие останутся)\n\n` +
+        `Это действие НЕОБРАТИМО. Продолжить?`;
+
+    if (!confirm(confirmText)) return;
+
+    const typed = prompt(`Для подтверждения введи название гильдии:\n«${clan.name}»`);
+    if (typed !== clan.name) {
+        alert('Название не совпадает. Удаление отменено.');
+        return;
+    }
+
+    const btn = $('deleteClanBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Удаление…';
+
+    try {
+        for (const t of TABS) {
+            await supabase.from(t).delete().eq('clan', cid);
+        }
+        await supabase.from('events').delete().eq('clan', cid).eq('is_shared', false);
+        await supabase.from('treasury').delete().eq('clan', cid);
+        await supabase.from('builds').delete().eq('clan', cid).eq('is_shared', false);
+
+        const { error } = await supabase.from('clans').delete().eq('id', cid);
+        if (error) throw error;
+
+        delete clansCache[cid];
+        if (currentClan === cid) {
+            currentClan = null;
+            localStorage.removeItem(LAST_CLAN_KEY);
+            localStorage.removeItem(UNLOCK_KEY);
+            showScreen('home');
+        }
+        renderHomeCards();
+        renderAdminClanSelect();
+        renderScopeSelects();
+        renderContacts();
+        applyBg();
+        $('adminPanelMsg').textContent = `✔ Гильдия «${clan.name}» удалена`;
+        $('adminPanelMsg').style.color = '#6ee7a7';
+    } catch (err) {
+        $('adminPanelMsg').textContent = 'Ошибка: ' + err.message;
+        $('adminPanelMsg').style.color = '#ff7a7a';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🗑 Удалить гильдию';
+    }
 });
 
 function renderSiteFields() {
