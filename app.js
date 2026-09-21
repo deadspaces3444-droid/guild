@@ -2,24 +2,24 @@ import { supabase } from './supabase.js';
 
 /* ===================== КОНФИГ ===================== */
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.3.2';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const UNLOCK_KEY = 'guild_unlocked';
 const LAST_CLAN_KEY = 'guild_last_clan';
 const BG_STORAGE_KEY = 'guild_bg_overrides';
 const SHARED = '__shared__';
-const IP_CACHE_KEY = 'user_ip_cache';
 
-let clansCache = {};
-let currentClan = null;
+let clansCache    = {};
+let settingsCache = null;
+let currentClan   = null;
 let pendingClanId = null;
-let currentTab = 'enemies';
+let currentTab    = 'enemies';
 let currentSection = 'lists';
-let isAdmin = false;
-let movingItem = null;
-let editingItem = null;
-let editingBuild = null;
+let isAdmin       = false;
+let movingItem    = null;
+let editingItem   = null;
+let editingBuild  = null;
 let duplicatingBuild = null;
 
 const $ = id => document.getElementById(id);
@@ -138,11 +138,7 @@ $('doAdminLogin').addEventListener('click', async () => {
 $('adminPassword').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('doAdminLogin').click();
 });
-async function adminLogout() {
-    await supabase.auth.signOut();
-    closeAdminPanel();
-    hideIpWidget();
-}
+async function adminLogout() { await supabase.auth.signOut(); closeAdminPanel(); }
 $('adminLogoutBtn').addEventListener('click', adminLogout);
 $('adminLogoutBtn2').addEventListener('click', adminLogout);
 supabase.auth.onAuthStateChange((_e, session) => {
@@ -180,6 +176,49 @@ async function loadClans() {
     renderAdminClanSelect();
     renderScopeSelects();
 }
+
+/* ===================== НАСТРОЙКИ САЙТА ===================== */
+async function loadSettings() {
+    const { data, error } = await supabase.from('site_settings').select('*').eq('id', 'main').single();
+    if (error) { console.warn('Настройки не загружены:', error.message); return; }
+    settingsCache = data;
+    renderYoutubeBlock(data);
+}
+
+function extractYouTubeHandle(url) {
+    if (!url) return '';
+    try {
+        const u = new URL(url.trim());
+        const path = u.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+        if (path.startsWith('@')) return path.split('/')[0];
+        if (path.startsWith('channel/')) return path.replace('channel/', '').split('/')[0];
+        if (path.startsWith('c/'))       return path.replace('c/', '').split('/')[0];
+        if (path.startsWith('user/'))    return path.replace('user/', '').split('/')[0];
+        return path.split('/')[0] || '';
+    } catch { return ''; }
+}
+
+function renderYoutubeBlock(s) {
+    const section = $('promoSection');
+    if (!section || !s || !s.youtube_url) { if (section) section.hidden = true; return; }
+
+    $('ytPromoCard').href = s.youtube_url;
+    $('ytName').textContent = s.youtube_name || 'YouTube';
+    $('ytDesc').textContent = s.youtube_desc || '';
+
+    const handle = extractYouTubeHandle(s.youtube_url);
+    const logo = $('ytLogo');
+    if (handle) {
+        logo.src = `https://unavatar.io/youtube/${handle}`;
+        logo.classList.remove('promo-logo-fallback');
+    } else {
+        logo.src = 'images/aov.png';
+        logo.classList.add('promo-logo-fallback');
+    }
+
+    section.hidden = false;
+}
+
 function renderHomeCards() {
     const grid = $('clanGrid');
     grid.innerHTML = '';
@@ -240,9 +279,7 @@ function openClanInfo(id) {
     if (clan.news && clan.news.trim()) {
         newsWrap.hidden = false;
         $('clanInfoNews').textContent = clan.news;
-    } else {
-        newsWrap.hidden = true;
-    }
+    } else { newsWrap.hidden = true; }
     $('clanLoginBtn').hidden = isUnlocked();
     $('clanViewBtn').hidden = !isUnlocked();
     showScreen('clan');
@@ -276,60 +313,6 @@ $('clanPassword').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('doClanLogin').click();
 });
 
-/* ===================== IP-ВИДЖЕТ ===================== */
-async function loadAndShowIP() {
-    const widget = $('ipWidget');
-    if (!widget) return;
-
-    let cached = null;
-    try { cached = JSON.parse(sessionStorage.getItem(IP_CACHE_KEY) || 'null'); }
-    catch {}
-
-    if (cached && cached.ip) {
-        renderIpWidget(cached);
-        return;
-    }
-
-    $('ipValue').textContent = 'определяем…';
-    $('ipCity').textContent = 'определяем…';
-    widget.hidden = false;
-
-    try {
-        const res = await fetch('https://ipwho.is/');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message || 'IP lookup failed');
-
-        const info = {
-            ip: data.ip || '—',
-            city: data.city || '—',
-            region: data.region || '',
-            country: data.country || ''
-        };
-
-        sessionStorage.setItem(IP_CACHE_KEY, JSON.stringify(info));
-        renderIpWidget(info);
-    } catch (err) {
-        console.warn('Не удалось получить IP:', err);
-        $('ipValue').textContent = '—';
-        $('ipCity').textContent = '—';
-    }
-}
-
-function renderIpWidget(info) {
-    const widget = $('ipWidget');
-    if (!widget) return;
-    $('ipValue').textContent = info.ip || '—';
-    const cityParts = [info.city, info.region, info.country].filter(Boolean);
-    $('ipCity').textContent = cityParts.length ? cityParts.join(', ') : '—';
-    widget.hidden = false;
-}
-
-function hideIpWidget() {
-    const widget = $('ipWidget');
-    if (widget) widget.hidden = true;
-}
-
 /* ===================== ОТКРЫТИЕ ГИЛЬДИИ ===================== */
 function openClan(id) {
     const clan = clansCache[id];
@@ -342,7 +325,6 @@ function openClan(id) {
     $('clanIcon').alt = clan.name;
     showScreen('lists');
     applyBg();
-    loadAndShowIP();
     currentSection = 'lists';
     document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b.dataset.section === 'lists'));
     document.querySelectorAll('.clan-section').forEach(s => s.classList.toggle('active', s.id === 'section-lists'));
@@ -356,16 +338,12 @@ function openClan(id) {
     renderBuilds('pb');
     renderContacts();
 }
-$('backBtn').addEventListener('click', () => {
-    hideIpWidget();
-    showScreen('home');
-});
+$('backBtn').addEventListener('click', () => showScreen('home'));
 $('clanLeaveBtn').addEventListener('click', () => {
     if (!confirm('Заблокировать просмотр? Пароль потребуется ввести снова.')) return;
     localStorage.removeItem(UNLOCK_KEY);
     localStorage.removeItem(LAST_CLAN_KEY);
     currentClan = null;
-    hideIpWidget();
     showScreen('home');
     applyBg();
 });
@@ -770,7 +748,9 @@ function renderContacts() {
 function openAdminPanel() {
     if (!isAdmin) return;
     renderAdminClanSelect();
+    renderSiteFields();
     $('adminPanelMsg').textContent = '';
+    $('adminSiteMsg').textContent = '';
     $('adminNewPass').value = '';
     $('adminPanelModal').hidden = false;
 }
@@ -779,6 +759,18 @@ $('adminPanelBtn2').addEventListener('click', openAdminPanel);
 $('adminPanelBtn3').addEventListener('click', openAdminPanel);
 function closeAdminPanel() { $('adminPanelModal').hidden = true; }
 $('closeAdminPanel').addEventListener('click', closeAdminPanel);
+
+/* Вкладки админки */
+document.querySelectorAll('.admin-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const target = tab.dataset.atab;
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        $('atab-' + target).classList.add('active');
+        if (target === 'site') renderSiteFields();
+    });
+});
 
 function renderAdminClanSelect() {
     const sel = $('adminClanSelect');
@@ -827,6 +819,33 @@ $('saveAdminSettings').addEventListener('click', async () => {
         else nw.hidden = true;
     }
     renderContacts();
+});
+
+/* Настройки сайта */
+function renderSiteFields() {
+    const s = settingsCache || {};
+    $('adminYoutubeUrl').value = s.youtube_url || '';
+    $('adminYoutubeName').value = s.youtube_name || '';
+    $('adminYoutubeDesc').value = s.youtube_desc || '';
+    $('adminSiteMsg').textContent = '';
+}
+$('saveSiteSettings').addEventListener('click', async () => {
+    const msg = $('adminSiteMsg');
+    msg.style.color = '';
+    const payload = {
+        youtube_url: $('adminYoutubeUrl').value.trim() || null,
+        youtube_name: $('adminYoutubeName').value.trim() || null,
+        youtube_desc: $('adminYoutubeDesc').value || null,
+        updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase.from('site_settings').update(payload).eq('id', 'main');
+    if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
+
+    settingsCache = Object.assign({ id: 'main' }, settingsCache || {}, payload);
+    renderYoutubeBlock(settingsCache);
+    msg.textContent = '✔ Сохранено';
+    msg.style.color = '#6ee7a7';
 });
 
 /* ===================== ДОБАВЛЕНИЕ ГИЛЬДИИ ===================== */
@@ -969,6 +988,7 @@ function escapeHtml(str) {
     if (verEl) verEl.textContent = 'v' + APP_VERSION;
 
     await loadClans();
+    await loadSettings();
 
     const { data: { session } } = await supabase.auth.getSession();
     isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
