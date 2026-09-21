@@ -1,19 +1,22 @@
 import { supabase } from './supabase.js';
 
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
-const APP_VERSION = '1.4.3';
+const APP_VERSION = '1.5.0';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const UNLOCK_KEY = 'guild_unlocked';
 const LAST_CLAN_KEY = 'guild_last_clan';
 const BG_STORAGE_KEY = 'guild_bg_overrides';
+const GAME_STORAGE_KEY = 'selected_game_id';
 const SHARED = '__shared__';
 
+let gamesCache    = {};
 let clansCache    = {};
 let settingsCache = null;
 let faqCache      = [];
 let partnersCache = [];
 let partnerLogoData = null;
+let currentGame   = null;
 let currentClan   = null;
 let pendingClanId = null;
 let currentTab    = 'enemies';
@@ -21,6 +24,7 @@ let isAdmin       = false;
 let movingItem    = null;
 let editingItem   = null;
 let editingBuild  = null;
+let editingGame   = null;
 let duplicatingBuild = null;
 
 const $ = id => document.getElementById(id);
@@ -96,6 +100,70 @@ function showScreen(name) {
     screenClan.hidden = name !== 'clan';
     clanView.hidden   = name !== 'lists';
     window.scrollTo(0, 0);
+}
+
+/* ===================== ИГРЫ ===================== */
+async function loadGames() {
+    const { data, error } = await supabase.from('games').select('*')
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
+    if (error) { console.error('Games load error:', error); return; }
+    gamesCache = {};
+    (data || []).forEach(g => { gamesCache[g.id] = g; });
+    const saved = localStorage.getItem(GAME_STORAGE_KEY);
+    if (saved && gamesCache[saved]) currentGame = saved;
+    else currentGame = Object.keys(gamesCache)[0] || null;
+    renderGameSelector();
+    renderGamesAdmin();
+    renderNewClanGameSelect();
+}
+
+function renderGameSelector() {
+    const wrap = $('gameSelector');
+    const tabs = $('gameTabs');
+    if (!wrap || !tabs) return;
+    tabs.innerHTML = '';
+    const games = Object.values(gamesCache);
+
+    if (!games.length) { wrap.hidden = true; return; }
+    if (games.length === 1) {
+        // Если игра одна — показываем только название (или можно скрыть блок полностью)
+        wrap.hidden = false;
+        const el = document.createElement('div');
+        el.className = 'game-tab active';
+        el.style.cursor = 'default';
+        el.innerHTML = renderGameTabContent(games[0]);
+        tabs.appendChild(el);
+        return;
+    }
+
+    wrap.hidden = false;
+    games.forEach(g => {
+        const btn = document.createElement('button');
+        btn.className = 'game-tab' + (g.id === currentGame ? ' active' : '');
+        btn.type = 'button';
+        btn.innerHTML = renderGameTabContent(g);
+        btn.addEventListener('click', () => selectGame(g.id));
+        tabs.appendChild(btn);
+    });
+}
+
+function renderGameTabContent(g) {
+    if (g.image) {
+        return `<img src="${escapeHtml(g.image)}" alt="" onerror="this.style.display='none'"><span>${escapeHtml(g.name)}</span>`;
+    }
+    return `<span class="game-tab-emoji">🎮</span><span>${escapeHtml(g.name)}</span>`;
+}
+
+function selectGame(gameId) {
+    if (!gamesCache[gameId]) return;
+    currentGame = gameId;
+    localStorage.setItem(GAME_STORAGE_KEY, gameId);
+    renderGameSelector();
+    renderHomeCards();
+    renderApplyClanSelect();
+    renderAdminClanSelect();
+    renderScopeSelects();
 }
 
 /* ===================== САЙДБАР ===================== */
@@ -178,16 +246,28 @@ async function loadClans() {
     renderHomeCards();
     renderAdminClanSelect();
     renderScopeSelects();
+    renderContacts();
 }
+
+function getClansForGame(gameId) {
+    return Object.values(clansCache).filter(c => (c.game_id || 'wosb') === gameId);
+}
+
 function renderHomeCards() {
     const grid = $('clanGrid');
+    if (!grid) return;
     grid.innerHTML = '';
-    Object.values(clansCache).forEach(clan => {
+    const list = currentGame ? getClansForGame(currentGame) : [];
+    if (!list.length) {
+        grid.innerHTML = '<div class="empty">В этой игре пока нет гильдий</div>';
+        return;
+    }
+    list.forEach(clan => {
         const btn = document.createElement('button');
         btn.className = 'clan-card';
         btn.dataset.clan = clan.id;
         btn.innerHTML = `
-            <img src="${escapeHtml(clan.image || '')}" alt="${escapeHtml(clan.name)}">
+            <img src="${escapeHtml(clan.image || '')}" alt="${escapeHtml(clan.name)}" onerror="this.style.display='none'">
             <span class="clan-name">${escapeHtml(clan.name)}</span>
             <span class="clan-desc">${escapeHtml(clan.description || '')}</span>
             <span class="clan-more">Подробнее →</span>
@@ -390,17 +470,13 @@ async function renderBuilds(type) {
     const container = type === 'pvp' ? $('pvpList') : $('pbList');
     if (!container) return;
     container.innerHTML = '<div class="empty">Загрузка…</div>';
-
     const { data, error } = await supabase.from('builds').select('*')
         .eq('type', type)
         .or(`is_shared.eq.true,clan.eq.${currentClan}`)
         .order('created_at', { ascending: false });
-
     if (error) { container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
     if (!data?.length) { container.innerHTML = '<div class="empty">Билды пока не добавлены</div>'; return; }
-
     container.innerHTML = '';
-
     if (type === 'pb') {
         const groups = {};
         data.forEach(b => {
@@ -432,7 +508,6 @@ async function renderBuilds(type) {
 function createBuildCard(item) {
     const card = document.createElement('div');
     card.className = 'build-card';
-
     const upgrades = parseLines(item.upgrades);
     const weapS = parseLines(item.weapons_small);
     const weapM = parseLines(item.weapons_medium);
@@ -444,10 +519,8 @@ function createBuildCard(item) {
     const scopeBadge = item.is_shared
         ? `<span class="build-scope shared">🌐 Общий</span>`
         : `<span class="build-scope clan">🏰 ${escapeHtml(clansCache[item.clan]?.name || item.clan || '?')}</span>`;
-
     const rankBadge = (item.type === 'pb' && item.rank)
         ? `<span class="build-rank">Ранг ${escapeHtml(item.rank)}</span>` : '';
-
     const actions = `<div class="build-actions">
         <button class="share" title="Скопировать ссылку">🔗</button>
         ${isAdmin ? `
@@ -460,9 +533,7 @@ function createBuildCard(item) {
     card.innerHTML = `
         <div class="build-header">
             <h3 class="build-ship">${escapeHtml(item.ship_name)}</h3>
-            ${rankBadge}
-            ${scopeBadge}
-            ${actions}
+            ${rankBadge}${scopeBadge}${actions}
         </div>
         ${upgrades.length ? `<div class="build-section">
             <div class="build-section-label">🔧 Апгрейды</div>
@@ -501,7 +572,6 @@ function createBuildCard(item) {
                 </div>`).join('')}</div>
         </div>` : ''}
     `;
-
     card.querySelector('.share').addEventListener('click', () => {
         const url = `${location.origin}${location.pathname}#build=${item.id}`;
         navigator.clipboard.writeText(url).then(
@@ -509,7 +579,6 @@ function createBuildCard(item) {
             () => prompt('Скопируйте ссылку:', url)
         );
     });
-
     if (isAdmin) {
         card.querySelector('.edit').addEventListener('click', () => openBuildEdit(item));
         card.querySelector('.copy').addEventListener('click', () => openBuildDup(item));
@@ -525,7 +594,6 @@ async function addBuild(type) {
     const scopeVal = $(isPvp ? 'pvpScope' : 'pbScope').value;
     const isShared = scopeVal === SHARED;
     const clanValue = isShared ? null : scopeVal;
-
     const rank = isPvp ? null : $(`${type}Rank`).value.trim();
     const ship = $(`${type}Ship`).value.trim();
     const upgrades = $(`${type}Upgrades`).value;
@@ -552,15 +620,12 @@ async function addBuild(type) {
         consumable1: c1 || null, consumable2: c2 || null, consumable3: c3 || null,
         cargo: cargo || null, specialists: specs || null
     });
-
     if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
-
     ['Rank','Ship','Upgrades','WeapS','WeapM','WeapL','Cons1','Cons2','Cons3','Cargo','Specs']
         .forEach(suffix => {
             const el = $(`${type}${suffix}`);
             if (el) el.value = '';
         });
-
     flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
     renderBuilds(type);
 }
@@ -579,11 +644,9 @@ function openBuildEdit(item) {
     editingBuild = { id: item.id, type: item.type };
     $('buildEditTitle').textContent = item.type === 'pvp'
         ? '✏️ Редактировать ПВП-билд' : '✏️ Редактировать ПБ-билд';
-
     const rankField = $('buildEditRankField');
     if (item.type === 'pb') { rankField.hidden = false; $('buildEditRank').value = item.rank || ''; }
     else { rankField.hidden = true; $('buildEditRank').value = ''; }
-
     $('buildEditShip').value = item.ship_name || '';
     $('buildEditUpgrades').value = item.upgrades || '';
     $('buildEditWeapS').value = item.weapons_small || '';
@@ -594,10 +657,8 @@ function openBuildEdit(item) {
     $('buildEditCons3').value = item.consumable3 || '';
     $('buildEditCargo').value = item.cargo || '';
     $('buildEditSpecs').value = item.specialists || '';
-
     renderScopeSelects();
     $('buildEditScope').value = item.is_shared ? SHARED : (item.clan || SHARED);
-
     $('buildEditError').textContent = '';
     $('buildEditModal').hidden = false;
     $('buildEditShip').focus();
@@ -610,12 +671,10 @@ $('saveBuildEdit').addEventListener('click', async () => {
     const scopeVal = $('buildEditScope').value;
     const isShared = scopeVal === SHARED;
     const clanValue = isShared ? null : scopeVal;
-
     const rank = $('buildEditRank').value.trim();
     const ship = $('buildEditShip').value.trim();
     if (!ship) { $('buildEditError').textContent = 'Введите название корабля'; return; }
     if (editingBuild.type === 'pb' && !rank) { $('buildEditError').textContent = 'Укажите ранг'; return; }
-
     const { error } = await supabase.from('builds').update({
         clan: clanValue, is_shared: isShared,
         rank: editingBuild.type === 'pb' ? rank : null,
@@ -630,7 +689,6 @@ $('saveBuildEdit').addEventListener('click', async () => {
         cargo: $('buildEditCargo').value || null,
         specialists: $('buildEditSpecs').value || null
     }).eq('id', editingBuild.id);
-
     if (error) { $('buildEditError').textContent = 'Ошибка: ' + error.message; return; }
     const type = editingBuild.type;
     $('buildEditModal').hidden = true;
@@ -657,7 +715,6 @@ $('doBuildDup').addEventListener('click', async () => {
     const clanValue = isShared ? null : scopeVal;
     const msg = $('buildDupMsg');
     msg.style.color = '';
-
     const item = duplicatingBuild;
     const { error } = await supabase.from('builds').insert({
         clan: clanValue, is_shared: isShared, type: item.type,
@@ -671,7 +728,6 @@ $('doBuildDup').addEventListener('click', async () => {
         consumable3: item.consumable3 || null,
         cargo: item.cargo || null, specialists: item.specialists || null
     });
-
     if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
     msg.textContent = '✔ Копия создана';
     msg.style.color = '#6ee7a7';
@@ -681,7 +737,6 @@ $('doBuildDup').addEventListener('click', async () => {
         renderBuilds(item.type);
     }, 700);
 });
-
 async function deleteBuild(id, type) {
     if (!confirm('Удалить билд?')) return;
     const { error } = await supabase.from('builds').delete().eq('id', id);
@@ -695,36 +750,26 @@ async function renderEvents() {
     const container = $('eventsList');
     if (!container) return;
     container.innerHTML = '<div class="empty">Загрузка…</div>';
-
     const { data, error } = await supabase.from('events').select('*')
         .or(`is_shared.eq.true,clan.eq.${currentClan}`)
         .order('event_date', { ascending: true });
-
     if (error) { container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
     if (!data?.length) { container.innerHTML = '<div class="empty">Событий пока нет</div>'; return; }
-
     container.innerHTML = '';
     const now = Date.now();
     const monthNames = ['ЯНВ','ФЕВ','МАР','АПР','МАЯ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
-
     data.forEach(ev => {
         const d = new Date(ev.event_date);
         const isPast = d.getTime() < now;
         const day = String(d.getDate()).padStart(2, '0');
         const month = monthNames[d.getMonth()];
         const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-
         const card = document.createElement('div');
         card.className = 'event-card' + (isPast ? ' past' : '');
-
         const scopeBadge = ev.is_shared
             ? `<span class="event-badge shared">🌐 Общий</span>`
             : `<span class="event-badge clan">🏰 ${escapeHtml(clansCache[ev.clan]?.name || ev.clan)}</span>`;
-
-        const actions = isAdmin ? `<div class="event-actions">
-            <button class="delete" title="Удалить">🗑</button>
-        </div>` : '';
-
+        const actions = isAdmin ? `<div class="event-actions"><button class="delete" title="Удалить">🗑</button></div>` : '';
         card.innerHTML = `
             <div class="event-date-block">
                 <div class="event-day">${day}</div>
@@ -735,9 +780,7 @@ async function renderEvents() {
                 <div class="event-time">🕐 ${d.toLocaleDateString('ru-RU')} в ${time}</div>
                 ${ev.description ? `<div class="event-desc">${escapeHtml(ev.description)}</div>` : ''}
             </div>
-            ${actions}
-        `;
-
+            ${actions}`;
         if (isAdmin) {
             card.querySelector('.delete').addEventListener('click', async () => {
                 if (!confirm('Удалить событие?')) return;
@@ -746,11 +789,9 @@ async function renderEvents() {
                 renderEvents();
             });
         }
-
         container.appendChild(card);
     });
 }
-
 $('evAddBtn').addEventListener('click', async () => {
     if (!isAdmin || !currentClan) return;
     const title = $('evTitle').value.trim();
@@ -760,22 +801,17 @@ $('evAddBtn').addEventListener('click', async () => {
     const isShared = scopeVal === SHARED;
     const clanVal = isShared ? null : scopeVal;
     const statusEl = $('evStatus');
-
     if (!title) { flashStatusEl(statusEl, 'Введите название', '#ff7a7a'); return; }
     if (!dateStr) { flashStatusEl(statusEl, 'Укажите дату', '#ff7a7a'); return; }
-
     const { error } = await supabase.from('events').insert({
         clan: clanVal, is_shared: isShared, title,
         event_date: new Date(dateStr).toISOString(),
         description: desc || null
     });
-
     if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
-
     ['evTitle','evDate','evDesc'].forEach(id => $(id).value = '');
     flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
     renderEvents();
-
     sendDiscordWebhook('📅 **Новое событие**', `**${title}**\n${dateStr}\n${desc || ''}`);
 });
 
@@ -785,26 +821,20 @@ async function renderTreasury() {
     const container = $('treasuryList');
     if (!container) return;
     container.innerHTML = '<div class="empty">Загрузка…</div>';
-
     const { data, error } = await supabase.from('treasury').select('*')
         .eq('clan', currentClan)
         .order('created_at', { ascending: false });
-
     if (error) { container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
-
     const list = data || [];
     let balance = 0;
     list.forEach(t => {
         const amt = Number(t.amount) || 0;
         balance += t.type === 'in' ? amt : -amt;
     });
-
     const balEl = $('treasuryBalance');
     balEl.textContent = balance.toLocaleString('ru-RU');
     balEl.classList.toggle('negative', balance < 0);
-
     if (!list.length) { container.innerHTML = '<div class="empty">Операций пока нет</div>'; return; }
-
     container.innerHTML = '';
     list.forEach(t => {
         const amt = Number(t.amount) || 0;
@@ -812,21 +842,16 @@ async function renderTreasury() {
         const dateStr = d.toLocaleDateString('ru-RU') + ' ' +
                         String(d.getHours()).padStart(2,'0') + ':' +
                         String(d.getMinutes()).padStart(2,'0');
-
         const item = document.createElement('div');
         item.className = 'treasury-item ' + (t.type === 'in' ? 'in' : 'out');
-
         const delBtn = isAdmin ? `<button title="Удалить">🗑</button>` : '';
-
         item.innerHTML = `
             <div class="treasury-amount">${t.type === 'in' ? '+' : '−'}${amt.toLocaleString('ru-RU')}</div>
             <div class="treasury-info">
                 <div class="treasury-desc">${escapeHtml(t.description || '—')}</div>
                 <div class="treasury-date">${dateStr}</div>
             </div>
-            ${delBtn}
-        `;
-
+            ${delBtn}`;
         if (isAdmin) {
             item.querySelector('button').addEventListener('click', async () => {
                 if (!confirm('Удалить операцию?')) return;
@@ -838,23 +863,18 @@ async function renderTreasury() {
         container.appendChild(item);
     });
 }
-
 $('trAddBtn').addEventListener('click', async () => {
     if (!isAdmin || !currentClan) return;
     const type = $('trType').value;
     const amount = Number($('trAmount').value);
     const desc = $('trDesc').value.trim();
     const statusEl = $('trStatus');
-
     if (!amount || amount <= 0) { flashStatusEl(statusEl, 'Введите сумму > 0', '#ff7a7a'); return; }
     if (!desc) { flashStatusEl(statusEl, 'Добавьте описание', '#ff7a7a'); return; }
-
     const { error } = await supabase.from('treasury').insert({
         clan: currentClan, type, amount, description: desc
     });
-
     if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
-
     $('trAmount').value = '';
     $('trDesc').value = '';
     flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
@@ -866,27 +886,20 @@ async function renderApplications() {
     const container = $('applicationsList');
     if (!container || !isAdmin) return;
     container.innerHTML = '<div class="empty">Загрузка…</div>';
-
     const { data, error } = await supabase.from('applications').select('*')
         .order('created_at', { ascending: false });
-
     if (error) { container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
     if (!data?.length) { container.innerHTML = '<div class="empty">Заявок пока нет</div>'; return; }
-
     container.innerHTML = '';
     data.forEach(app => {
         const d = new Date(app.created_at);
         const dateStr = d.toLocaleDateString('ru-RU') + ' ' +
                         String(d.getHours()).padStart(2,'0') + ':' +
                         String(d.getMinutes()).padStart(2,'0');
-
         const card = document.createElement('div');
         card.className = 'application-card ' + (app.status || 'new');
-
         const targetClanName = app.target_clan && clansCache[app.target_clan]
-            ? clansCache[app.target_clan].name
-            : (app.target_clan || '—');
-
+            ? clansCache[app.target_clan].name : (app.target_clan || '—');
         card.innerHTML = `
             <div class="application-head">
                 <div class="application-nick">👤 ${escapeHtml(app.nickname)}</div>
@@ -903,13 +916,10 @@ async function renderApplications() {
                 ${app.status !== 'approved' ? `<button class="approve">✅ Принять</button>` : ''}
                 ${app.status !== 'rejected' ? `<button class="reject">❌ Отклонить</button>` : ''}
                 <button class="delete">🗑 Удалить</button>
-            </div>
-        `;
-
+            </div>`;
         const approveBtn = card.querySelector('.approve');
         const rejectBtn = card.querySelector('.reject');
         const deleteBtn = card.querySelector('.delete');
-
         if (approveBtn) approveBtn.addEventListener('click', () => updateAppStatus(app.id, 'approved'));
         if (rejectBtn)  rejectBtn.addEventListener('click', () => updateAppStatus(app.id, 'rejected'));
         if (deleteBtn)  deleteBtn.addEventListener('click', async () => {
@@ -917,11 +927,9 @@ async function renderApplications() {
             await supabase.from('applications').delete().eq('id', app.id);
             renderApplications();
         });
-
         container.appendChild(card);
     });
 }
-
 async function updateAppStatus(id, status) {
     const { error } = await supabase.from('applications').update({ status }).eq('id', id);
     if (error) return alert(error.message);
@@ -933,23 +941,19 @@ function renderApplyClanSelect() {
     const sel = $('applyClan');
     if (!sel) return;
     sel.innerHTML = '<option value="">— Не выбрано —</option>';
-    Object.values(clansCache).forEach(c => {
+    const list = currentGame ? getClansForGame(currentGame) : Object.values(clansCache);
+    list.forEach(c => {
         const o = document.createElement('option');
-        o.value = c.id;
-        o.textContent = c.name;
-        sel.appendChild(o);
+        o.value = c.id; o.textContent = c.name; sel.appendChild(o);
     });
 }
-
 $('applyBtn').addEventListener('click', async () => {
     const nick = $('applyNick').value.trim();
     const why = $('applyWhy').value.trim();
     const msg = $('applyMsg');
     msg.style.color = '';
-
     if (!nick) { msg.textContent = 'Введите никнейм'; msg.style.color = '#ff7a7a'; return; }
     if (!why) { msg.textContent = 'Расскажите, почему хотите вступить'; msg.style.color = '#ff7a7a'; return; }
-
     const payload = {
         nickname: nick,
         age: $('applyAge').value.trim() || null,
@@ -958,24 +962,17 @@ $('applyBtn').addEventListener('click', async () => {
         contact: $('applyContact').value.trim() || null,
         target_clan: $('applyClan').value || null
     };
-
     $('applyBtn').disabled = true;
     const { error } = await supabase.from('applications').insert(payload);
     $('applyBtn').disabled = false;
-
     if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
-
     msg.textContent = '✔ Заявка отправлена! С вами свяжутся.';
     msg.style.color = '#6ee7a7';
-
     sendDiscordWebhook('📝 **Новая заявка в гильдию**',
-        `**Ник:** ${payload.nickname}\n` +
-        `**Возраст:** ${payload.age || '—'}\n` +
-        `**Опыт:** ${payload.experience || '—'}\n` +
-        `**Контакт:** ${payload.contact || '—'}\n` +
+        `**Ник:** ${payload.nickname}\n**Возраст:** ${payload.age || '—'}\n` +
+        `**Опыт:** ${payload.experience || '—'}\n**Контакт:** ${payload.contact || '—'}\n` +
         `**Гильдия:** ${payload.target_clan ? (clansCache[payload.target_clan]?.name || payload.target_clan) : '—'}\n\n` +
         `**Зачем:** ${payload.why}`);
-
     ['applyNick','applyAge','applyExp','applyContact','applyWhy'].forEach(id => $(id).value = '');
     $('applyClan').value = '';
 });
@@ -996,10 +993,8 @@ function renderFaq() {
     faqCache.forEach(item => {
         const details = document.createElement('details');
         details.className = 'faq-item';
-        details.innerHTML = `
-            <summary class="faq-q">${escapeHtml(item.question)}</summary>
-            <div class="faq-a">${escapeHtml(item.answer)}</div>
-        `;
+        details.innerHTML = `<summary class="faq-q">${escapeHtml(item.question)}</summary>
+            <div class="faq-a">${escapeHtml(item.answer)}</div>`;
         container.appendChild(details);
     });
 }
@@ -1012,12 +1007,8 @@ function renderFaqAdmin() {
         const el = document.createElement('div');
         el.className = 'faq-admin-item';
         el.innerHTML = `
-            <div class="txt">
-                <b>${escapeHtml(item.question)}</b>
-                <span>${escapeHtml(item.answer)}</span>
-            </div>
-            <button title="Удалить">🗑</button>
-        `;
+            <div class="txt"><b>${escapeHtml(item.question)}</b><span>${escapeHtml(item.answer)}</span></div>
+            <button title="Удалить">🗑</button>`;
         el.querySelector('button').addEventListener('click', async () => {
             if (!confirm('Удалить вопрос?')) return;
             await supabase.from('faq').delete().eq('id', item.id);
@@ -1034,8 +1025,7 @@ $('faqAddBtn').addEventListener('click', async () => {
         question: q, answer: a, sort_order: faqCache.length + 1
     });
     if (error) return alert(error.message);
-    $('faqQ').value = '';
-    $('faqA').value = '';
+    $('faqQ').value = ''; $('faqA').value = '';
     loadFaq();
 });
 
@@ -1051,10 +1041,8 @@ async function loadPartners() {
 }
 function isYouTubeUrl(url) {
     if (!url) return false;
-    try {
-        const u = new URL(url.trim());
-        return /(?:^|\.)(?:youtube\.com|youtu\.be)$/i.test(u.hostname);
-    } catch { return false; }
+    try { return /(?:^|\.)(?:youtube\.com|youtu\.be)$/i.test(new URL(url.trim()).hostname); }
+    catch { return false; }
 }
 function extractYouTubeHandle(url) {
     if (!url) return '';
@@ -1092,9 +1080,7 @@ function renderPartnersHome() {
 function createYouTubeCard(p) {
     const a = document.createElement('a');
     a.className = 'yt-promo-card';
-    a.href = p.url;
-    a.target = '_blank';
-    a.rel = 'noopener';
+    a.href = p.url; a.target = '_blank'; a.rel = 'noopener';
     const logoSrc = getPartnerLogo(p);
     const logoEl = document.createElement('img');
     logoEl.className = 'yt-promo-logo';
@@ -1110,25 +1096,20 @@ function createYouTubeCard(p) {
     info.innerHTML = `
         <div class="yt-promo-name">${escapeHtml(p.name)}</div>
         ${p.description ? `<div class="yt-promo-desc">${escapeHtml(p.description)}</div>` : ''}
-        <div class="yt-promo-btn">Смотреть на YouTube</div>
-    `;
-    a.appendChild(logoEl);
-    a.appendChild(info);
+        <div class="yt-promo-btn">Смотреть на YouTube</div>`;
+    a.appendChild(logoEl); a.appendChild(info);
     return a;
 }
 function createPartnerCard(p) {
     const a = document.createElement('a');
     a.className = 'partner-card';
-    a.href = p.url;
-    a.target = '_blank';
-    a.rel = 'noopener';
+    a.href = p.url; a.target = '_blank'; a.rel = 'noopener';
     const logoEl = document.createElement('div');
     logoEl.className = 'partner-logo';
     const logoSrc = getPartnerLogo(p);
     if (logoSrc) {
         const img = document.createElement('img');
-        img.src = logoSrc;
-        img.alt = '';
+        img.src = logoSrc; img.alt = '';
         img.onerror = () => img.replaceWith(makePartnerLetter(p.name));
         logoEl.appendChild(img);
     } else {
@@ -1139,10 +1120,8 @@ function createPartnerCard(p) {
     info.innerHTML = `
         <div class="partner-name">${escapeHtml(p.name)}</div>
         ${p.description ? `<div class="partner-desc">${escapeHtml(p.description)}</div>` : ''}
-        <div class="partner-link">🔗 ${escapeHtml(p.url)}</div>
-    `;
-    a.appendChild(logoEl);
-    a.appendChild(info);
+        <div class="partner-link">🔗 ${escapeHtml(p.url)}</div>`;
+    a.appendChild(logoEl); a.appendChild(info);
     return a;
 }
 function makePartnerLetter(name) {
@@ -1176,16 +1155,14 @@ function renderPartnersAdmin() {
             : `<span>${escapeHtml(letter)}</span>`;
         el.innerHTML = `
             <div class="logo-mini">${logoHtml}</div>
-            <div class="txt">
-                <b>${escapeHtml(p.name)}</b>
+            <div class="txt"><b>${escapeHtml(p.name)}</b>
                 <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.url)}</a>
             </div>
             <div class="actions">
-                <button class="up" title="Выше" ${idx === 0 ? 'disabled style="opacity:.3"' : ''}>▲</button>
-                <button class="down" title="Ниже" ${idx === partnersCache.length - 1 ? 'disabled style="opacity:.3"' : ''}>▼</button>
-                <button class="delete" title="Удалить">🗑</button>
-            </div>
-        `;
+                <button class="up" ${idx === 0 ? 'disabled style="opacity:.3"' : ''}>▲</button>
+                <button class="down" ${idx === partnersCache.length - 1 ? 'disabled style="opacity:.3"' : ''}>▼</button>
+                <button class="delete">🗑</button>
+            </div>`;
         el.querySelector('.up')?.addEventListener('click', () => movePartner(p.id, -1));
         el.querySelector('.down')?.addEventListener('click', () => movePartner(p.id, +1));
         el.querySelector('.delete').addEventListener('click', () => deletePartner(p.id));
@@ -1197,8 +1174,7 @@ async function movePartner(id, dir) {
     if (idx === -1) return;
     const swapIdx = idx + dir;
     if (swapIdx < 0 || swapIdx >= partnersCache.length) return;
-    const a = partnersCache[idx];
-    const b = partnersCache[swapIdx];
+    const a = partnersCache[idx]; const b = partnersCache[swapIdx];
     await supabase.from('partners').update({ sort_order: swapIdx }).eq('id', a.id);
     await supabase.from('partners').update({ sort_order: idx }).eq('id', b.id);
     await loadPartners();
@@ -1215,8 +1191,7 @@ function compressLogo(file, maxSize = 128, quality = 0.85) {
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = maxSize;
-                canvas.height = maxSize;
+                canvas.width = maxSize; canvas.height = maxSize;
                 const ctx = canvas.getContext('2d');
                 const minSide = Math.min(img.width, img.height);
                 const sx = (img.width - minSide) / 2;
@@ -1240,9 +1215,7 @@ $('partnerLogoFile').addEventListener('change', async e => {
         $('partnerLogoImg').src = partnerLogoData;
         $('partnerLogoPreview').hidden = false;
         $('partnerLogoName').textContent = file.name;
-    } catch (err) {
-        alert('Не удалось загрузить картинку: ' + err.message);
-    }
+    } catch (err) { alert('Не удалось загрузить картинку: ' + err.message); }
 });
 $('partnerLogoClear').addEventListener('click', () => {
     partnerLogoData = null;
@@ -1308,16 +1281,14 @@ async function loadStats() {
         stats.forEach(s => {
             const el = document.createElement('div');
             el.className = 'stat-card';
-            el.innerHTML = `
-                <div class="stat-value">${s.ico} ${s.value}</div>
-                <div class="stat-label">${s.label}</div>
-            `;
+            el.innerHTML = `<div class="stat-value">${s.ico} ${s.value}</div>
+                <div class="stat-label">${s.label}</div>`;
             row.appendChild(el);
         });
     } catch (err) { console.warn('Stats error:', err); }
 }
 
-/* ===================== DISCORD WEBHOOK (через allorigins) ===================== */
+/* ===================== DISCORD ===================== */
 async function sendDiscordWebhook(title, content) {
     const webhookUrl = settingsCache?.discord_webhook;
     if (!webhookUrl) return;
@@ -1337,9 +1308,7 @@ async function sendDiscordWebhook(title, content) {
             body: JSON.stringify(payload)
         });
         console.log('Discord webhook response:', res.status);
-    } catch (err) {
-        console.warn('Webhook error:', err);
-    }
+    } catch (err) { console.warn('Webhook error:', err); }
 }
 
 /* ===================== КОНТАКТЫ ===================== */
@@ -1362,8 +1331,7 @@ function renderContacts() {
                 <div class="contact-name">${escapeHtml(clan.name)}</div>
                 <div class="contact-discord">${hasLink ? escapeHtml(clan.discord) : 'Ссылка не указана'}</div>
             </div>
-            ${btn}
-        `;
+            ${btn}`;
         container.appendChild(card);
     });
 }
@@ -1375,6 +1343,7 @@ function openAdminPanel() {
     renderSiteFields();
     renderFaqAdmin();
     renderPartnersAdmin();
+    renderGamesAdmin();
     $('adminPanelMsg').textContent = '';
     $('adminSiteMsg').textContent = '';
     $('adminNewPass').value = '';
@@ -1395,8 +1364,103 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
         if (target === 'site') renderSiteFields();
         if (target === 'faq') renderFaqAdmin();
         if (target === 'partners') renderPartnersAdmin();
+        if (target === 'games') renderGamesAdmin();
     });
 });
+
+/* ---------- АДМИН: ИГРЫ ---------- */
+function renderGamesAdmin() {
+    const container = $('gamesAdminList');
+    if (!container) return;
+    container.innerHTML = '';
+    const list = Object.values(gamesCache);
+    if (!list.length) {
+        container.innerHTML = '<div class="empty">Пока нет игр</div>';
+        return;
+    }
+    list.forEach(g => {
+        const el = document.createElement('div');
+        el.className = 'games-admin-item';
+        const logoHtml = g.image
+            ? `<img src="${escapeHtml(g.image)}" alt="" onerror="this.outerHTML='<span>🎮</span>'">`
+            : `<span>🎮</span>`;
+        el.innerHTML = `
+            <div class="logo-mini">${logoHtml}</div>
+            <div class="txt">
+                <b>${escapeHtml(g.name)}</b>
+                <span>ID: ${escapeHtml(g.id)}</span>
+            </div>
+            <div class="actions">
+                <button class="edit" title="Редактировать">✏️</button>
+                <button class="delete" title="Удалить">🗑</button>
+            </div>`;
+        el.querySelector('.edit').addEventListener('click', () => openGameEdit(g));
+        el.querySelector('.delete').addEventListener('click', () => deleteGame(g.id, g.name));
+        container.appendChild(el);
+    });
+}
+
+$('gameAddBtn').addEventListener('click', async () => {
+    const id = $('gameId').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    const name = $('gameName').value.trim();
+    const image = $('gameImage').value.trim();
+    const statusEl = $('gameStatus');
+    if (!id) { flashStatusEl(statusEl, 'Укажи ID (латиница)', '#ff7a7a'); return; }
+    if (!name) { flashStatusEl(statusEl, 'Укажи название', '#ff7a7a'); return; }
+    if (gamesCache[id]) { flashStatusEl(statusEl, 'ID уже существует', '#ff7a7a'); return; }
+
+    const { error } = await supabase.from('games').insert({
+        id, name,
+        image: image || null,
+        sort_order: Object.keys(gamesCache).length
+    });
+    if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
+    ['gameId','gameName','gameImage'].forEach(i => $(i).value = '');
+    flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
+    await loadGames();
+});
+
+function openGameEdit(g) {
+    editingGame = g;
+    $('gameEditId').value = g.id;
+    $('gameEditName').value = g.name;
+    $('gameEditImage').value = g.image || '';
+    $('gameEditMsg').textContent = '';
+    $('gameEditModal').hidden = false;
+    $('gameEditName').focus();
+}
+$('cancelGameEdit').addEventListener('click', () => {
+    $('gameEditModal').hidden = true; editingGame = null;
+});
+$('saveGameEdit').addEventListener('click', async () => {
+    if (!editingGame) return;
+    const name = $('gameEditName').value.trim();
+    const image = $('gameEditImage').value.trim();
+    const msg = $('gameEditMsg');
+    if (!name) { msg.textContent = 'Укажи название'; msg.style.color = '#ff7a7a'; return; }
+    const { error } = await supabase.from('games').update({
+        name, image: image || null
+    }).eq('id', editingGame.id);
+    if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
+    $('gameEditModal').hidden = true;
+    editingGame = null;
+    await loadGames();
+});
+
+async function deleteGame(id, name) {
+    if (!confirm(`Удалить игру «${name}»?\n\nГильдии останутся, но пропадут с главной, пока не назначишь им другую игру.`)) return;
+    const { error } = await supabase.from('games').delete().eq('id', id);
+    if (error) return alert('Ошибка: ' + error.message);
+    if (currentGame === id) {
+        currentGame = null;
+        localStorage.removeItem(GAME_STORAGE_KEY);
+    }
+    await loadGames();
+    await loadClans();
+    renderHomeCards();
+}
+
+/* ---------- АДМИН: ГИЛЬДИИ ---------- */
 function renderAdminClanSelect() {
     const sel = $('adminClanSelect');
     if (!sel) return;
@@ -1409,10 +1473,37 @@ function renderAdminClanSelect() {
     if (cur && clansCache[cur]) sel.value = cur;
     updateAdminFields();
 }
+function renderGameSelectForClanAdmin() {
+    const sel = $('adminClanGame');
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '';
+    Object.values(gamesCache).forEach(g => {
+        const o = document.createElement('option');
+        o.value = g.id; o.textContent = g.name; sel.appendChild(o);
+    });
+    if (cur && gamesCache[cur]) sel.value = cur;
+}
+function renderNewClanGameSelect() {
+    const sel = $('newClanGame');
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '';
+    Object.values(gamesCache).forEach(g => {
+        const o = document.createElement('option');
+        o.value = g.id; o.textContent = g.name; sel.appendChild(o);
+    });
+    if (cur && gamesCache[cur]) sel.value = cur;
+    else if (currentGame && gamesCache[currentGame]) sel.value = currentGame;
+}
 $('adminClanSelect').addEventListener('change', updateAdminFields);
 function updateAdminFields() {
     const cid = $('adminClanSelect').value;
     const clan = clansCache[cid];
+    renderGameSelectForClanAdmin();
+    if (clan) {
+        $('adminClanGame').value = clan.game_id || 'wosb';
+    }
     $('adminCurrentPass').value = clan?.password || '—';
     $('adminNewPass').value = '';
     $('adminDiscord').value = clan?.discord || '';
@@ -1426,11 +1517,17 @@ $('saveAdminSettings').addEventListener('click', async () => {
     const newDiscord = $('adminDiscord').value.trim();
     const newNews = $('adminNews').value;
     const newRules = $('adminRules').value;
+    const newGame = $('adminClanGame').value;
     const msg = $('adminPanelMsg');
     if (!cid) return;
     const clan = clansCache[cid]; if (!clan) return;
-    const payload = { discord: newDiscord || null, news: newNews || null, rules: newRules,
-        updated_at: new Date().toISOString() };
+    const payload = {
+        discord: newDiscord || null,
+        news: newNews || null,
+        rules: newRules,
+        game_id: newGame || null,
+        updated_at: new Date().toISOString()
+    };
     if (newPass) payload.password = newPass;
     const { error } = await supabase.from('clans').update(payload).eq('id', cid);
     if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
@@ -1443,8 +1540,10 @@ $('saveAdminSettings').addEventListener('click', async () => {
         if (newNews?.trim()) { nw.hidden = false; $('clanInfoNews').textContent = newNews; }
         else nw.hidden = true;
     }
+    renderHomeCards();
     renderContacts();
 });
+
 function renderSiteFields() {
     const s = settingsCache || {};
     $('adminWebhook').value = s.discord_webhook || '';
@@ -1468,6 +1567,7 @@ $('saveSiteSettings').addEventListener('click', async () => {
 $('openAddClan').addEventListener('click', () => {
     ['newClanId','newClanName','newClanDesc','newClanRules','newClanPass','newClanDiscord','newClanImage','newClanBg']
         .forEach(id => { const el = $(id); if (el) el.value = ''; });
+    renderNewClanGameSelect();
     $('addClanMsg').textContent = '';
     $('addClanModal').hidden = false;
     $('newClanId').focus();
@@ -1477,11 +1577,13 @@ $('saveNewClan').addEventListener('click', async () => {
     const id = $('newClanId').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
     const name = $('newClanName').value.trim();
     const pass = $('newClanPass').value.trim();
+    const game = $('newClanGame').value;
     const msg = $('addClanMsg');
     if (!id || !name || !pass) { msg.textContent = 'ID, название и пароль обязательны'; msg.style.color = '#ff7a7a'; return; }
+    if (!game) { msg.textContent = 'Выберите игру'; msg.style.color = '#ff7a7a'; return; }
     if (clansCache[id]) { msg.textContent = 'ID уже занят'; msg.style.color = '#ff7a7a'; return; }
     const payload = {
-        id, name,
+        id, name, game_id: game,
         description: $('newClanDesc').value.trim(),
         rules: $('newClanRules').value,
         password: pass,
@@ -1626,6 +1728,7 @@ function escapeHtml(str) {
     const verEl = document.querySelector('.footer-right');
     if (verEl) verEl.textContent = 'v' + APP_VERSION;
 
+    await loadGames();
     await loadClans();
     await loadSettings();
     await loadPartners();
