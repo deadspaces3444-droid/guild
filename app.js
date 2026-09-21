@@ -2,7 +2,7 @@ import { supabase } from './supabase.js';
 
 /* ===================== КОНФИГ ===================== */
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
-const APP_VERSION = '1.3.2';
+const APP_VERSION = '1.4.0';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const UNLOCK_KEY = 'guild_unlocked';
@@ -12,6 +12,7 @@ const SHARED = '__shared__';
 
 let clansCache    = {};
 let settingsCache = null;
+let faqCache      = [];
 let currentClan   = null;
 let pendingClanId = null;
 let currentTab    = 'enemies';
@@ -108,9 +109,12 @@ document.querySelectorAll('.side-item').forEach(btn => {
         $('section-' + section).classList.add('active');
         currentSection = section;
         if (section === 'lists') TABS.forEach(loadList);
+        else if (section === 'events') renderEvents();
+        else if (section === 'treasury') renderTreasury();
         else if (section === 'pvp') renderBuilds('pvp');
         else if (section === 'pb') renderBuilds('pb');
         else if (section === 'contacts') renderContacts();
+        else if (section === 'applications') renderApplications();
     });
 });
 
@@ -177,48 +181,6 @@ async function loadClans() {
     renderScopeSelects();
 }
 
-/* ===================== НАСТРОЙКИ САЙТА ===================== */
-async function loadSettings() {
-    const { data, error } = await supabase.from('site_settings').select('*').eq('id', 'main').single();
-    if (error) { console.warn('Настройки не загружены:', error.message); return; }
-    settingsCache = data;
-    renderYoutubeBlock(data);
-}
-
-function extractYouTubeHandle(url) {
-    if (!url) return '';
-    try {
-        const u = new URL(url.trim());
-        const path = u.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
-        if (path.startsWith('@')) return path.split('/')[0];
-        if (path.startsWith('channel/')) return path.replace('channel/', '').split('/')[0];
-        if (path.startsWith('c/'))       return path.replace('c/', '').split('/')[0];
-        if (path.startsWith('user/'))    return path.replace('user/', '').split('/')[0];
-        return path.split('/')[0] || '';
-    } catch { return ''; }
-}
-
-function renderYoutubeBlock(s) {
-    const section = $('promoSection');
-    if (!section || !s || !s.youtube_url) { if (section) section.hidden = true; return; }
-
-    $('ytPromoCard').href = s.youtube_url;
-    $('ytName').textContent = s.youtube_name || 'YouTube';
-    $('ytDesc').textContent = s.youtube_desc || '';
-
-    const handle = extractYouTubeHandle(s.youtube_url);
-    const logo = $('ytLogo');
-    if (handle) {
-        logo.src = `https://unavatar.io/youtube/${handle}`;
-        logo.classList.remove('promo-logo-fallback');
-    } else {
-        logo.src = 'images/aov.png';
-        logo.classList.add('promo-logo-fallback');
-    }
-
-    section.hidden = false;
-}
-
 function renderHomeCards() {
     const grid = $('clanGrid');
     grid.innerHTML = '';
@@ -242,14 +204,14 @@ function handleClanClick(id) { isUnlocked() ? openClan(id) : openClanInfo(id); }
 /* ===================== SCOPE SELECT ===================== */
 function renderScopeSelects() {
     const clans = Object.values(clansCache);
-    ['pvpScope', 'pbScope', 'buildEditScope', 'buildDupScope'].forEach(id => {
+    ['pvpScope', 'pbScope', 'buildEditScope', 'buildDupScope', 'evScope'].forEach(id => {
         const sel = $(id);
         if (!sel) return;
         const current = sel.value;
         sel.innerHTML = '';
         const opt1 = document.createElement('option');
         opt1.value = SHARED;
-        opt1.textContent = '🌐 Общий (для всех гильдий)';
+        opt1.textContent = '🌐 Общий';
         sel.appendChild(opt1);
         clans.forEach(c => {
             const opt = document.createElement('option');
@@ -259,7 +221,7 @@ function renderScopeSelects() {
         });
         if (current && Array.from(sel.options).some(o => o.value === current)) {
             sel.value = current;
-        } else if (currentClan && (id === 'pvpScope' || id === 'pbScope')) {
+        } else if (currentClan && (id === 'pvpScope' || id === 'pbScope' || id === 'evScope')) {
             sel.value = currentClan;
         }
     });
@@ -337,6 +299,9 @@ function openClan(id) {
     renderBuilds('pvp');
     renderBuilds('pb');
     renderContacts();
+    renderEvents();
+    renderTreasury();
+    renderApplications();
 }
 $('backBtn').addEventListener('click', () => showScreen('home'));
 $('clanLeaveBtn').addEventListener('click', () => {
@@ -356,8 +321,20 @@ document.querySelectorAll('.tab').forEach(btn => {
         btn.classList.add('active');
         currentTab = btn.dataset.tab;
         $('tab-' + currentTab).classList.add('active');
+        applySearchFilter();
     });
 });
+
+/* ===================== ПОИСК ===================== */
+$('searchInput').addEventListener('input', applySearchFilter);
+function applySearchFilter() {
+    const q = $('searchInput').value.toLowerCase().trim();
+    document.querySelectorAll('.tab-content.active .player-list li').forEach(li => {
+        if (!q) { li.style.display = ''; return; }
+        const text = li.textContent.toLowerCase();
+        li.style.display = text.includes(q) ? '' : 'none';
+    });
+}
 
 /* ===================== СПИСКИ ===================== */
 function renderAll() { if (currentClan) TABS.forEach(loadList); }
@@ -391,6 +368,7 @@ async function loadList(tab) {
         }
         ul.appendChild(li);
     });
+    applySearchFilter();
 }
 
 /* ===================== БИЛДЫ ===================== */
@@ -477,11 +455,14 @@ function createBuildCard(item) {
     const rankBadge = (item.type === 'pb' && item.rank)
         ? `<span class="build-rank">Ранг ${escapeHtml(item.rank)}</span>` : '';
 
-    const actions = isAdmin ? `<div class="build-actions">
-        <button class="edit" title="Редактировать">✏️</button>
-        <button class="copy" title="Дублировать">📋</button>
-        <button class="delete" title="Удалить">🗑</button>
-    </div>` : '';
+    const actions = `<div class="build-actions">
+        <button class="share" title="Скопировать ссылку">🔗</button>
+        ${isAdmin ? `
+            <button class="edit" title="Редактировать">✏️</button>
+            <button class="copy" title="Дублировать">📋</button>
+            <button class="delete" title="Удалить">🗑</button>
+        ` : ''}
+    </div>`;
 
     card.innerHTML = `
         <div class="build-header">
@@ -527,6 +508,14 @@ function createBuildCard(item) {
                 </div>`).join('')}</div>
         </div>` : ''}
     `;
+
+    card.querySelector('.share').addEventListener('click', () => {
+        const url = `${location.origin}${location.pathname}#build=${item.id}`;
+        navigator.clipboard.writeText(url).then(
+            () => alert('🔗 Ссылка на билд скопирована!'),
+            () => prompt('Скопируйте ссылку:', url)
+        );
+    });
 
     if (isAdmin) {
         card.querySelector('.edit').addEventListener('click', () => openBuildEdit(item));
@@ -591,13 +580,14 @@ async function addBuild(type) {
 $('pvpAddBtn').addEventListener('click', () => addBuild('pvp'));
 $('pbAddBtn').addEventListener('click', () => addBuild('pb'));
 function flashStatusEl(el, text, color) {
+    if (!el) return;
     el.textContent = text;
     el.style.color = color;
     clearTimeout(el._t);
     el._t = setTimeout(() => el.textContent = '', 2000);
 }
 
-/* ===================== РЕДАКТИРОВАНИЕ ===================== */
+/* ===================== РЕДАКТИРОВАНИЕ БИЛДА ===================== */
 function openBuildEdit(item) {
     editingBuild = { id: item.id, type: item.type };
     $('buildEditTitle').textContent = item.type === 'pvp'
@@ -718,6 +708,475 @@ async function deleteBuild(id, type) {
     renderBuilds(type);
 }
 
+/* ===================== СОБЫТИЯ ===================== */
+async function renderEvents() {
+    if (!currentClan) return;
+    const container = $('eventsList');
+    if (!container) return;
+    container.innerHTML = '<div class="empty">Загрузка…</div>';
+
+    const { data, error } = await supabase.from('events').select('*')
+        .or(`is_shared.eq.true,clan.eq.${currentClan}`)
+        .order('event_date', { ascending: true });
+
+    if (error) { container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
+    if (!data?.length) { container.innerHTML = '<div class="empty">Событий пока нет</div>'; return; }
+
+    container.innerHTML = '';
+    const now = Date.now();
+    const monthNames = ['ЯНВ','ФЕВ','МАР','АПР','МАЯ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
+
+    data.forEach(ev => {
+        const d = new Date(ev.event_date);
+        const isPast = d.getTime() < now;
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = monthNames[d.getMonth()];
+        const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+
+        const card = document.createElement('div');
+        card.className = 'event-card' + (isPast ? ' past' : '');
+
+        const scopeBadge = ev.is_shared
+            ? `<span class="event-badge shared">🌐 Общий</span>`
+            : `<span class="event-badge clan">🏰 ${escapeHtml(clansCache[ev.clan]?.name || ev.clan)}</span>`;
+
+        const actions = isAdmin ? `<div class="event-actions">
+            <button class="delete" title="Удалить">🗑</button>
+        </div>` : '';
+
+        card.innerHTML = `
+            <div class="event-date-block">
+                <div class="event-day">${day}</div>
+                <div class="event-month">${month}</div>
+            </div>
+            <div class="event-info">
+                <div class="event-title">${scopeBadge}${escapeHtml(ev.title)}</div>
+                <div class="event-time">🕐 ${d.toLocaleDateString('ru-RU')} в ${time}</div>
+                ${ev.description ? `<div class="event-desc">${escapeHtml(ev.description)}</div>` : ''}
+            </div>
+            ${actions}
+        `;
+
+        if (isAdmin) {
+            card.querySelector('.delete').addEventListener('click', async () => {
+                if (!confirm('Удалить событие?')) return;
+                const { error } = await supabase.from('events').delete().eq('id', ev.id);
+                if (error) return alert(error.message);
+                renderEvents();
+            });
+        }
+
+        container.appendChild(card);
+    });
+}
+
+$('evAddBtn').addEventListener('click', async () => {
+    if (!isAdmin || !currentClan) return;
+    const title = $('evTitle').value.trim();
+    const dateStr = $('evDate').value;
+    const desc = $('evDesc').value.trim();
+    const scopeVal = $('evScope').value;
+    const isShared = scopeVal === SHARED;
+    const clanVal = isShared ? null : scopeVal;
+    const statusEl = $('evStatus');
+
+    if (!title) { flashStatusEl(statusEl, 'Введите название', '#ff7a7a'); return; }
+    if (!dateStr) { flashStatusEl(statusEl, 'Укажите дату', '#ff7a7a'); return; }
+
+    const { error } = await supabase.from('events').insert({
+        clan: clanVal,
+        is_shared: isShared,
+        title,
+        event_date: new Date(dateStr).toISOString(),
+        description: desc || null
+    });
+
+    if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
+
+    ['evTitle','evDate','evDesc'].forEach(id => $(id).value = '');
+    flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
+    renderEvents();
+
+    sendDiscordWebhook('📅 **Новое событие**', `**${title}**\n${dateStr}\n${desc || ''}`);
+});
+
+/* ===================== КАЗНА ===================== */
+async function renderTreasury() {
+    if (!currentClan) return;
+    const container = $('treasuryList');
+    if (!container) return;
+    container.innerHTML = '<div class="empty">Загрузка…</div>';
+
+    const { data, error } = await supabase.from('treasury').select('*')
+        .eq('clan', currentClan)
+        .order('created_at', { ascending: false });
+
+    if (error) { container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
+
+    const list = data || [];
+    let balance = 0;
+    list.forEach(t => {
+        const amt = Number(t.amount) || 0;
+        balance += t.type === 'in' ? amt : -amt;
+    });
+
+    const balEl = $('treasuryBalance');
+    balEl.textContent = balance.toLocaleString('ru-RU');
+    balEl.classList.toggle('negative', balance < 0);
+
+    if (!list.length) { container.innerHTML = '<div class="empty">Операций пока нет</div>'; return; }
+
+    container.innerHTML = '';
+    list.forEach(t => {
+        const amt = Number(t.amount) || 0;
+        const d = new Date(t.created_at);
+        const dateStr = d.toLocaleDateString('ru-RU') + ' ' +
+                        String(d.getHours()).padStart(2,'0') + ':' +
+                        String(d.getMinutes()).padStart(2,'0');
+
+        const item = document.createElement('div');
+        item.className = 'treasury-item ' + (t.type === 'in' ? 'in' : 'out');
+
+        const delBtn = isAdmin ? `<button title="Удалить">🗑</button>` : '';
+
+        item.innerHTML = `
+            <div class="treasury-amount">${t.type === 'in' ? '+' : '−'}${amt.toLocaleString('ru-RU')}</div>
+            <div class="treasury-info">
+                <div class="treasury-desc">${escapeHtml(t.description || '—')}</div>
+                <div class="treasury-date">${dateStr}</div>
+            </div>
+            ${delBtn}
+        `;
+
+        if (isAdmin) {
+            item.querySelector('button').addEventListener('click', async () => {
+                if (!confirm('Удалить операцию?')) return;
+                const { error } = await supabase.from('treasury').delete().eq('id', t.id);
+                if (error) return alert(error.message);
+                renderTreasury();
+            });
+        }
+        container.appendChild(item);
+    });
+}
+
+$('trAddBtn').addEventListener('click', async () => {
+    if (!isAdmin || !currentClan) return;
+    const type = $('trType').value;
+    const amountRaw = $('trAmount').value;
+    const desc = $('trDesc').value.trim();
+    const statusEl = $('trStatus');
+
+    const amount = Number(amountRaw);
+    if (!amount || amount <= 0) { flashStatusEl(statusEl, 'Введите сумму > 0', '#ff7a7a'); return; }
+    if (!desc) { flashStatusEl(statusEl, 'Добавьте описание', '#ff7a7a'); return; }
+
+    const { error } = await supabase.from('treasury').insert({
+        clan: currentClan,
+        type,
+        amount,
+        description: desc
+    });
+
+    if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
+
+    $('trAmount').value = '';
+    $('trDesc').value = '';
+    flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
+    renderTreasury();
+});
+
+/* ===================== ЗАЯВКИ (АДМИН) ===================== */
+async function renderApplications() {
+    const container = $('applicationsList');
+    if (!container || !isAdmin) return;
+    container.innerHTML = '<div class="empty">Загрузка…</div>';
+
+    const { data, error } = await supabase.from('applications').select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) { container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
+    if (!data?.length) { container.innerHTML = '<div class="empty">Заявок пока нет</div>'; return; }
+
+    container.innerHTML = '';
+    data.forEach(app => {
+        const d = new Date(app.created_at);
+        const dateStr = d.toLocaleDateString('ru-RU') + ' ' +
+                        String(d.getHours()).padStart(2,'0') + ':' +
+                        String(d.getMinutes()).padStart(2,'0');
+
+        const card = document.createElement('div');
+        card.className = 'application-card ' + (app.status || 'new');
+
+        const targetClanName = app.target_clan && clansCache[app.target_clan]
+            ? clansCache[app.target_clan].name
+            : (app.target_clan || '—');
+
+        card.innerHTML = `
+            <div class="application-head">
+                <div class="application-nick">👤 ${escapeHtml(app.nickname)}</div>
+                <div class="application-date">${dateStr}</div>
+            </div>
+            <div class="application-grid">
+                <div><b>Возраст</b>${escapeHtml(app.age || '—')}</div>
+                <div><b>Опыт</b>${escapeHtml(app.experience || '—')}</div>
+                <div><b>Контакт</b>${escapeHtml(app.contact || '—')}</div>
+                <div><b>Гильдия</b>${escapeHtml(targetClanName)}</div>
+            </div>
+            ${app.why ? `<div class="application-why">${escapeHtml(app.why)}</div>` : ''}
+            <div class="application-actions">
+                ${app.status !== 'approved' ? `<button class="approve">✅ Принять</button>` : ''}
+                ${app.status !== 'rejected' ? `<button class="reject">❌ Отклонить</button>` : ''}
+                <button class="delete">🗑 Удалить</button>
+            </div>
+        `;
+
+        const approveBtn = card.querySelector('.approve');
+        const rejectBtn = card.querySelector('.reject');
+        const deleteBtn = card.querySelector('.delete');
+
+        if (approveBtn) approveBtn.addEventListener('click', () => updateAppStatus(app.id, 'approved'));
+        if (rejectBtn)  rejectBtn.addEventListener('click', () => updateAppStatus(app.id, 'rejected'));
+        if (deleteBtn)  deleteBtn.addEventListener('click', async () => {
+            if (!confirm('Удалить заявку?')) return;
+            await supabase.from('applications').delete().eq('id', app.id);
+            renderApplications();
+        });
+
+        container.appendChild(card);
+    });
+}
+
+async function updateAppStatus(id, status) {
+    const { error } = await supabase.from('applications').update({ status }).eq('id', id);
+    if (error) return alert(error.message);
+    renderApplications();
+}
+
+/* ===================== ФОРМА ЗАЯВКИ (главная) ===================== */
+function renderApplyClanSelect() {
+    const sel = $('applyClan');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Не выбрано —</option>';
+    Object.values(clansCache).forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.id;
+        o.textContent = c.name;
+        sel.appendChild(o);
+    });
+}
+
+$('applyBtn').addEventListener('click', async () => {
+    const nick = $('applyNick').value.trim();
+    const why = $('applyWhy').value.trim();
+    const msg = $('applyMsg');
+    msg.style.color = '';
+
+    if (!nick) { msg.textContent = 'Введите никнейм'; msg.style.color = '#ff7a7a'; return; }
+    if (!why) { msg.textContent = 'Расскажите, почему хотите вступить'; msg.style.color = '#ff7a7a'; return; }
+
+    const payload = {
+        nickname: nick,
+        age: $('applyAge').value.trim() || null,
+        experience: $('applyExp').value.trim() || null,
+        why,
+        contact: $('applyContact').value.trim() || null,
+        target_clan: $('applyClan').value || null
+    };
+
+    $('applyBtn').disabled = true;
+    const { error } = await supabase.from('applications').insert(payload);
+    $('applyBtn').disabled = false;
+
+    if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
+
+    msg.textContent = '✔ Заявка отправлена! С вами свяжутся.';
+    msg.style.color = '#6ee7a7';
+
+    sendDiscordWebhook('📝 **Новая заявка в гильдию**',
+        `**Ник:** ${payload.nickname}\n` +
+        `**Возраст:** ${payload.age || '—'}\n` +
+        `**Опыт:** ${payload.experience || '—'}\n` +
+        `**Контакт:** ${payload.contact || '—'}\n` +
+        `**Гильдия:** ${payload.target_clan ? (clansCache[payload.target_clan]?.name || payload.target_clan) : '—'}\n\n` +
+        `**Зачем:** ${payload.why}`);
+
+    ['applyNick','applyAge','applyExp','applyContact','applyWhy'].forEach(id => $(id).value = '');
+    $('applyClan').value = '';
+});
+
+/* ===================== FAQ ===================== */
+async function loadFaq() {
+    const { data, error } = await supabase.from('faq').select('*').order('sort_order');
+    if (error) { console.warn(error); return; }
+    faqCache = data || [];
+    renderFaq();
+    renderFaqAdmin();
+}
+
+function renderFaq() {
+    const container = $('faqList');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!faqCache.length) { container.innerHTML = '<div class="empty">Пока нет вопросов</div>'; return; }
+
+    faqCache.forEach(item => {
+        const details = document.createElement('details');
+        details.className = 'faq-item';
+        details.innerHTML = `
+            <summary class="faq-q">${escapeHtml(item.question)}</summary>
+            <div class="faq-a">${escapeHtml(item.answer)}</div>
+        `;
+        container.appendChild(details);
+    });
+}
+
+function renderFaqAdmin() {
+    const container = $('faqAdminList');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!faqCache.length) { container.innerHTML = '<div class="empty">Пока нет</div>'; return; }
+
+    faqCache.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'faq-admin-item';
+        el.innerHTML = `
+            <div class="txt">
+                <b>${escapeHtml(item.question)}</b>
+                <span>${escapeHtml(item.answer)}</span>
+            </div>
+            <button title="Удалить">🗑</button>
+        `;
+        el.querySelector('button').addEventListener('click', async () => {
+            if (!confirm('Удалить вопрос?')) return;
+            await supabase.from('faq').delete().eq('id', item.id);
+            loadFaq();
+        });
+        container.appendChild(el);
+    });
+}
+
+$('faqAddBtn').addEventListener('click', async () => {
+    const q = $('faqQ').value.trim();
+    const a = $('faqA').value.trim();
+    if (!q || !a) { alert('Заполни вопрос и ответ'); return; }
+
+    const { error } = await supabase.from('faq').insert({
+        question: q,
+        answer: a,
+        sort_order: faqCache.length + 1
+    });
+    if (error) return alert(error.message);
+
+    $('faqQ').value = '';
+    $('faqA').value = '';
+    loadFaq();
+});
+
+/* ===================== НАСТРОЙКИ САЙТА ===================== */
+async function loadSettings() {
+    const { data, error } = await supabase.from('site_settings').select('*').eq('id', 'main').single();
+    if (error) { console.warn('Настройки не загружены:', error.message); return; }
+    settingsCache = data;
+    renderYoutubeBlock(data);
+}
+
+function extractYouTubeHandle(url) {
+    if (!url) return '';
+    try {
+        const u = new URL(url.trim());
+        const path = u.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+        if (path.startsWith('@')) return path.split('/')[0];
+        if (path.startsWith('channel/')) return path.replace('channel/', '').split('/')[0];
+        if (path.startsWith('c/'))       return path.replace('c/', '').split('/')[0];
+        if (path.startsWith('user/'))    return path.replace('user/', '').split('/')[0];
+        return path.split('/')[0] || '';
+    } catch { return ''; }
+}
+
+function renderYoutubeBlock(s) {
+    const section = $('promoSection');
+    if (!section || !s || !s.youtube_url) { if (section) section.hidden = true; return; }
+
+    $('ytPromoCard').href = s.youtube_url;
+    $('ytName').textContent = s.youtube_name || 'YouTube';
+    $('ytDesc').textContent = s.youtube_desc || '';
+
+    const handle = extractYouTubeHandle(s.youtube_url);
+    const logo = $('ytLogo');
+    if (handle) {
+        logo.src = `https://unavatar.io/youtube/${handle}`;
+        logo.classList.remove('promo-logo-fallback');
+    } else {
+        logo.src = 'images/aov.png';
+        logo.classList.add('promo-logo-fallback');
+    }
+
+    section.hidden = false;
+}
+
+/* ===================== СЧЁТЧИКИ ===================== */
+async function loadStats() {
+    const row = $('statsRow');
+    if (!row) return;
+    row.innerHTML = '';
+
+    try {
+        const [e, f, n, p, b1, b2, c] = await Promise.all([
+            supabase.from('enemies').select('id', { count: 'exact', head: true }),
+            supabase.from('friends').select('id', { count: 'exact', head: true }),
+            supabase.from('neutral').select('id', { count: 'exact', head: true }),
+            supabase.from('personal').select('id', { count: 'exact', head: true }),
+            supabase.from('builds').select('id', { count: 'exact', head: true }).eq('type', 'pvp'),
+            supabase.from('builds').select('id', { count: 'exact', head: true }).eq('type', 'pb'),
+            supabase.from('clans').select('id', { count: 'exact', head: true })
+        ]);
+
+        const stats = [
+            { label: 'Врагов',    value: e.count || 0, ico: '🔴' },
+            { label: 'Друзей',    value: f.count || 0, ico: '🟢' },
+            { label: 'Нейтралов', value: n.count || 0, ico: '⚪' },
+            { label: 'В личном',  value: p.count || 0, ico: '🟡' },
+            { label: 'Билды ПВП', value: b1.count || 0, ico: '⚔️' },
+            { label: 'Билды ПБ',  value: b2.count || 0, ico: '🛡' },
+            { label: 'Гильдий',   value: c.count || 0, ico: '🏰' }
+        ];
+
+        stats.forEach(s => {
+            const el = document.createElement('div');
+            el.className = 'stat-card';
+            el.innerHTML = `
+                <div class="stat-value">${s.ico} ${s.value}</div>
+                <div class="stat-label">${s.label}</div>
+            `;
+            row.appendChild(el);
+        });
+    } catch (err) { console.warn('Stats error:', err); }
+}
+
+/* ===================== DISCORD WEBHOOK ===================== */
+async function sendDiscordWebhook(title, content) {
+    const url = settingsCache?.discord_webhook;
+    if (!url) return;
+
+    try {
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                embeds: [{
+                    title,
+                    description: content.substring(0, 4000),
+                    color: 0x2b6cb0,
+                    timestamp: new Date().toISOString()
+                }]
+            })
+        });
+    } catch (err) {
+        console.warn('Webhook error:', err);
+    }
+}
+
 /* ===================== КОНТАКТЫ ===================== */
 function renderContacts() {
     const container = $('contactsList');
@@ -749,6 +1208,7 @@ function openAdminPanel() {
     if (!isAdmin) return;
     renderAdminClanSelect();
     renderSiteFields();
+    renderFaqAdmin();
     $('adminPanelMsg').textContent = '';
     $('adminSiteMsg').textContent = '';
     $('adminNewPass').value = '';
@@ -760,7 +1220,6 @@ $('adminPanelBtn3').addEventListener('click', openAdminPanel);
 function closeAdminPanel() { $('adminPanelModal').hidden = true; }
 $('closeAdminPanel').addEventListener('click', closeAdminPanel);
 
-/* Вкладки админки */
 document.querySelectorAll('.admin-tab').forEach(tab => {
     tab.addEventListener('click', () => {
         const target = tab.dataset.atab;
@@ -769,6 +1228,7 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
         tab.classList.add('active');
         $('atab-' + target).classList.add('active');
         if (target === 'site') renderSiteFields();
+        if (target === 'faq') renderFaqAdmin();
     });
 });
 
@@ -821,12 +1281,12 @@ $('saveAdminSettings').addEventListener('click', async () => {
     renderContacts();
 });
 
-/* Настройки сайта */
 function renderSiteFields() {
     const s = settingsCache || {};
     $('adminYoutubeUrl').value = s.youtube_url || '';
     $('adminYoutubeName').value = s.youtube_name || '';
     $('adminYoutubeDesc').value = s.youtube_desc || '';
+    $('adminWebhook').value = s.discord_webhook || '';
     $('adminSiteMsg').textContent = '';
 }
 $('saveSiteSettings').addEventListener('click', async () => {
@@ -836,6 +1296,7 @@ $('saveSiteSettings').addEventListener('click', async () => {
         youtube_url: $('adminYoutubeUrl').value.trim() || null,
         youtube_name: $('adminYoutubeName').value.trim() || null,
         youtube_desc: $('adminYoutubeDesc').value || null,
+        discord_webhook: $('adminWebhook').value.trim() || null,
         updated_at: new Date().toISOString()
     };
 
@@ -939,6 +1400,7 @@ $('addBtn').addEventListener('click', async () => {
 });
 function flashStatus(text, color) {
     const el = $('status');
+    if (!el) return;
     el.textContent = text; el.style.color = color;
     clearTimeout(flashStatus._t);
     flashStatus._t = setTimeout(() => el.textContent = '', 2000);
@@ -975,6 +1437,36 @@ document.querySelectorAll('#moveModal [data-target]').forEach(btn => {
     });
 });
 
+/* ===================== ОБРАБОТКА #build=ID ===================== */
+async function handleBuildHash() {
+    const hash = location.hash;
+    const m = hash.match(/^#build=([a-f0-9-]+)$/i);
+    if (!m) return;
+    const id = m[1];
+
+    const { data, error } = await supabase.from('builds').select('*').eq('id', id).single();
+    if (error || !data) return;
+
+    const section = data.type === 'pvp' ? 'pvp' : 'pb';
+    const sideBtn = document.querySelector(`.side-item[data-section="${section}"]`);
+    if (sideBtn) sideBtn.click();
+
+    setTimeout(() => {
+        const cards = document.querySelectorAll('.build-card');
+        for (const c of cards) {
+            if (c.querySelector('.build-ship')?.textContent === data.ship_name) {
+                c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                c.style.boxShadow = '0 0 0 3px #b48aff';
+                setTimeout(() => c.style.boxShadow = '', 2500);
+                break;
+            }
+        }
+    }, 600);
+}
+window.addEventListener('hashchange', () => {
+    if (location.hash.startsWith('#build=')) handleBuildHash();
+});
+
 /* ===================== УТИЛИТА ===================== */
 function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, c => ({
@@ -989,6 +1481,9 @@ function escapeHtml(str) {
 
     await loadClans();
     await loadSettings();
+    renderApplyClanSelect();
+    await loadFaq();
+    loadStats();
 
     const { data: { session } } = await supabase.auth.getSession();
     isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
@@ -996,4 +1491,6 @@ function escapeHtml(str) {
 
     showScreen('home');
     applyBg();
+
+    setTimeout(handleBuildHash, 800);
 })();
