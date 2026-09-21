@@ -8,11 +8,6 @@
 </head>
 <body>
 
-    <!-- ТУЛБАР ИГР -->
-    <div id="gameToolbar" class="game-toolbar" hidden>
-        <div id="gameTabs" class="game-toolbar-tabs"></div>
-    </div>
-
     <!-- ГЛАВНАЯ -->
     <div id="screen-home" class="screen">
         <div class="top-right">
@@ -263,7 +258,7 @@
         </div>
     </div>
 
-    <!-- ═══════════ АДМИН-ПАНЕЛЬ (ОТДЕЛЬНАЯ СТРАНИЦА) ═══════════ -->
+    <!-- ═══════════ АДМИН-ПАНЕЛЬ ═══════════ -->
     <div id="adminView" hidden>
         <aside class="admin-sidebar">
             <div class="admin-sidebar-brand">
@@ -293,6 +288,17 @@
                     <span>Настройки</span>
                 </button>
 
+                <div class="admin-nav-divider">Журналы</div>
+
+                <button class="admin-nav-item" data-apanel="adminlog">
+                    <span class="admin-nav-ico">📜</span>
+                    <span>Журнал действий</span>
+                </button>
+                <button class="admin-nav-item" data-apanel="viewhistory">
+                    <span class="admin-nav-ico">👁</span>
+                    <span>История просмотров</span>
+                </button>
+
                 <div class="admin-nav-divider">В разработке</div>
 
                 <button class="admin-nav-item wip" data-wip="1">
@@ -302,10 +308,6 @@
                 <button class="admin-nav-item wip" data-wip="1">
                     <span class="admin-nav-ico">📊</span>
                     <span>Аналитика</span>
-                </button>
-                <button class="admin-nav-item wip" data-wip="1">
-                    <span class="admin-nav-ico">📜</span>
-                    <span>Журнал действий</span>
                 </button>
                 <button class="admin-nav-item wip" data-wip="1">
                     <span class="admin-nav-ico">💾</span>
@@ -438,14 +440,35 @@
                     </div>
                 </div>
             </section>
+
+            <!-- РАЗДЕЛ: ЖУРНАЛ ДЕЙСТВИЙ -->
+            <section class="admin-section" data-apanel="adminlog">
+                <h2 class="admin-section-title">📜 Журнал действий админов</h2>
+                <p class="hint">Последние 500 операций. Кто, что и когда делал.</p>
+                <div class="modal-actions" style="margin-bottom:12px">
+                    <button id="refreshAdminLog" class="secondary">🔄 Обновить</button>
+                </div>
+                <div id="adminLogList" class="log-list"></div>
+            </section>
+
+            <!-- РАЗДЕЛ: ИСТОРИЯ ПРОСМОТРОВ -->
+            <section class="admin-section" data-apanel="viewhistory">
+                <h2 class="admin-section-title">👁 История просмотров</h2>
+                <p class="hint">Кто и когда заходил в гильдии.</p>
+                <div class="modal-actions" style="margin-bottom:12px">
+                    <button id="refreshViewHistory" class="secondary">🔄 Обновить</button>
+                </div>
+                <div id="viewHistoryList" class="log-list"></div>
+            </section>
         </main>
     </div>
 
-    <!-- МОДАЛКА: ПАРОЛЬ -->
+    <!-- МОДАЛКА: ПАРОЛЬ ГИЛЬДИИ (с ником) -->
     <div id="clanPassModal" class="modal" hidden>
         <div class="modal-content">
             <h2>🔐 Вход в гильдию</h2>
             <p id="clanPassName" class="auth-clan-name"></p>
+            <input type="text" id="clanNickname" placeholder="Ваш игровой ник" maxlength="32" autocomplete="nickname">
             <input type="password" id="clanPassword" placeholder="Пароль гильдии" autocomplete="current-password">
             <p id="clanPassError" class="error"></p>
             <div class="modal-actions">
@@ -455,10 +478,11 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА: ВХОД АДМИНА -->
+    <!-- МОДАЛКА: ВХОД АДМИНА (с ником) -->
     <div id="adminAuthModal" class="modal" hidden>
         <div class="modal-content">
             <h2>🔐 Вход администратора</h2>
+            <input type="text" id="adminNickname" placeholder="Ваш ник" maxlength="32" autocomplete="nickname">
             <input type="email" id="adminEmail" placeholder="Email" autocomplete="username">
             <input type="password" id="adminPassword" placeholder="Пароль" autocomplete="current-password">
             <p id="adminAuthError" class="error"></p>
