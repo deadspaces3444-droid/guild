@@ -8,7 +8,7 @@
 </head>
 <body>
 
-    <!-- ТУЛБАР ИГР (фиксированный сверху) -->
+    <!-- ТУЛБАР ИГР -->
     <div id="gameToolbar" class="game-toolbar" hidden>
         <div id="gameTabs" class="game-toolbar-tabs"></div>
     </div>
@@ -312,10 +312,8 @@
                 <button class="admin-tab" data-atab="site">⚙️ Настройки</button>
             </div>
 
-            <!-- ИГРЫ -->
             <div id="atab-games" class="admin-tab-content">
                 <p class="hint admin-hint">Игры, для которых ведутся кланы на сайте</p>
-
                 <div class="add-form" style="border-style:solid">
                     <input type="text" id="gameId" placeholder="ID (латиница, напр. wosb)" maxlength="30">
                     <input type="text" id="gameName" placeholder="Название игры *" maxlength="80">
@@ -324,11 +322,9 @@
                     <button id="gameAddBtn">➕ Добавить</button>
                     <span id="gameStatus"></span>
                 </div>
-
                 <div id="gamesAdminList" class="partners-admin-list"></div>
             </div>
 
-            <!-- ГИЛЬДИИ -->
             <div id="atab-clans" class="admin-tab-content active">
                 <div class="admin-field">
                     <label>Гильдия</label>
@@ -347,10 +343,10 @@
                 <div class="modal-actions">
                     <button id="saveAdminSettings">💾 Сохранить</button>
                     <button id="openAddClan" class="secondary">➕ Новая гильдия</button>
+                    <button id="deleteClanBtn" class="danger">🗑 Удалить гильдию</button>
                 </div>
             </div>
 
-            <!-- ПАРТНЁРЫ -->
             <div id="atab-partners" class="admin-tab-content">
                 <p class="hint admin-hint">
                     Для <b>YouTube-ссылок</b> логотип подтягивается автоматически.
@@ -375,7 +371,6 @@
                 <div id="partnersAdminList" class="partners-admin-list"></div>
             </div>
 
-            <!-- FAQ -->
             <div id="atab-faq" class="admin-tab-content">
                 <p class="hint admin-hint">Вопросы и ответы на главной</p>
                 <div class="add-form" style="border-style:solid">
@@ -386,7 +381,6 @@
                 <div id="faqAdminList" class="faq-admin-list"></div>
             </div>
 
-            <!-- НАСТРОЙКИ -->
             <div id="atab-site" class="admin-tab-content">
                 <div class="admin-field">
                     <label>Discord Webhook URL</label>
@@ -518,7 +512,7 @@
 
     <footer class="site-footer">
         <span class="footer-left">Mist Time — Сергеев С.В</span>
-        <span class="footer-right">v1.5.1</span>
+        <span class="footer-right">v1.5.2</span>
     </footer>
 
     <script type="module" src="app.js"></script>
