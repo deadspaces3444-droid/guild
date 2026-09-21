@@ -899,4 +899,771 @@ async function renderApplications() {
                 <div><b>Контакт</b>${escapeHtml(app.contact || '—')}</div>
                 <div><b>Гильдия</b>${escapeHtml(targetClanName)}</div>
             </div>
-            ${app.why ? `<div class="application-why">${escapeHtml(app.why)}</div
+            ${app.why ? `<div class="application-why">${escapeHtml(app.why)}</div>` : ''}
+            <div class="application-actions">
+                ${app.status !== 'approved' ? `<button class="approve">✅ Принять</button>` : ''}
+                ${app.status !== 'rejected' ? `<button class="reject">❌ Отклонить</button>` : ''}
+                <button class="delete">🗑 Удалить</button>
+            </div>
+        `;
+
+        const approveBtn = card.querySelector('.approve');
+        const rejectBtn = card.querySelector('.reject');
+        const deleteBtn = card.querySelector('.delete');
+
+        if (approveBtn) approveBtn.addEventListener('click', () => updateAppStatus(app.id, 'approved'));
+        if (rejectBtn)  rejectBtn.addEventListener('click', () => updateAppStatus(app.id, 'rejected'));
+        if (deleteBtn)  deleteBtn.addEventListener('click', async () => {
+            if (!confirm('Удалить заявку?')) return;
+            await supabase.from('applications').delete().eq('id', app.id);
+            renderApplications();
+        });
+
+        container.appendChild(card);
+    });
+}
+
+async function updateAppStatus(id, status) {
+    const { error } = await supabase.from('applications').update({ status }).eq('id', id);
+    if (error) return alert(error.message);
+    renderApplications();
+}
+
+/* ===================== ФОРМА ЗАЯВКИ ===================== */
+function renderApplyClanSelect() {
+    const sel = $('applyClan');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Не выбрано —</option>';
+    Object.values(clansCache).forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.id;
+        o.textContent = c.name;
+        sel.appendChild(o);
+    });
+}
+
+$('applyBtn').addEventListener('click', async () => {
+    const nick = $('applyNick').value.trim();
+    const why = $('applyWhy').value.trim();
+    const msg = $('applyMsg');
+    msg.style.color = '';
+
+    if (!nick) { msg.textContent = 'Введите никнейм'; msg.style.color = '#ff7a7a'; return; }
+    if (!why) { msg.textContent = 'Расскажите, почему хотите вступить'; msg.style.color = '#ff7a7a'; return; }
+
+    const payload = {
+        nickname: nick,
+        age: $('applyAge').value.trim() || null,
+        experience: $('applyExp').value.trim() || null,
+        why,
+        contact: $('applyContact').value.trim() || null,
+        target_clan: $('applyClan').value || null
+    };
+
+    $('applyBtn').disabled = true;
+    const { error } = await supabase.from('applications').insert(payload);
+    $('applyBtn').disabled = false;
+
+    if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
+
+    msg.textContent = '✔ Заявка отправлена! С вами свяжутся.';
+    msg.style.color = '#6ee7a7';
+
+    sendDiscordWebhook('📝 **Новая заявка в гильдию**',
+        `**Ник:** ${payload.nickname}\n` +
+        `**Возраст:** ${payload.age || '—'}\n` +
+        `**Опыт:** ${payload.experience || '—'}\n` +
+        `**Контакт:** ${payload.contact || '—'}\n` +
+        `**Гильдия:** ${payload.target_clan ? (clansCache[payload.target_clan]?.name || payload.target_clan) : '—'}\n\n` +
+        `**Зачем:** ${payload.why}`);
+
+    ['applyNick','applyAge','applyExp','applyContact','applyWhy'].forEach(id => $(id).value = '');
+    $('applyClan').value = '';
+});
+
+/* ===================== FAQ ===================== */
+async function loadFaq() {
+    const { data, error } = await supabase.from('faq').select('*').order('sort_order');
+    if (error) { console.warn(error); return; }
+    faqCache = data || [];
+    renderFaq();
+    renderFaqAdmin();
+}
+
+function renderFaq() {
+    const container = $('faqList');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!faqCache.length) { container.innerHTML = '<div class="empty">Пока нет вопросов</div>'; return; }
+
+    faqCache.forEach(item => {
+        const details = document.createElement('details');
+        details.className = 'faq-item';
+        details.innerHTML = `
+            <summary class="faq-q">${escapeHtml(item.question)}</summary>
+            <div class="faq-a">${escapeHtml(item.answer)}</div>
+        `;
+        container.appendChild(details);
+    });
+}
+
+function renderFaqAdmin() {
+    const container = $('faqAdminList');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!faqCache.length) { container.innerHTML = '<div class="empty">Пока нет</div>'; return; }
+
+    faqCache.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'faq-admin-item';
+        el.innerHTML = `
+            <div class="txt">
+                <b>${escapeHtml(item.question)}</b>
+                <span>${escapeHtml(item.answer)}</span>
+            </div>
+            <button title="Удалить">🗑</button>
+        `;
+        el.querySelector('button').addEventListener('click', async () => {
+            if (!confirm('Удалить вопрос?')) return;
+            await supabase.from('faq').delete().eq('id', item.id);
+            loadFaq();
+        });
+        container.appendChild(el);
+    });
+}
+
+$('faqAddBtn').addEventListener('click', async () => {
+    const q = $('faqQ').value.trim();
+    const a = $('faqA').value.trim();
+    if (!q || !a) { alert('Заполни вопрос и ответ'); return; }
+
+    const { error } = await supabase.from('faq').insert({
+        question: q, answer: a, sort_order: faqCache.length + 1
+    });
+    if (error) return alert(error.message);
+
+    $('faqQ').value = '';
+    $('faqA').value = '';
+    loadFaq();
+});
+
+/* ===================== ПАРТНЁРЫ ===================== */
+async function loadPartners() {
+    const { data, error } = await supabase.from('partners').select('*')
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
+
+    if (error) { console.warn('Партнёры не загружены:', error.message); return; }
+    partnersCache = data || [];
+    renderPartnersHome();
+    renderPartnersAdmin();
+}
+
+/* Авто-логотип YouTube */
+function extractYouTubeHandle(url) {
+    if (!url) return '';
+    try {
+        const u = new URL(url.trim());
+        if (!/(?:^|\.)(?:youtube\.com|youtu\.be)$/i.test(u.hostname)) return '';
+        const path = u.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+        if (!path) return '';
+        if (path.startsWith('@')) return path.split('/')[0];
+        if (path.startsWith('channel/')) return path.replace('channel/', '').split('/')[0];
+        if (path.startsWith('c/'))       return path.replace('c/', '').split('/')[0];
+        if (path.startsWith('user/'))    return path.replace('user/', '').split('/')[0];
+        return path.split('/')[0] || '';
+    } catch { return ''; }
+}
+
+function getPartnerLogo(p) {
+    // 1) Если логотип загружен вручную — используем его
+    if (p.logo_url && p.logo_url.startsWith('data:')) return p.logo_url;
+    // 2) Если URL — YouTube, тянем автоматически через unavatar
+    const handle = extractYouTubeHandle(p.url);
+    if (handle) return `https://unavatar.io/youtube/${handle}`;
+    // 3) Если в logo_url что-то другое — используем как есть
+    if (p.logo_url) return p.logo_url;
+    // 4) Ничего нет — null (покажем букву)
+    return null;
+}
+
+function renderPartnersHome() {
+    const section = $('partnersSection');
+    const list = $('partnersList');
+    if (!section || !list) return;
+    list.innerHTML = '';
+
+    if (!partnersCache.length) { section.hidden = true; return; }
+    section.hidden = false;
+
+    partnersCache.forEach(p => {
+        const a = document.createElement('a');
+        a.className = 'partner-card';
+        a.href = p.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+
+        const logoEl = document.createElement('div');
+        logoEl.className = 'partner-logo';
+
+        const logoSrc = getPartnerLogo(p);
+        if (logoSrc) {
+            const img = document.createElement('img');
+            img.src = logoSrc;
+            img.alt = '';
+            img.onerror = () => {
+                // Если unavatar не смог — показываем букву
+                img.replaceWith(makePartnerLetter(p.name));
+            };
+            logoEl.appendChild(img);
+        } else {
+            logoEl.appendChild(makePartnerLetter(p.name));
+        }
+
+        const info = document.createElement('div');
+        info.className = 'partner-info';
+        info.innerHTML = `
+            <div class="partner-name">${escapeHtml(p.name)}</div>
+            ${p.description ? `<div class="partner-desc">${escapeHtml(p.description)}</div>` : ''}
+            <div class="partner-link">🔗 ${escapeHtml(p.url)}</div>
+        `;
+
+        a.appendChild(logoEl);
+        a.appendChild(info);
+        list.appendChild(a);
+    });
+}
+
+function makePartnerLetter(name) {
+    const span = document.createElement('span');
+    span.className = 'partner-letter';
+    span.textContent = (name || '?').trim()[0]?.toUpperCase() || '?';
+    span.style.background = colorFromString(name || '?');
+    return span;
+}
+
+function colorFromString(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+    const hue = Math.abs(h) % 360;
+    return `linear-gradient(135deg, hsl(${hue}, 55%, 45%), hsl(${hue}, 55%, 30%))`;
+}
+
+function renderPartnersAdmin() {
+    const container = $('partnersAdminList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!partnersCache.length) {
+        container.innerHTML = '<div class="empty">Пока нет партнёров</div>';
+        return;
+    }
+
+    partnersCache.forEach((p, idx) => {
+        const el = document.createElement('div');
+        el.className = 'partners-admin-item';
+
+        const letter = (p.name || '?')[0].toUpperCase();
+        const logoSrc = getPartnerLogo(p);
+        const logoHtml = logoSrc
+            ? `<img src="${escapeHtml(logoSrc)}" alt="" onerror="this.outerHTML='<span>${escapeHtml(letter)}</span>'">`
+            : `<span>${escapeHtml(letter)}</span>`;
+
+        el.innerHTML = `
+            <div class="logo-mini">${logoHtml}</div>
+            <div class="txt">
+                <b>${escapeHtml(p.name)}</b>
+                <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.url)}</a>
+            </div>
+            <div class="actions">
+                <button class="up" title="Выше" ${idx === 0 ? 'disabled style="opacity:.3"' : ''}>▲</button>
+                <button class="down" title="Ниже" ${idx === partnersCache.length - 1 ? 'disabled style="opacity:.3"' : ''}>▼</button>
+                <button class="delete" title="Удалить">🗑</button>
+            </div>
+        `;
+
+        el.querySelector('.up')?.addEventListener('click', () => movePartner(p.id, -1));
+        el.querySelector('.down')?.addEventListener('click', () => movePartner(p.id, +1));
+        el.querySelector('.delete').addEventListener('click', () => deletePartner(p.id));
+
+        container.appendChild(el);
+    });
+}
+
+async function movePartner(id, dir) {
+    const idx = partnersCache.findIndex(p => p.id === id);
+    if (idx === -1) return;
+    const swapIdx = idx + dir;
+    if (swapIdx < 0 || swapIdx >= partnersCache.length) return;
+
+    const a = partnersCache[idx];
+    const b = partnersCache[swapIdx];
+
+    await supabase.from('partners').update({ sort_order: swapIdx }).eq('id', a.id);
+    await supabase.from('partners').update({ sort_order: idx }).eq('id', b.id);
+
+    await loadPartners();
+}
+
+async function deletePartner(id) {
+    if (!confirm('Удалить партнёра?')) return;
+    await supabase.from('partners').delete().eq('id', id);
+    await loadPartners();
+}
+
+/* Загрузка логотипа с диска */
+function compressLogo(file, maxSize = 128, quality = 0.85) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = maxSize;
+                canvas.height = maxSize;
+                const ctx = canvas.getContext('2d');
+                const minSide = Math.min(img.width, img.height);
+                const sx = (img.width - minSide) / 2;
+                const sy = (img.height - minSide) / 2;
+                ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, maxSize, maxSize);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+$('partnerLogoPick').addEventListener('click', () => $('partnerLogoFile').click());
+
+$('partnerLogoFile').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+        partnerLogoData = await compressLogo(file);
+        $('partnerLogoImg').src = partnerLogoData;
+        $('partnerLogoPreview').hidden = false;
+        $('partnerLogoName').textContent = file.name;
+    } catch (err) {
+        alert('Не удалось загрузить картинку: ' + err.message);
+    }
+});
+
+$('partnerLogoClear').addEventListener('click', () => {
+    partnerLogoData = null;
+    $('partnerLogoFile').value = '';
+    $('partnerLogoPreview').hidden = true;
+    $('partnerLogoName').textContent = '';
+});
+
+$('partnerAddBtn').addEventListener('click', async () => {
+    const name = $('partnerName').value.trim();
+    const url = $('partnerUrl').value.trim();
+    const desc = $('partnerDesc').value.trim();
+    const statusEl = $('partnerStatus');
+
+    if (!name) { flashStatusEl(statusEl, 'Укажи название', '#ff7a7a'); return; }
+    if (!url) { flashStatusEl(statusEl, 'Укажи ссылку', '#ff7a7a'); return; }
+    if (!/^https?:\/\//i.test(url)) { flashStatusEl(statusEl, 'Ссылка должна начинаться с http:// или https://', '#ff7a7a'); return; }
+
+    const { error } = await supabase.from('partners').insert({
+        name, url,
+        logo_url: partnerLogoData || null,
+        description: desc || null,
+        sort_order: partnersCache.length
+    });
+
+    if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
+
+    ['partnerName','partnerUrl','partnerDesc'].forEach(id => $(id).value = '');
+    partnerLogoData = null;
+    $('partnerLogoFile').value = '';
+    $('partnerLogoPreview').hidden = true;
+    $('partnerLogoName').textContent = '';
+
+    flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
+    await loadPartners();
+});
+
+/* ===================== НАСТРОЙКИ ===================== */
+async function loadSettings() {
+    const { data, error } = await supabase.from('site_settings').select('*').eq('id', 'main').single();
+    if (error) { console.warn('Настройки не загружены:', error.message); return; }
+    settingsCache = data;
+}
+
+/* ===================== СЧЁТЧИКИ ===================== */
+async function loadStats() {
+    const row = $('statsRow');
+    if (!row) return;
+    row.innerHTML = '';
+
+    try {
+        const [e, f, n, p, b1, b2, c] = await Promise.all([
+            supabase.from('enemies').select('id', { count: 'exact', head: true }),
+            supabase.from('friends').select('id', { count: 'exact', head: true }),
+            supabase.from('neutral').select('id', { count: 'exact', head: true }),
+            supabase.from('personal').select('id', { count: 'exact', head: true }),
+            supabase.from('builds').select('id', { count: 'exact', head: true }).eq('type', 'pvp'),
+            supabase.from('builds').select('id', { count: 'exact', head: true }).eq('type', 'pb'),
+            supabase.from('clans').select('id', { count: 'exact', head: true })
+        ]);
+
+        const stats = [
+            { label: 'Врагов',    value: e.count || 0, ico: '🔴' },
+            { label: 'Друзей',    value: f.count || 0, ico: '🟢' },
+            { label: 'Нейтралов', value: n.count || 0, ico: '⚪' },
+            { label: 'В личном',  value: p.count || 0, ico: '🟡' },
+            { label: 'Билды ПВП', value: b1.count || 0, ico: '⚔️' },
+            { label: 'Билды ПБ',  value: b2.count || 0, ico: '🛡' },
+            { label: 'Гильдий',   value: c.count || 0, ico: '🏰' }
+        ];
+
+        stats.forEach(s => {
+            const el = document.createElement('div');
+            el.className = 'stat-card';
+            el.innerHTML = `
+                <div class="stat-value">${s.ico} ${s.value}</div>
+                <div class="stat-label">${s.label}</div>
+            `;
+            row.appendChild(el);
+        });
+    } catch (err) { console.warn('Stats error:', err); }
+}
+
+/* ===================== DISCORD WEBHOOK (через прокси) ===================== */
+async function sendDiscordWebhook(title, content) {
+    const webhookUrl = settingsCache?.discord_webhook;
+    if (!webhookUrl) return;
+
+    const payload = {
+        embeds: [{
+            title,
+            description: content.substring(0, 4000),
+            color: 0x2b6cb0,
+            timestamp: new Date().toISOString()
+        }]
+    };
+
+    // Обход CORS через публичный прокси
+    const proxied = 'https://corsproxy.io/?url=' + encodeURIComponent(webhookUrl);
+
+    try {
+        const res = await fetch(proxied, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        console.log('Discord webhook response:', res.status);
+    } catch (err) {
+        console.warn('Webhook error:', err);
+    }
+}
+
+/* ===================== КОНТАКТЫ ===================== */
+function renderContacts() {
+    const container = $('contactsList');
+    if (!container) return;
+    container.innerHTML = '';
+    const clans = Object.values(clansCache);
+    if (!clans.length) { container.innerHTML = '<div class="empty">Гильдий пока нет</div>'; return; }
+    clans.forEach(clan => {
+        const card = document.createElement('div');
+        card.className = 'contact-card';
+        const hasLink = clan.discord && clan.discord.trim();
+        const btn = hasLink
+            ? `<a class="contact-btn" href="${escapeHtml(clan.discord)}" target="_blank" rel="noopener">💬 Discord</a>`
+            : `<span class="contact-btn disabled">💬 Нет ссылки</span>`;
+        card.innerHTML = `
+            <img src="${escapeHtml(clan.image || '')}" alt="${escapeHtml(clan.name)}">
+            <div class="contact-info">
+                <div class="contact-name">${escapeHtml(clan.name)}</div>
+                <div class="contact-discord">${hasLink ? escapeHtml(clan.discord) : 'Ссылка не указана'}</div>
+            </div>
+            ${btn}
+        `;
+        container.appendChild(card);
+    });
+}
+
+/* ===================== АДМИН-ПАНЕЛЬ ===================== */
+function openAdminPanel() {
+    if (!isAdmin) return;
+    renderAdminClanSelect();
+    renderSiteFields();
+    renderFaqAdmin();
+    renderPartnersAdmin();
+    $('adminPanelMsg').textContent = '';
+    $('adminSiteMsg').textContent = '';
+    $('adminNewPass').value = '';
+    $('adminPanelModal').hidden = false;
+}
+$('adminPanelBtn').addEventListener('click', openAdminPanel);
+$('adminPanelBtn2').addEventListener('click', openAdminPanel);
+$('adminPanelBtn3').addEventListener('click', openAdminPanel);
+function closeAdminPanel() { $('adminPanelModal').hidden = true; }
+$('closeAdminPanel').addEventListener('click', closeAdminPanel);
+
+document.querySelectorAll('.admin-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const target = tab.dataset.atab;
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        $('atab-' + target).classList.add('active');
+        if (target === 'site') renderSiteFields();
+        if (target === 'faq') renderFaqAdmin();
+        if (target === 'partners') renderPartnersAdmin();
+    });
+});
+
+function renderAdminClanSelect() {
+    const sel = $('adminClanSelect');
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '';
+    Object.values(clansCache).forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.id; o.textContent = c.name; sel.appendChild(o);
+    });
+    if (cur && clansCache[cur]) sel.value = cur;
+    updateAdminFields();
+}
+$('adminClanSelect').addEventListener('change', updateAdminFields);
+function updateAdminFields() {
+    const cid = $('adminClanSelect').value;
+    const clan = clansCache[cid];
+    $('adminCurrentPass').value = clan?.password || '—';
+    $('adminNewPass').value = '';
+    $('adminDiscord').value = clan?.discord || '';
+    $('adminNews').value = clan?.news || '';
+    $('adminRules').value = clan?.rules || '';
+    $('adminPanelMsg').textContent = '';
+}
+$('saveAdminSettings').addEventListener('click', async () => {
+    const cid = $('adminClanSelect').value;
+    const newPass = $('adminNewPass').value.trim();
+    const newDiscord = $('adminDiscord').value.trim();
+    const newNews = $('adminNews').value;
+    const newRules = $('adminRules').value;
+    const msg = $('adminPanelMsg');
+    if (!cid) return;
+    const clan = clansCache[cid]; if (!clan) return;
+    const payload = { discord: newDiscord || null, news: newNews || null, rules: newRules,
+        updated_at: new Date().toISOString() };
+    if (newPass) payload.password = newPass;
+    const { error } = await supabase.from('clans').update(payload).eq('id', cid);
+    if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
+    Object.assign(clansCache[cid], payload);
+    msg.textContent = '✔ Сохранено'; msg.style.color = '#6ee7a7';
+    $('adminNewPass').value = '';
+    if (pendingClanId === cid) {
+        $('clanInfoRules').textContent = newRules || 'Правила не заданы.';
+        const nw = $('clanInfoNewsWrap');
+        if (newNews?.trim()) { nw.hidden = false; $('clanInfoNews').textContent = newNews; }
+        else nw.hidden = true;
+    }
+    renderContacts();
+});
+
+function renderSiteFields() {
+    const s = settingsCache || {};
+    $('adminWebhook').value = s.discord_webhook || '';
+    $('adminSiteMsg').textContent = '';
+}
+$('saveSiteSettings').addEventListener('click', async () => {
+    const msg = $('adminSiteMsg');
+    msg.style.color = '';
+    const payload = {
+        discord_webhook: $('adminWebhook').value.trim() || null,
+        updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase.from('site_settings').update(payload).eq('id', 'main');
+    if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
+
+    settingsCache = Object.assign({ id: 'main' }, settingsCache || {}, payload);
+    msg.textContent = '✔ Сохранено';
+    msg.style.color = '#6ee7a7';
+});
+
+/* ===================== ДОБАВЛЕНИЕ ГИЛЬДИИ ===================== */
+$('openAddClan').addEventListener('click', () => {
+    ['newClanId','newClanName','newClanDesc','newClanRules','newClanPass','newClanDiscord','newClanImage','newClanBg']
+        .forEach(id => { const el = $(id); if (el) el.value = ''; });
+    $('addClanMsg').textContent = '';
+    $('addClanModal').hidden = false;
+    $('newClanId').focus();
+});
+$('cancelAddClan').addEventListener('click', () => { $('addClanModal').hidden = true; });
+$('saveNewClan').addEventListener('click', async () => {
+    const id = $('newClanId').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    const name = $('newClanName').value.trim();
+    const pass = $('newClanPass').value.trim();
+    const msg = $('addClanMsg');
+    if (!id || !name || !pass) { msg.textContent = 'ID, название и пароль обязательны'; msg.style.color = '#ff7a7a'; return; }
+    if (clansCache[id]) { msg.textContent = 'ID уже занят'; msg.style.color = '#ff7a7a'; return; }
+    const payload = {
+        id, name,
+        description: $('newClanDesc').value.trim(),
+        rules: $('newClanRules').value,
+        password: pass,
+        discord: $('newClanDiscord').value.trim() || null,
+        image: $('newClanImage').value.trim() || 'images/aov.png',
+        bg: $('newClanBg').value.trim() || 'images/bg-main.jpg'
+    };
+    const { error } = await supabase.from('clans').insert(payload);
+    if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
+    clansCache[id] = payload;
+    renderHomeCards(); renderAdminClanSelect(); renderScopeSelects(); renderContacts();
+    msg.textContent = '✔ Гильдия создана'; msg.style.color = '#6ee7a7';
+    setTimeout(() => { $('addClanModal').hidden = true; }, 800);
+});
+
+/* ===================== РЕДАКТИРОВАНИЕ ЗАПИСИ ===================== */
+function openEditModal(tab, item) {
+    editingItem = { tab, id: item.id };
+    $('editPlayerGuild').value = item.player_guild || '';
+    $('editNickname').value = item.nickname || '';
+    $('editFaction').value = item.faction || '';
+    $('editNote').value = item.note || '';
+    $('editError').textContent = '';
+    $('editModal').hidden = false;
+    $('editPlayerGuild').focus();
+}
+$('cancelEdit').addEventListener('click', () => { $('editModal').hidden = true; editingItem = null; });
+$('saveEdit').addEventListener('click', async () => {
+    if (!editingItem) return;
+    const pg = $('editPlayerGuild').value.trim();
+    const nick = $('editNickname').value.trim();
+    if (!pg && !nick) { $('editError').textContent = 'Заполни Гильдию или Никнейм'; return; }
+    const { tab, id } = editingItem;
+    const { error } = await supabase.from(tab).update({
+        nickname: nick || null, player_guild: pg || null,
+        faction: $('editFaction').value.trim() || null,
+        note: $('editNote').value.trim() || null
+    }).eq('id', id);
+    if (error) { $('editError').textContent = 'Ошибка: ' + error.message; return; }
+    $('editModal').hidden = true; editingItem = null;
+    loadList(tab);
+});
+['editPlayerGuild','editNickname','editFaction','editNote'].forEach(id => {
+    $(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') $('saveEdit').click();
+    });
+});
+
+/* ===================== ДОБАВЛЕНИЕ ЗАПИСИ ===================== */
+$('addBtn').addEventListener('click', async () => {
+    if (!isAdmin || !currentClan) return;
+    const pg = $('playerGuild').value.trim();
+    const nick = $('nickname').value.trim();
+    if (!pg && !nick) { flashStatus('Заполни Гильдию или Никнейм', '#ff7a7a'); return; }
+    const { error } = await supabase.from(currentTab).insert({
+        nickname: nick || null, player_guild: pg || null,
+        faction: $('faction').value.trim() || null,
+        note: $('note').value.trim() || null,
+        clan: currentClan
+    });
+    if (error) { flashStatus('Ошибка: ' + error.message, '#ff7a7a'); return; }
+    ['playerGuild','nickname','faction','note'].forEach(id => $(id).value = '');
+    $('playerGuild').focus();
+    flashStatus('✔ Добавлено', '#6ee7a7');
+    loadList(currentTab);
+});
+['playerGuild','nickname','faction','note'].forEach(id => {
+    $(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') $('addBtn').click();
+    });
+});
+function flashStatus(text, color) {
+    const el = $('status');
+    if (!el) return;
+    el.textContent = text; el.style.color = color;
+    clearTimeout(flashStatus._t);
+    flashStatus._t = setTimeout(() => el.textContent = '', 2000);
+}
+
+/* ===================== УДАЛЕНИЕ И ПЕРЕМЕЩЕНИЕ ===================== */
+async function deleteItem(tab, id) {
+    if (!confirm('Удалить запись?')) return;
+    const { error } = await supabase.from(tab).delete().eq('id', id);
+    if (error) return alert(error.message);
+    loadList(tab);
+}
+function openMoveModal(fromTab, id) {
+    movingItem = { fromTab, id };
+    $('moveModal').hidden = false;
+}
+$('cancelMove').addEventListener('click', () => { $('moveModal').hidden = true; movingItem = null; });
+document.querySelectorAll('#moveModal [data-target]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        if (!movingItem || !currentClan) return;
+        const { fromTab, id } = movingItem;
+        const toTab = btn.dataset.target;
+        $('moveModal').hidden = true; movingItem = null;
+        if (toTab === fromTab) return;
+        const { data, error } = await supabase.from(fromTab).select('*').eq('id', id).single();
+        if (error) return alert(error.message);
+        const { error: insErr } = await supabase.from(toTab).insert({
+            nickname: data.nickname, player_guild: data.player_guild,
+            faction: data.faction, note: data.note, clan: currentClan
+        });
+        if (insErr) return alert(insErr.message);
+        await supabase.from(fromTab).delete().eq('id', id);
+        loadList(fromTab); loadList(toTab);
+    });
+});
+
+/* ===================== #build=ID ===================== */
+async function handleBuildHash() {
+    const m = location.hash.match(/^#build=([a-f0-9-]+)$/i);
+    if (!m) return;
+    const { data, error } = await supabase.from('builds').select('*').eq('id', m[1]).single();
+    if (error || !data) return;
+    const section = data.type === 'pvp' ? 'pvp' : 'pb';
+    document.querySelector(`.side-item[data-section="${section}"]`)?.click();
+    setTimeout(() => {
+        document.querySelectorAll('.build-card').forEach(c => {
+            if (c.querySelector('.build-ship')?.textContent === data.ship_name) {
+                c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                c.style.boxShadow = '0 0 0 3px #b48aff';
+                setTimeout(() => c.style.boxShadow = '', 2500);
+            }
+        });
+    }, 600);
+}
+window.addEventListener('hashchange', () => {
+    if (location.hash.startsWith('#build=')) handleBuildHash();
+});
+
+/* ===================== УТИЛИТА ===================== */
+function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+}
+
+/* ===================== СТАРТ ===================== */
+(async () => {
+    const verEl = document.querySelector('.footer-right');
+    if (verEl) verEl.textContent = 'v' + APP_VERSION;
+
+    await loadClans();
+    await loadSettings();
+    await loadPartners();
+    renderApplyClanSelect();
+    await loadFaq();
+    loadStats();
+
+    const { data: { session } } = await supabase.auth.getSession();
+    isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
+    applyAdminUI();
+
+    showScreen('home');
+    applyBg();
+
+    setTimeout(handleBuildHash, 800);
+})();
