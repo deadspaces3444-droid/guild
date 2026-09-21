@@ -50,6 +50,11 @@
                 <h1 id="clanInfoName" class="clan-info-name"></h1>
                 <p id="clanInfoDesc" class="clan-info-desc"></p>
 
+                <div id="clanInfoNewsWrap" class="clan-info-news-wrap" hidden>
+                    <h3>📰 Новости</h3>
+                    <p id="clanInfoNews" class="clan-info-news"></p>
+                </div>
+
                 <div class="clan-info-rules-wrap">
                     <h3>📜 Правила гильдии</h3>
                     <p id="clanInfoRules" class="clan-info-rules"></p>
@@ -90,7 +95,6 @@
         </header>
 
         <div class="clan-layout">
-            <!-- САЙДБАР -->
             <aside class="sidebar">
                 <button class="side-item active" data-section="lists">
                     <span class="side-ico">📋</span>
@@ -104,12 +108,14 @@
                     <span class="side-ico">🛡</span>
                     <span>Билды для ПБ</span>
                 </button>
+                <button class="side-item" data-section="contacts">
+                    <span class="side-ico">💬</span>
+                    <span>Контакты</span>
+                </button>
             </aside>
 
-            <!-- КОНТЕНТ -->
             <div class="clan-main">
 
-                <!-- СЕКЦИЯ: СПИСКИ -->
                 <div id="section-lists" class="clan-section active">
                     <nav class="tabs">
                         <button class="tab active" data-tab="enemies">🔴 Враги</button>
@@ -146,7 +152,6 @@
                     </section>
                 </div>
 
-                <!-- СЕКЦИЯ: БИЛДЫ ПВП -->
                 <div id="section-pvp" class="clan-section">
                     <h2>⚔️ Билды для ПВП</h2>
 
@@ -165,7 +170,6 @@
                     <div id="pvpList" class="builds-list"></div>
                 </div>
 
-                <!-- СЕКЦИЯ: БИЛДЫ ПБ -->
                 <div id="section-pb" class="clan-section">
                     <h2>🛡 Билды для ПБ</h2>
 
@@ -183,6 +187,12 @@
                     <p class="hint admin-only" hidden>💡 Ранг и название корабля — обязательны.</p>
 
                     <div id="pbList" class="builds-list"></div>
+                </div>
+
+                <div id="section-contacts" class="clan-section">
+                    <h2>💬 Контакты гильдий</h2>
+                    <p class="hint">Ссылки на Discord-серверы гильдий</p>
+                    <div id="contactsList" class="contacts-list"></div>
                 </div>
             </div>
         </div>
@@ -238,6 +248,16 @@
             </div>
 
             <div class="admin-field">
+                <label>Discord-ссылка гильдии</label>
+                <input type="text" id="adminDiscord" placeholder="https://discord.gg/xxxxx" maxlength="200">
+            </div>
+
+            <div class="admin-field">
+                <label>Новости гильдии</label>
+                <textarea id="adminNews" placeholder="Общие новости..." rows="5"></textarea>
+            </div>
+
+            <div class="admin-field">
                 <label>Правила гильдии</label>
                 <textarea id="adminRules" placeholder="Каждое правило с новой строки..." rows="8"></textarea>
             </div>
@@ -281,6 +301,11 @@
             <div class="admin-field">
                 <label>Пароль для входа</label>
                 <input type="text" id="newClanPass" placeholder="Пароль гильдии">
+            </div>
+
+            <div class="admin-field">
+                <label>Discord-ссылка</label>
+                <input type="text" id="newClanDiscord" placeholder="https://discord.gg/xxxxx">
             </div>
 
             <div class="admin-field">
@@ -385,7 +410,10 @@
 
     <input type="file" id="bgFileInput" accept="image/*" hidden>
 
-    <footer class="site-footer">Mist Time — Сергеев С.В</footer>
+    <footer class="site-footer">
+        <span class="footer-left">Mist Time — Сергеев С.В</span>
+        <span class="footer-right">v1.2.2</span>
+    </footer>
 
     <script type="module" src="app.js"></script>
 </body>
