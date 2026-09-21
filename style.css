@@ -311,6 +311,67 @@ body::before {
 #clanView .back-btn { position: static; flex-shrink: 0; margin: 0; }
 #clanView .top-right { position: static; flex-shrink: 0; margin: 0; }
 
+/* ============ IP-ВИДЖЕТ ============ */
+.ip-widget {
+    position: fixed;
+    top: 72px;
+    left: 20px;
+    z-index: 20;
+    padding: 10px 14px;
+    background: rgba(15, 17, 21, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-left: 3px solid #ff7a7a;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #cfd3dc;
+    max-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .5);
+    pointer-events: none;
+    animation: ipFadeIn .4s ease;
+}
+@keyframes ipFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.ip-line,
+.ip-city {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ip-label {
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: .5px;
+}
+
+.ip-value {
+    color: #fff;
+    font-weight: 700;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.ip-warning {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ff7a7a;
+    padding: 4px 0;
+    border-top: 1px dashed rgba(255, 122, 122, 0.35);
+    border-bottom: 1px dashed rgba(255, 122, 122, 0.35);
+    margin: 2px 0;
+    line-height: 1.3;
+}
+
 /* ============ LAYOUT С САЙДБАРОМ ============ */
 .clan-layout {
     display: flex;
@@ -810,6 +871,14 @@ a.icon-btn:hover {
     .clan-card { min-height: auto; padding: 20px; }
     .clan-card img { width: 80px; height: 80px; }
     .back-btn { position: static; margin-bottom: 12px; }
+
+    .ip-widget {
+        position: static;
+        max-width: 100%;
+        margin-bottom: 12px;
+        pointer-events: auto;
+    }
+
     .clan-info-wrap { padding: 10px 0 30px; min-height: auto; }
     .clan-info { padding: 26px 20px; border-radius: 16px; }
     .clan-info-logo { width: 110px; height: 110px; }
