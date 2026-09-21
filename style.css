@@ -109,64 +109,6 @@ body::before {
 }
 .back-btn:hover { background: rgba(31, 36, 48, 0.95); }
 
-/* ============ ИГРОВОЙ ТУЛБАР ============ */
-.game-toolbar {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 50;
-    display: flex;
-    gap: 6px;
-    padding: 6px;
-    background: rgba(15, 17, 21, 0.85);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    max-width: calc(100vw - 40px);
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-.game-toolbar::-webkit-scrollbar { display: none; }
-.game-toolbar-tabs { display: flex; gap: 6px; }
-.game-tab {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    background: transparent;
-    border: 1px solid transparent;
-    color: #cfd3dc;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: inherit;
-    transition: all .15s;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-.game-tab:hover {
-    background: rgba(43, 108, 176, 0.15);
-    border-color: rgba(43, 108, 176, 0.3);
-    color: #fff;
-}
-.game-tab.active {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-    box-shadow: 0 4px 12px rgba(43, 108, 176, 0.4);
-}
-.game-tab img {
-    width: 22px;
-    height: 22px;
-    object-fit: contain;
-    border-radius: 5px;
-    flex-shrink: 0;
-}
-.game-tab-emoji { font-size: 16px; line-height: 1; }
-
 /* ============ ГЛАВНАЯ ============ */
 .home-wrap {
     display: flex;
@@ -369,7 +311,6 @@ body::before {
     width: 100%;
 }
 
-/* YouTube-карточка */
 .yt-promo-card {
     grid-column: 1 / -1;
     display: flex;
@@ -440,7 +381,6 @@ body::before {
     box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5);
 }
 
-/* Обычная карточка партнёра */
 .partner-card {
     display: flex;
     align-items: flex-start;
@@ -494,7 +434,6 @@ body::before {
     opacity: .8;
 }
 
-/* Партнёры (админ) */
 .partners-admin-list {
     display: flex;
     flex-direction: column;
@@ -547,7 +486,6 @@ body::before {
 .partners-admin-item .actions button.edit:hover { color: #ffd479; border-color: #ffd479; }
 .partners-admin-item .actions button.delete:hover { color: var(--red); border-color: var(--red); }
 
-/* Загрузка лого */
 .logo-upload {
     display: flex;
     align-items: center;
@@ -1130,7 +1068,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     cursor: not-allowed; pointer-events: none; opacity: .6;
 }
 
-/* ============ АДМИН-ПАНЕЛЬ (ОТДЕЛЬНАЯ СТРАНИЦА) ============ */
+/* ============ АДМИН-ПАНЕЛЬ ============ */
 #adminView {
     display: flex;
     min-height: 100vh;
@@ -1282,6 +1220,43 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     margin-bottom: 20px;
 }
 
+/* ============ ЖУРНАЛЫ ============ */
+.log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+.log-item {
+    padding: 12px 16px;
+    background: rgba(23, 26, 33, 0.9);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.log-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.log-admin { font-weight: 700; color: #ffd479; font-size: 13px; }
+.log-date  { font-size: 11px; color: var(--muted); }
+.log-action { font-size: 14px; color: #e6e6e6; word-break: break-word; }
+.log-action b { color: #7db9ff; }
+.log-details {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: pre-line;
+    word-break: break-word;
+    padding-top: 4px;
+    border-top: 1px dashed var(--border);
+}
+
 /* ============ МОДАЛКИ ============ */
 .modal {
     position: fixed; inset: 0;
@@ -1416,15 +1391,6 @@ a.icon-btn:hover {
 @media (max-width: 700px) {
     body { padding: 12px 12px 50px; }
     .top-right { position: static; justify-content: center; margin-bottom: 14px; }
-
-    .game-toolbar {
-        top: 10px;
-        padding: 4px;
-        border-radius: 12px;
-    }
-    .game-tab { padding: 6px 10px; font-size: 12px; gap: 6px; }
-    .game-tab img { width: 18px; height: 18px; }
-    .game-tab-emoji { font-size: 14px; }
 
     .home-wrap { padding: 80px 8px 30px; gap: 24px; }
     .hero-video { aspect-ratio: 16 / 10; border-radius: 14px; }
