@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
 
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
-const APP_VERSION = '1.4.2';
+const APP_VERSION = '1.4.3';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const UNLOCK_KEY = 'guild_unlocked';
@@ -179,7 +179,6 @@ async function loadClans() {
     renderAdminClanSelect();
     renderScopeSelects();
 }
-
 function renderHomeCards() {
     const grid = $('clanGrid');
     grid.innerHTML = '';
@@ -989,13 +988,11 @@ async function loadFaq() {
     renderFaq();
     renderFaqAdmin();
 }
-
 function renderFaq() {
     const container = $('faqList');
     if (!container) return;
     container.innerHTML = '';
     if (!faqCache.length) { container.innerHTML = '<div class="empty">Пока нет вопросов</div>'; return; }
-
     faqCache.forEach(item => {
         const details = document.createElement('details');
         details.className = 'faq-item';
@@ -1006,13 +1003,11 @@ function renderFaq() {
         container.appendChild(details);
     });
 }
-
 function renderFaqAdmin() {
     const container = $('faqAdminList');
     if (!container) return;
     container.innerHTML = '';
     if (!faqCache.length) { container.innerHTML = '<div class="empty">Пока нет</div>'; return; }
-
     faqCache.forEach(item => {
         const el = document.createElement('div');
         el.className = 'faq-admin-item';
@@ -1031,17 +1026,14 @@ function renderFaqAdmin() {
         container.appendChild(el);
     });
 }
-
 $('faqAddBtn').addEventListener('click', async () => {
     const q = $('faqQ').value.trim();
     const a = $('faqA').value.trim();
     if (!q || !a) { alert('Заполни вопрос и ответ'); return; }
-
     const { error } = await supabase.from('faq').insert({
         question: q, answer: a, sort_order: faqCache.length + 1
     });
     if (error) return alert(error.message);
-
     $('faqQ').value = '';
     $('faqA').value = '';
     loadFaq();
@@ -1052,14 +1044,18 @@ async function loadPartners() {
     const { data, error } = await supabase.from('partners').select('*')
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true });
-
     if (error) { console.warn('Партнёры не загружены:', error.message); return; }
     partnersCache = data || [];
     renderPartnersHome();
     renderPartnersAdmin();
 }
-
-/* Авто-логотип YouTube */
+function isYouTubeUrl(url) {
+    if (!url) return false;
+    try {
+        const u = new URL(url.trim());
+        return /(?:^|\.)(?:youtube\.com|youtu\.be)$/i.test(u.hostname);
+    } catch { return false; }
+}
 function extractYouTubeHandle(url) {
     if (!url) return '';
     try {
@@ -1074,66 +1070,81 @@ function extractYouTubeHandle(url) {
         return path.split('/')[0] || '';
     } catch { return ''; }
 }
-
 function getPartnerLogo(p) {
-    // 1) Если логотип загружен вручную — используем его
     if (p.logo_url && p.logo_url.startsWith('data:')) return p.logo_url;
-    // 2) Если URL — YouTube, тянем автоматически через unavatar
     const handle = extractYouTubeHandle(p.url);
     if (handle) return `https://unavatar.io/youtube/${handle}`;
-    // 3) Если в logo_url что-то другое — используем как есть
     if (p.logo_url) return p.logo_url;
-    // 4) Ничего нет — null (покажем букву)
     return null;
 }
-
 function renderPartnersHome() {
     const section = $('partnersSection');
     const list = $('partnersList');
     if (!section || !list) return;
     list.innerHTML = '';
-
     if (!partnersCache.length) { section.hidden = true; return; }
     section.hidden = false;
-
     partnersCache.forEach(p => {
-        const a = document.createElement('a');
-        a.className = 'partner-card';
-        a.href = p.url;
-        a.target = '_blank';
-        a.rel = 'noopener';
-
-        const logoEl = document.createElement('div');
-        logoEl.className = 'partner-logo';
-
-        const logoSrc = getPartnerLogo(p);
-        if (logoSrc) {
-            const img = document.createElement('img');
-            img.src = logoSrc;
-            img.alt = '';
-            img.onerror = () => {
-                // Если unavatar не смог — показываем букву
-                img.replaceWith(makePartnerLetter(p.name));
-            };
-            logoEl.appendChild(img);
-        } else {
-            logoEl.appendChild(makePartnerLetter(p.name));
-        }
-
-        const info = document.createElement('div');
-        info.className = 'partner-info';
-        info.innerHTML = `
-            <div class="partner-name">${escapeHtml(p.name)}</div>
-            ${p.description ? `<div class="partner-desc">${escapeHtml(p.description)}</div>` : ''}
-            <div class="partner-link">🔗 ${escapeHtml(p.url)}</div>
-        `;
-
-        a.appendChild(logoEl);
-        a.appendChild(info);
-        list.appendChild(a);
+        if (isYouTubeUrl(p.url)) list.appendChild(createYouTubeCard(p));
+        else list.appendChild(createPartnerCard(p));
     });
 }
-
+function createYouTubeCard(p) {
+    const a = document.createElement('a');
+    a.className = 'yt-promo-card';
+    a.href = p.url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    const logoSrc = getPartnerLogo(p);
+    const logoEl = document.createElement('img');
+    logoEl.className = 'yt-promo-logo';
+    logoEl.alt = p.name;
+    logoEl.src = logoSrc || 'images/aov.png';
+    logoEl.onerror = () => {
+        logoEl.onerror = null;
+        logoEl.classList.add('yt-promo-logo-fallback');
+        logoEl.src = 'images/aov.png';
+    };
+    const info = document.createElement('div');
+    info.className = 'yt-promo-info';
+    info.innerHTML = `
+        <div class="yt-promo-name">${escapeHtml(p.name)}</div>
+        ${p.description ? `<div class="yt-promo-desc">${escapeHtml(p.description)}</div>` : ''}
+        <div class="yt-promo-btn">Смотреть на YouTube</div>
+    `;
+    a.appendChild(logoEl);
+    a.appendChild(info);
+    return a;
+}
+function createPartnerCard(p) {
+    const a = document.createElement('a');
+    a.className = 'partner-card';
+    a.href = p.url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    const logoEl = document.createElement('div');
+    logoEl.className = 'partner-logo';
+    const logoSrc = getPartnerLogo(p);
+    if (logoSrc) {
+        const img = document.createElement('img');
+        img.src = logoSrc;
+        img.alt = '';
+        img.onerror = () => img.replaceWith(makePartnerLetter(p.name));
+        logoEl.appendChild(img);
+    } else {
+        logoEl.appendChild(makePartnerLetter(p.name));
+    }
+    const info = document.createElement('div');
+    info.className = 'partner-info';
+    info.innerHTML = `
+        <div class="partner-name">${escapeHtml(p.name)}</div>
+        ${p.description ? `<div class="partner-desc">${escapeHtml(p.description)}</div>` : ''}
+        <div class="partner-link">🔗 ${escapeHtml(p.url)}</div>
+    `;
+    a.appendChild(logoEl);
+    a.appendChild(info);
+    return a;
+}
 function makePartnerLetter(name) {
     const span = document.createElement('span');
     span.className = 'partner-letter';
@@ -1141,34 +1152,28 @@ function makePartnerLetter(name) {
     span.style.background = colorFromString(name || '?');
     return span;
 }
-
 function colorFromString(str) {
     let h = 0;
     for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
     const hue = Math.abs(h) % 360;
     return `linear-gradient(135deg, hsl(${hue}, 55%, 45%), hsl(${hue}, 55%, 30%))`;
 }
-
 function renderPartnersAdmin() {
     const container = $('partnersAdminList');
     if (!container) return;
     container.innerHTML = '';
-
     if (!partnersCache.length) {
         container.innerHTML = '<div class="empty">Пока нет партнёров</div>';
         return;
     }
-
     partnersCache.forEach((p, idx) => {
         const el = document.createElement('div');
         el.className = 'partners-admin-item';
-
         const letter = (p.name || '?')[0].toUpperCase();
         const logoSrc = getPartnerLogo(p);
         const logoHtml = logoSrc
             ? `<img src="${escapeHtml(logoSrc)}" alt="" onerror="this.outerHTML='<span>${escapeHtml(letter)}</span>'">`
             : `<span>${escapeHtml(letter)}</span>`;
-
         el.innerHTML = `
             <div class="logo-mini">${logoHtml}</div>
             <div class="txt">
@@ -1181,37 +1186,28 @@ function renderPartnersAdmin() {
                 <button class="delete" title="Удалить">🗑</button>
             </div>
         `;
-
         el.querySelector('.up')?.addEventListener('click', () => movePartner(p.id, -1));
         el.querySelector('.down')?.addEventListener('click', () => movePartner(p.id, +1));
         el.querySelector('.delete').addEventListener('click', () => deletePartner(p.id));
-
         container.appendChild(el);
     });
 }
-
 async function movePartner(id, dir) {
     const idx = partnersCache.findIndex(p => p.id === id);
     if (idx === -1) return;
     const swapIdx = idx + dir;
     if (swapIdx < 0 || swapIdx >= partnersCache.length) return;
-
     const a = partnersCache[idx];
     const b = partnersCache[swapIdx];
-
     await supabase.from('partners').update({ sort_order: swapIdx }).eq('id', a.id);
     await supabase.from('partners').update({ sort_order: idx }).eq('id', b.id);
-
     await loadPartners();
 }
-
 async function deletePartner(id) {
     if (!confirm('Удалить партнёра?')) return;
     await supabase.from('partners').delete().eq('id', id);
     await loadPartners();
 }
-
-/* Загрузка логотипа с диска */
 function compressLogo(file, maxSize = 128, quality = 0.85) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1235,9 +1231,7 @@ function compressLogo(file, maxSize = 128, quality = 0.85) {
         reader.readAsDataURL(file);
     });
 }
-
 $('partnerLogoPick').addEventListener('click', () => $('partnerLogoFile').click());
-
 $('partnerLogoFile').addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1250,39 +1244,32 @@ $('partnerLogoFile').addEventListener('change', async e => {
         alert('Не удалось загрузить картинку: ' + err.message);
     }
 });
-
 $('partnerLogoClear').addEventListener('click', () => {
     partnerLogoData = null;
     $('partnerLogoFile').value = '';
     $('partnerLogoPreview').hidden = true;
     $('partnerLogoName').textContent = '';
 });
-
 $('partnerAddBtn').addEventListener('click', async () => {
     const name = $('partnerName').value.trim();
     const url = $('partnerUrl').value.trim();
     const desc = $('partnerDesc').value.trim();
     const statusEl = $('partnerStatus');
-
     if (!name) { flashStatusEl(statusEl, 'Укажи название', '#ff7a7a'); return; }
     if (!url) { flashStatusEl(statusEl, 'Укажи ссылку', '#ff7a7a'); return; }
     if (!/^https?:\/\//i.test(url)) { flashStatusEl(statusEl, 'Ссылка должна начинаться с http:// или https://', '#ff7a7a'); return; }
-
     const { error } = await supabase.from('partners').insert({
         name, url,
         logo_url: partnerLogoData || null,
         description: desc || null,
         sort_order: partnersCache.length
     });
-
     if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
-
     ['partnerName','partnerUrl','partnerDesc'].forEach(id => $(id).value = '');
     partnerLogoData = null;
     $('partnerLogoFile').value = '';
     $('partnerLogoPreview').hidden = true;
     $('partnerLogoName').textContent = '';
-
     flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
     await loadPartners();
 });
@@ -1299,7 +1286,6 @@ async function loadStats() {
     const row = $('statsRow');
     if (!row) return;
     row.innerHTML = '';
-
     try {
         const [e, f, n, p, b1, b2, c] = await Promise.all([
             supabase.from('enemies').select('id', { count: 'exact', head: true }),
@@ -1310,7 +1296,6 @@ async function loadStats() {
             supabase.from('builds').select('id', { count: 'exact', head: true }).eq('type', 'pb'),
             supabase.from('clans').select('id', { count: 'exact', head: true })
         ]);
-
         const stats = [
             { label: 'Врагов',    value: e.count || 0, ico: '🔴' },
             { label: 'Друзей',    value: f.count || 0, ico: '🟢' },
@@ -1320,7 +1305,6 @@ async function loadStats() {
             { label: 'Билды ПБ',  value: b2.count || 0, ico: '🛡' },
             { label: 'Гильдий',   value: c.count || 0, ico: '🏰' }
         ];
-
         stats.forEach(s => {
             const el = document.createElement('div');
             el.className = 'stat-card';
@@ -1333,11 +1317,10 @@ async function loadStats() {
     } catch (err) { console.warn('Stats error:', err); }
 }
 
-/* ===================== DISCORD WEBHOOK (через прокси) ===================== */
+/* ===================== DISCORD WEBHOOK (через allorigins) ===================== */
 async function sendDiscordWebhook(title, content) {
     const webhookUrl = settingsCache?.discord_webhook;
     if (!webhookUrl) return;
-
     const payload = {
         embeds: [{
             title,
@@ -1346,10 +1329,7 @@ async function sendDiscordWebhook(title, content) {
             timestamp: new Date().toISOString()
         }]
     };
-
-    // Обход CORS через публичный прокси
-    const proxied = 'https://corsproxy.io/?url=' + encodeURIComponent(webhookUrl);
-
+    const proxied = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(webhookUrl);
     try {
         const res = await fetch(proxied, {
             method: 'POST',
@@ -1405,7 +1385,6 @@ $('adminPanelBtn2').addEventListener('click', openAdminPanel);
 $('adminPanelBtn3').addEventListener('click', openAdminPanel);
 function closeAdminPanel() { $('adminPanelModal').hidden = true; }
 $('closeAdminPanel').addEventListener('click', closeAdminPanel);
-
 document.querySelectorAll('.admin-tab').forEach(tab => {
     tab.addEventListener('click', () => {
         const target = tab.dataset.atab;
@@ -1418,7 +1397,6 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
         if (target === 'partners') renderPartnersAdmin();
     });
 });
-
 function renderAdminClanSelect() {
     const sel = $('adminClanSelect');
     if (!sel) return;
@@ -1467,7 +1445,6 @@ $('saveAdminSettings').addEventListener('click', async () => {
     }
     renderContacts();
 });
-
 function renderSiteFields() {
     const s = settingsCache || {};
     $('adminWebhook').value = s.discord_webhook || '';
@@ -1480,10 +1457,8 @@ $('saveSiteSettings').addEventListener('click', async () => {
         discord_webhook: $('adminWebhook').value.trim() || null,
         updated_at: new Date().toISOString()
     };
-
     const { error } = await supabase.from('site_settings').update(payload).eq('id', 'main');
     if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
-
     settingsCache = Object.assign({ id: 'main' }, settingsCache || {}, payload);
     msg.textContent = '✔ Сохранено';
     msg.style.color = '#6ee7a7';
