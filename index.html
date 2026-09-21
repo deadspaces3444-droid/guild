@@ -8,6 +8,11 @@
 </head>
 <body>
 
+    <!-- ТУЛБАР ИГР (фиксированный сверху) -->
+    <div id="gameToolbar" class="game-toolbar" hidden>
+        <div id="gameTabs" class="game-toolbar-tabs"></div>
+    </div>
+
     <!-- ГЛАВНАЯ -->
     <div id="screen-home" class="screen">
         <div class="top-right">
@@ -27,12 +32,6 @@
                     <h1>⚔️ Добро пожаловать</h1>
                     <p>Выбери свою гильдию, чтобы ознакомиться с правилами</p>
                 </div>
-            </div>
-
-            <!-- ВЫБОР ИГРЫ -->
-            <div id="gameSelector" class="game-selector" hidden>
-                <div class="game-selector-label">🎮 Выберите игру:</div>
-                <div id="gameTabs" class="game-tabs"></div>
             </div>
 
             <div id="statsRow" class="stats-row"></div>
@@ -320,7 +319,8 @@
                 <div class="add-form" style="border-style:solid">
                     <input type="text" id="gameId" placeholder="ID (латиница, напр. wosb)" maxlength="30">
                     <input type="text" id="gameName" placeholder="Название игры *" maxlength="80">
-                    <input type="text" id="gameImage" placeholder="Путь к логотипу (images/wosb.png)" maxlength="200">
+                    <input type="text" id="gameImage" placeholder="Логотип (images/wosb.png)" maxlength="200">
+                    <input type="text" id="gameBg" placeholder="Фон (images/bg-wosb.jpg)" maxlength="200">
                     <button id="gameAddBtn">➕ Добавить</button>
                     <span id="gameStatus"></span>
                 </div>
@@ -434,7 +434,8 @@
             <h2>✏️ Редактировать игру</h2>
             <input type="hidden" id="gameEditId">
             <div class="admin-field"><label>Название</label><input type="text" id="gameEditName" maxlength="80"></div>
-            <div class="admin-field"><label>Путь к логотипу</label><input type="text" id="gameEditImage" maxlength="200"></div>
+            <div class="admin-field"><label>Логотип</label><input type="text" id="gameEditImage" placeholder="images/wosb.png" maxlength="200"></div>
+            <div class="admin-field"><label>Фон</label><input type="text" id="gameEditBg" placeholder="images/bg-wosb.jpg" maxlength="200"></div>
             <p id="gameEditMsg" class="error"></p>
             <div class="modal-actions">
                 <button id="saveGameEdit">💾 Сохранить</button>
@@ -517,7 +518,7 @@
 
     <footer class="site-footer">
         <span class="footer-left">Mist Time — Сергеев С.В</span>
-        <span class="footer-right">v1.5.0</span>
+        <span class="footer-right">v1.5.1</span>
     </footer>
 
     <script type="module" src="app.js"></script>
