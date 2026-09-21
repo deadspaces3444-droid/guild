@@ -326,7 +326,7 @@ body::before {
     font-size: 12px;
 }
 
-/* ПАРТНЁРЫ (главная) */
+/* ПАРТНЁРЫ */
 .promo-section {
     display: flex;
     flex-direction: column;
@@ -342,6 +342,79 @@ body::before {
     gap: 16px;
     width: 100%;
 }
+
+/* ============ YOUTUBE-КАРТОЧКА (крупная) ============ */
+.yt-promo-card {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+    padding: 24px 28px;
+    background: rgba(23, 26, 33, 0.9);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--border);
+    border-radius: 18px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all .2s ease;
+}
+.yt-promo-card:hover {
+    border-color: #ff0000;
+    background: rgba(30, 20, 20, 0.95);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(255, 0, 0, 0.25);
+}
+.yt-promo-logo {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 50%;
+    background: #000;
+    flex-shrink: 0;
+    border: 3px solid #ff0000;
+    box-shadow: 0 6px 20px rgba(255, 0, 0, 0.35);
+}
+.yt-promo-logo-fallback {
+    object-fit: contain;
+    border-radius: 50%;
+    background: var(--panel);
+    border-color: var(--accent);
+    box-shadow: 0 6px 20px rgba(43, 108, 176, 0.35);
+}
+.yt-promo-info { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.yt-promo-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    word-break: break-word;
+}
+.yt-promo-name::before { content: '📺'; font-size: 24px; flex-shrink: 0; }
+.yt-promo-desc { font-size: 14px; line-height: 1.5; color: var(--muted); word-break: break-word; }
+.yt-promo-btn {
+    margin-top: 8px;
+    padding: 12px 22px;
+    background: #ff0000;
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+    transition: all .15s;
+}
+.yt-promo-btn::before { content: '▶'; font-size: 12px; }
+.yt-promo-card:hover .yt-promo-btn {
+    background: #cc0000;
+    box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5);
+}
+
+/* Обычная карточка партнёра */
 .partner-card {
     display: flex;
     align-items: flex-start;
@@ -784,7 +857,6 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
 .player-list li .actions button.edit:hover   { color: #ffd479; border-color: #ffd479; }
 .player-list li .actions button.move:hover   { color: var(--green); border-color: var(--green); }
 .player-list li .actions button.delete:hover { color: var(--red);   border-color: var(--red); }
-
 .empty {
     color: var(--muted); font-style: italic; padding: 12px;
     background: rgba(23, 26, 33, 0.7); border-radius: 8px;
@@ -845,7 +917,6 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
 .build-actions button.edit:hover   { color: #ffd479; border-color: #ffd479; }
 .build-actions button.copy:hover   { color: #7db9ff; border-color: #7db9ff; }
 .build-actions button.delete:hover { color: var(--red); border-color: var(--red); }
-
 .build-section { display: flex; flex-direction: column; gap: 6px; }
 .build-section-label {
     font-size: 12px; font-weight: 700;
@@ -853,7 +924,6 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     text-transform: uppercase; letter-spacing: .5px;
 }
 .build-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-
 .chip {
     display: inline-block; padding: 4px 10px;
     font-size: 13px; font-weight: 600;
@@ -865,7 +935,6 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
 .chip-weap-small  { color: #6ee7a7; background: rgba(110, 231, 167, 0.12); border-color: rgba(110, 231, 167, 0.45); }
 .chip-weap-medium { color: #ffd479; background: rgba(255, 212, 121, 0.12); border-color: rgba(255, 212, 121, 0.45); }
 .chip-weap-large  { color: #ff7a7a; background: rgba(255, 122, 122, 0.12); border-color: rgba(255, 122, 122, 0.45); }
-
 .spec-list { display: flex; flex-direction: column; gap: 8px; }
 .spec-item {
     background: rgba(15, 17, 21, 0.5);
@@ -881,7 +950,6 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
 .spec-bonus.plus    { color: #6ee7a7; background: rgba(110, 231, 167, 0.12); border: 1px solid rgba(110, 231, 167, 0.4); }
 .spec-bonus.minus   { color: #ff7a7a; background: rgba(255, 122, 122, 0.12); border: 1px solid rgba(255, 122, 122, 0.4); }
 .spec-bonus.neutral { color: #cfd3dc; background: rgba(207, 211, 220, 0.12); border: 1px solid rgba(207, 211, 220, 0.35); }
-
 .build-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
 .build-group-title {
     font-size: 16px; font-weight: 700; color: #7db9ff;
@@ -1238,6 +1306,10 @@ a.icon-btn:hover {
     .partner-card { padding: 14px 16px; }
     .partner-logo { width: 48px; height: 48px; }
     .partner-letter { font-size: 20px; }
+    .yt-promo-card { flex-direction: column; text-align: center; padding: 20px; }
+    .yt-promo-logo { width: 80px; height: 80px; }
+    .yt-promo-btn { align-self: center; }
+    .yt-promo-name { font-size: 18px; justify-content: center; }
 }
 @media (max-width: 520px) {
     .hero-text h1 { font-size: 18px; }
