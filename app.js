@@ -1,8 +1,7 @@
 import { supabase } from './supabase.js';
 
-/* ===================== КОНФИГ ===================== */
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.4.1';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const UNLOCK_KEY = 'guild_unlocked';
@@ -13,10 +12,10 @@ const SHARED = '__shared__';
 let clansCache    = {};
 let settingsCache = null;
 let faqCache      = [];
+let partnersCache = [];
 let currentClan   = null;
 let pendingClanId = null;
 let currentTab    = 'enemies';
-let currentSection = 'lists';
 let isAdmin       = false;
 let movingItem    = null;
 let editingItem   = null;
@@ -107,7 +106,6 @@ document.querySelectorAll('.side-item').forEach(btn => {
         document.querySelectorAll('.clan-section').forEach(s => s.classList.remove('active'));
         btn.classList.add('active');
         $('section-' + section).classList.add('active');
-        currentSection = section;
         if (section === 'lists') TABS.forEach(loadList);
         else if (section === 'events') renderEvents();
         else if (section === 'treasury') renderTreasury();
@@ -201,7 +199,7 @@ function renderHomeCards() {
 function isUnlocked() { return isAdmin || localStorage.getItem(UNLOCK_KEY) === '1'; }
 function handleClanClick(id) { isUnlocked() ? openClan(id) : openClanInfo(id); }
 
-/* ===================== SCOPE SELECT ===================== */
+/* ===================== SCOPE ===================== */
 function renderScopeSelects() {
     const clans = Object.values(clansCache);
     ['pvpScope', 'pbScope', 'buildEditScope', 'buildDupScope', 'evScope'].forEach(id => {
@@ -227,7 +225,7 @@ function renderScopeSelects() {
     });
 }
 
-/* ===================== ОПИСАНИЕ ГИЛЬДИИ ===================== */
+/* ===================== ОПИСАНИЕ ===================== */
 function openClanInfo(id) {
     const clan = clansCache[id];
     if (!clan) return;
@@ -287,7 +285,6 @@ function openClan(id) {
     $('clanIcon').alt = clan.name;
     showScreen('lists');
     applyBg();
-    currentSection = 'lists';
     document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b.dataset.section === 'lists'));
     document.querySelectorAll('.clan-section').forEach(s => s.classList.toggle('active', s.id === 'section-lists'));
     currentTab = 'enemies';
@@ -376,20 +373,17 @@ function parseLines(text) {
     if (!text) return [];
     return String(text).split('\n').map(s => s.trim()).filter(Boolean);
 }
-function parseSpecialist(line) {
-    const parts = line.split('|').map(p => p.trim()).filter(Boolean);
-    if (!parts.length) return null;
-    const name = parts[0];
-    const bonuses = parts.slice(1).map(parseBonus).filter(Boolean);
-    return { name, bonuses };
-}
 function parseBonus(text) {
     const m = String(text).match(/^(.+?)\s*([+-]\s*\d+)\s*$/);
     if (!m) return { stat: text.trim(), value: null };
     return { stat: m[1].trim(), value: parseInt(m[2].replace(/\s/g, ''), 10) };
 }
 function parseSpecialists(text) {
-    return parseLines(text).map(parseSpecialist).filter(Boolean);
+    return parseLines(text).map(line => {
+        const parts = line.split('|').map(p => p.trim()).filter(Boolean);
+        if (!parts.length) return null;
+        return { name: parts[0], bonuses: parts.slice(1).map(parseBonus) };
+    }).filter(Boolean);
 }
 
 async function renderBuilds(type) {
@@ -550,20 +544,14 @@ async function addBuild(type) {
     if (!isPvp && !rank) { flashStatusEl(statusEl, 'Укажите ранг', '#ff7a7a'); return; }
 
     const { error } = await supabase.from('builds').insert({
-        clan: clanValue,
-        is_shared: isShared,
-        type,
-        rank: rank || null,
-        ship_name: ship,
+        clan: clanValue, is_shared: isShared, type,
+        rank: rank || null, ship_name: ship,
         upgrades: upgrades || null,
         weapons_small: weapS || null,
         weapons_medium: weapM || null,
         weapons_large: weapL || null,
-        consumable1: c1 || null,
-        consumable2: c2 || null,
-        consumable3: c3 || null,
-        cargo: cargo || null,
-        specialists: specs || null
+        consumable1: c1 || null, consumable2: c2 || null, consumable3: c3 || null,
+        cargo: cargo || null, specialists: specs || null
     });
 
     if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
@@ -630,8 +618,7 @@ $('saveBuildEdit').addEventListener('click', async () => {
     if (editingBuild.type === 'pb' && !rank) { $('buildEditError').textContent = 'Укажите ранг'; return; }
 
     const { error } = await supabase.from('builds').update({
-        clan: clanValue,
-        is_shared: isShared,
+        clan: clanValue, is_shared: isShared,
         rank: editingBuild.type === 'pb' ? rank : null,
         ship_name: ship,
         upgrades: $('buildEditUpgrades').value || null,
@@ -674,11 +661,8 @@ $('doBuildDup').addEventListener('click', async () => {
 
     const item = duplicatingBuild;
     const { error } = await supabase.from('builds').insert({
-        clan: clanValue,
-        is_shared: isShared,
-        type: item.type,
-        rank: item.rank || null,
-        ship_name: item.ship_name,
+        clan: clanValue, is_shared: isShared, type: item.type,
+        rank: item.rank || null, ship_name: item.ship_name,
         upgrades: item.upgrades || null,
         weapons_small: item.weapons_small || null,
         weapons_medium: item.weapons_medium || null,
@@ -686,8 +670,7 @@ $('doBuildDup').addEventListener('click', async () => {
         consumable1: item.consumable1 || null,
         consumable2: item.consumable2 || null,
         consumable3: item.consumable3 || null,
-        cargo: item.cargo || null,
-        specialists: item.specialists || null
+        cargo: item.cargo || null, specialists: item.specialists || null
     });
 
     if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
@@ -700,7 +683,6 @@ $('doBuildDup').addEventListener('click', async () => {
     }, 700);
 });
 
-/* ===================== УДАЛЕНИЕ БИЛДА ===================== */
 async function deleteBuild(id, type) {
     if (!confirm('Удалить билд?')) return;
     const { error } = await supabase.from('builds').delete().eq('id', id);
@@ -784,9 +766,7 @@ $('evAddBtn').addEventListener('click', async () => {
     if (!dateStr) { flashStatusEl(statusEl, 'Укажите дату', '#ff7a7a'); return; }
 
     const { error } = await supabase.from('events').insert({
-        clan: clanVal,
-        is_shared: isShared,
-        title,
+        clan: clanVal, is_shared: isShared, title,
         event_date: new Date(dateStr).toISOString(),
         description: desc || null
     });
@@ -863,19 +843,15 @@ async function renderTreasury() {
 $('trAddBtn').addEventListener('click', async () => {
     if (!isAdmin || !currentClan) return;
     const type = $('trType').value;
-    const amountRaw = $('trAmount').value;
+    const amount = Number($('trAmount').value);
     const desc = $('trDesc').value.trim();
     const statusEl = $('trStatus');
 
-    const amount = Number(amountRaw);
     if (!amount || amount <= 0) { flashStatusEl(statusEl, 'Введите сумму > 0', '#ff7a7a'); return; }
     if (!desc) { flashStatusEl(statusEl, 'Добавьте описание', '#ff7a7a'); return; }
 
     const { error } = await supabase.from('treasury').insert({
-        clan: currentClan,
-        type,
-        amount,
-        description: desc
+        clan: currentClan, type, amount, description: desc
     });
 
     if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
@@ -886,7 +862,7 @@ $('trAddBtn').addEventListener('click', async () => {
     renderTreasury();
 });
 
-/* ===================== ЗАЯВКИ (АДМИН) ===================== */
+/* ===================== ЗАЯВКИ (админ) ===================== */
 async function renderApplications() {
     const container = $('applicationsList');
     if (!container || !isAdmin) return;
@@ -1062,9 +1038,7 @@ $('faqAddBtn').addEventListener('click', async () => {
     if (!q || !a) { alert('Заполни вопрос и ответ'); return; }
 
     const { error } = await supabase.from('faq').insert({
-        question: q,
-        answer: a,
-        sort_order: faqCache.length + 1
+        question: q, answer: a, sort_order: faqCache.length + 1
     });
     if (error) return alert(error.message);
 
@@ -1073,46 +1047,167 @@ $('faqAddBtn').addEventListener('click', async () => {
     loadFaq();
 });
 
-/* ===================== НАСТРОЙКИ САЙТА ===================== */
+/* ===================== ПАРТНЁРЫ ===================== */
+async function loadPartners() {
+    const { data, error } = await supabase.from('partners').select('*')
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
+
+    if (error) { console.warn('Партнёры не загружены:', error.message); return; }
+    partnersCache = data || [];
+    renderPartnersHome();
+    renderPartnersAdmin();
+}
+
+function renderPartnersHome() {
+    const section = $('partnersSection');
+    const list = $('partnersList');
+    if (!section || !list) return;
+    list.innerHTML = '';
+
+    if (!partnersCache.length) { section.hidden = true; return; }
+    section.hidden = false;
+
+    partnersCache.forEach(p => {
+        const a = document.createElement('a');
+        a.className = 'partner-card';
+        a.href = p.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+
+        const logoEl = document.createElement('div');
+        logoEl.className = 'partner-logo';
+
+        if (p.logo_url) {
+            const img = document.createElement('img');
+            img.src = p.logo_url;
+            img.alt = '';
+            img.onerror = () => img.replaceWith(makePartnerLetter(p.name));
+            logoEl.appendChild(img);
+        } else {
+            logoEl.appendChild(makePartnerLetter(p.name));
+        }
+
+        const info = document.createElement('div');
+        info.className = 'partner-info';
+        info.innerHTML = `
+            <div class="partner-name">${escapeHtml(p.name)}</div>
+            ${p.description ? `<div class="partner-desc">${escapeHtml(p.description)}</div>` : ''}
+            <div class="partner-link">🔗 ${escapeHtml(p.url)}</div>
+        `;
+
+        a.appendChild(logoEl);
+        a.appendChild(info);
+        list.appendChild(a);
+    });
+}
+
+function makePartnerLetter(name) {
+    const span = document.createElement('span');
+    span.className = 'partner-letter';
+    span.textContent = (name || '?').trim()[0]?.toUpperCase() || '?';
+    span.style.background = colorFromString(name || '?');
+    return span;
+}
+
+function colorFromString(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+    const hue = Math.abs(h) % 360;
+    return `linear-gradient(135deg, hsl(${hue}, 55%, 45%), hsl(${hue}, 55%, 30%))`;
+}
+
+function renderPartnersAdmin() {
+    const container = $('partnersAdminList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!partnersCache.length) {
+        container.innerHTML = '<div class="empty">Пока нет партнёров</div>';
+        return;
+    }
+
+    partnersCache.forEach((p, idx) => {
+        const el = document.createElement('div');
+        el.className = 'partners-admin-item';
+
+        const letter = (p.name || '?')[0].toUpperCase();
+        const logoHtml = p.logo_url
+            ? `<img src="${escapeHtml(p.logo_url)}" alt="" onerror="this.outerHTML='<span>${escapeHtml(letter)}</span>'">`
+            : `<span>${escapeHtml(letter)}</span>`;
+
+        el.innerHTML = `
+            <div class="logo-mini">${logoHtml}</div>
+            <div class="txt">
+                <b>${escapeHtml(p.name)}</b>
+                <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.url)}</a>
+            </div>
+            <div class="actions">
+                <button class="up" title="Выше" ${idx === 0 ? 'disabled style="opacity:.3"' : ''}>▲</button>
+                <button class="down" title="Ниже" ${idx === partnersCache.length - 1 ? 'disabled style="opacity:.3"' : ''}>▼</button>
+                <button class="delete" title="Удалить">🗑</button>
+            </div>
+        `;
+
+        el.querySelector('.up')?.addEventListener('click', () => movePartner(p.id, -1));
+        el.querySelector('.down')?.addEventListener('click', () => movePartner(p.id, +1));
+        el.querySelector('.delete').addEventListener('click', () => deletePartner(p.id));
+
+        container.appendChild(el);
+    });
+}
+
+async function movePartner(id, dir) {
+    const idx = partnersCache.findIndex(p => p.id === id);
+    if (idx === -1) return;
+    const swapIdx = idx + dir;
+    if (swapIdx < 0 || swapIdx >= partnersCache.length) return;
+
+    const a = partnersCache[idx];
+    const b = partnersCache[swapIdx];
+
+    await supabase.from('partners').update({ sort_order: swapIdx }).eq('id', a.id);
+    await supabase.from('partners').update({ sort_order: idx }).eq('id', b.id);
+
+    await loadPartners();
+}
+
+async function deletePartner(id) {
+    if (!confirm('Удалить партнёра?')) return;
+    await supabase.from('partners').delete().eq('id', id);
+    await loadPartners();
+}
+
+$('partnerAddBtn').addEventListener('click', async () => {
+    const name = $('partnerName').value.trim();
+    const url = $('partnerUrl').value.trim();
+    const logo = $('partnerLogo').value.trim();
+    const desc = $('partnerDesc').value.trim();
+    const statusEl = $('partnerStatus');
+
+    if (!name) { flashStatusEl(statusEl, 'Укажи название', '#ff7a7a'); return; }
+    if (!url) { flashStatusEl(statusEl, 'Укажи ссылку', '#ff7a7a'); return; }
+    if (!/^https?:\/\//i.test(url)) { flashStatusEl(statusEl, 'Ссылка должна начинаться с http:// или https://', '#ff7a7a'); return; }
+
+    const { error } = await supabase.from('partners').insert({
+        name, url,
+        logo_url: logo || null,
+        description: desc || null,
+        sort_order: partnersCache.length
+    });
+
+    if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
+
+    ['partnerName','partnerUrl','partnerLogo','partnerDesc'].forEach(id => $(id).value = '');
+    flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
+    await loadPartners();
+});
+
+/* ===================== НАСТРОЙКИ ===================== */
 async function loadSettings() {
     const { data, error } = await supabase.from('site_settings').select('*').eq('id', 'main').single();
     if (error) { console.warn('Настройки не загружены:', error.message); return; }
     settingsCache = data;
-    renderYoutubeBlock(data);
-}
-
-function extractYouTubeHandle(url) {
-    if (!url) return '';
-    try {
-        const u = new URL(url.trim());
-        const path = u.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
-        if (path.startsWith('@')) return path.split('/')[0];
-        if (path.startsWith('channel/')) return path.replace('channel/', '').split('/')[0];
-        if (path.startsWith('c/'))       return path.replace('c/', '').split('/')[0];
-        if (path.startsWith('user/'))    return path.replace('user/', '').split('/')[0];
-        return path.split('/')[0] || '';
-    } catch { return ''; }
-}
-
-function renderYoutubeBlock(s) {
-    const section = $('promoSection');
-    if (!section || !s || !s.youtube_url) { if (section) section.hidden = true; return; }
-
-    $('ytPromoCard').href = s.youtube_url;
-    $('ytName').textContent = s.youtube_name || 'YouTube';
-    $('ytDesc').textContent = s.youtube_desc || '';
-
-    const handle = extractYouTubeHandle(s.youtube_url);
-    const logo = $('ytLogo');
-    if (handle) {
-        logo.src = `https://unavatar.io/youtube/${handle}`;
-        logo.classList.remove('promo-logo-fallback');
-    } else {
-        logo.src = 'images/aov.png';
-        logo.classList.add('promo-logo-fallback');
-    }
-
-    section.hidden = false;
 }
 
 /* ===================== СЧЁТЧИКИ ===================== */
@@ -1158,7 +1253,6 @@ async function loadStats() {
 async function sendDiscordWebhook(title, content) {
     const url = settingsCache?.discord_webhook;
     if (!url) return;
-
     try {
         await fetch(url, {
             method: 'POST',
@@ -1172,9 +1266,7 @@ async function sendDiscordWebhook(title, content) {
                 }]
             })
         });
-    } catch (err) {
-        console.warn('Webhook error:', err);
-    }
+    } catch (err) { console.warn('Webhook error:', err); }
 }
 
 /* ===================== КОНТАКТЫ ===================== */
@@ -1209,6 +1301,7 @@ function openAdminPanel() {
     renderAdminClanSelect();
     renderSiteFields();
     renderFaqAdmin();
+    renderPartnersAdmin();
     $('adminPanelMsg').textContent = '';
     $('adminSiteMsg').textContent = '';
     $('adminNewPass').value = '';
@@ -1229,6 +1322,7 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
         $('atab-' + target).classList.add('active');
         if (target === 'site') renderSiteFields();
         if (target === 'faq') renderFaqAdmin();
+        if (target === 'partners') renderPartnersAdmin();
     });
 });
 
@@ -1283,9 +1377,6 @@ $('saveAdminSettings').addEventListener('click', async () => {
 
 function renderSiteFields() {
     const s = settingsCache || {};
-    $('adminYoutubeUrl').value = s.youtube_url || '';
-    $('adminYoutubeName').value = s.youtube_name || '';
-    $('adminYoutubeDesc').value = s.youtube_desc || '';
     $('adminWebhook').value = s.discord_webhook || '';
     $('adminSiteMsg').textContent = '';
 }
@@ -1293,9 +1384,6 @@ $('saveSiteSettings').addEventListener('click', async () => {
     const msg = $('adminSiteMsg');
     msg.style.color = '';
     const payload = {
-        youtube_url: $('adminYoutubeUrl').value.trim() || null,
-        youtube_name: $('adminYoutubeName').value.trim() || null,
-        youtube_desc: $('adminYoutubeDesc').value || null,
         discord_webhook: $('adminWebhook').value.trim() || null,
         updated_at: new Date().toISOString()
     };
@@ -1304,7 +1392,6 @@ $('saveSiteSettings').addEventListener('click', async () => {
     if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
 
     settingsCache = Object.assign({ id: 'main' }, settingsCache || {}, payload);
-    renderYoutubeBlock(settingsCache);
     msg.textContent = '✔ Сохранено';
     msg.style.color = '#6ee7a7';
 });
@@ -1342,7 +1429,7 @@ $('saveNewClan').addEventListener('click', async () => {
     setTimeout(() => { $('addClanModal').hidden = true; }, 800);
 });
 
-/* ===================== РЕДАКТИРОВАНИЕ ЗАПИСЕЙ СПИСКА ===================== */
+/* ===================== РЕДАКТИРОВАНИЕ ЗАПИСИ ===================== */
 function openEditModal(tab, item) {
     editingItem = { tab, id: item.id };
     $('editPlayerGuild').value = item.player_guild || '';
@@ -1375,7 +1462,7 @@ $('saveEdit').addEventListener('click', async () => {
     });
 });
 
-/* ===================== ДОБАВЛЕНИЕ ЗАПИСИ В СПИСОК ===================== */
+/* ===================== ДОБАВЛЕНИЕ ЗАПИСИ ===================== */
 $('addBtn').addEventListener('click', async () => {
     if (!isAdmin || !currentClan) return;
     const pg = $('playerGuild').value.trim();
@@ -1437,30 +1524,22 @@ document.querySelectorAll('#moveModal [data-target]').forEach(btn => {
     });
 });
 
-/* ===================== ОБРАБОТКА #build=ID ===================== */
+/* ===================== #build=ID ===================== */
 async function handleBuildHash() {
-    const hash = location.hash;
-    const m = hash.match(/^#build=([a-f0-9-]+)$/i);
+    const m = location.hash.match(/^#build=([a-f0-9-]+)$/i);
     if (!m) return;
-    const id = m[1];
-
-    const { data, error } = await supabase.from('builds').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('builds').select('*').eq('id', m[1]).single();
     if (error || !data) return;
-
     const section = data.type === 'pvp' ? 'pvp' : 'pb';
-    const sideBtn = document.querySelector(`.side-item[data-section="${section}"]`);
-    if (sideBtn) sideBtn.click();
-
+    document.querySelector(`.side-item[data-section="${section}"]`)?.click();
     setTimeout(() => {
-        const cards = document.querySelectorAll('.build-card');
-        for (const c of cards) {
+        document.querySelectorAll('.build-card').forEach(c => {
             if (c.querySelector('.build-ship')?.textContent === data.ship_name) {
                 c.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 c.style.boxShadow = '0 0 0 3px #b48aff';
                 setTimeout(() => c.style.boxShadow = '', 2500);
-                break;
             }
-        }
+        });
     }, 600);
 }
 window.addEventListener('hashchange', () => {
@@ -1481,6 +1560,7 @@ function escapeHtml(str) {
 
     await loadClans();
     await loadSettings();
+    await loadPartners();
     renderApplyClanSelect();
     await loadFaq();
     loadStats();
