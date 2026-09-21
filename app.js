@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
 
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.5.1';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const UNLOCK_KEY = 'guild_unlocked';
@@ -47,6 +47,7 @@ function setOverride(key, dataUrl) {
 function currentBgKey() { return currentClan ? currentClan : 'main'; }
 function currentBgFallback() {
     if (currentClan && clansCache[currentClan]?.bg) return clansCache[currentClan].bg;
+    if (currentGame && gamesCache[currentGame]?.bg) return gamesCache[currentGame].bg;
     return 'images/bg-main.jpg';
 }
 function applyBg() {
@@ -116,10 +117,11 @@ async function loadGames() {
     renderGameSelector();
     renderGamesAdmin();
     renderNewClanGameSelect();
+    applyBg();
 }
 
 function renderGameSelector() {
-    const wrap = $('gameSelector');
+    const wrap = $('gameToolbar');
     const tabs = $('gameTabs');
     if (!wrap || !tabs) return;
     tabs.innerHTML = '';
@@ -127,7 +129,6 @@ function renderGameSelector() {
 
     if (!games.length) { wrap.hidden = true; return; }
     if (games.length === 1) {
-        // Если игра одна — показываем только название (или можно скрыть блок полностью)
         wrap.hidden = false;
         const el = document.createElement('div');
         el.className = 'game-tab active';
@@ -164,6 +165,7 @@ function selectGame(gameId) {
     renderApplyClanSelect();
     renderAdminClanSelect();
     renderScopeSelects();
+    applyBg();
 }
 
 /* ===================== САЙДБАР ===================== */
@@ -353,7 +355,7 @@ $('clanPassword').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('doClanLogin').click();
 });
 
-/* ===================== ОТКРЫТИЕ ===================== */
+/* ===================== ОТКРЫТИЕ ГИЛЬДИИ ===================== */
 function openClan(id) {
     const clan = clansCache[id];
     if (!clan) return;
@@ -380,7 +382,10 @@ function openClan(id) {
     renderTreasury();
     renderApplications();
 }
-$('backBtn').addEventListener('click', () => showScreen('home'));
+$('backBtn').addEventListener('click', () => {
+    showScreen('home');
+    applyBg();
+});
 $('clanLeaveBtn').addEventListener('click', () => {
     if (!confirm('Заблокировать просмотр? Пароль потребуется ввести снова.')) return;
     localStorage.removeItem(UNLOCK_KEY);
@@ -1388,7 +1393,7 @@ function renderGamesAdmin() {
             <div class="logo-mini">${logoHtml}</div>
             <div class="txt">
                 <b>${escapeHtml(g.name)}</b>
-                <span>ID: ${escapeHtml(g.id)}</span>
+                <span>ID: ${escapeHtml(g.id)}${g.bg ? ' · 🎨 фон' : ''}</span>
             </div>
             <div class="actions">
                 <button class="edit" title="Редактировать">✏️</button>
@@ -1404,6 +1409,7 @@ $('gameAddBtn').addEventListener('click', async () => {
     const id = $('gameId').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
     const name = $('gameName').value.trim();
     const image = $('gameImage').value.trim();
+    const bg = $('gameBg').value.trim();
     const statusEl = $('gameStatus');
     if (!id) { flashStatusEl(statusEl, 'Укажи ID (латиница)', '#ff7a7a'); return; }
     if (!name) { flashStatusEl(statusEl, 'Укажи название', '#ff7a7a'); return; }
@@ -1412,10 +1418,11 @@ $('gameAddBtn').addEventListener('click', async () => {
     const { error } = await supabase.from('games').insert({
         id, name,
         image: image || null,
+        bg: bg || null,
         sort_order: Object.keys(gamesCache).length
     });
     if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
-    ['gameId','gameName','gameImage'].forEach(i => $(i).value = '');
+    ['gameId','gameName','gameImage','gameBg'].forEach(i => $(i).value = '');
     flashStatusEl(statusEl, '✔ Добавлено', '#6ee7a7');
     await loadGames();
 });
@@ -1425,6 +1432,7 @@ function openGameEdit(g) {
     $('gameEditId').value = g.id;
     $('gameEditName').value = g.name;
     $('gameEditImage').value = g.image || '';
+    $('gameEditBg').value = g.bg || '';
     $('gameEditMsg').textContent = '';
     $('gameEditModal').hidden = false;
     $('gameEditName').focus();
@@ -1436,10 +1444,13 @@ $('saveGameEdit').addEventListener('click', async () => {
     if (!editingGame) return;
     const name = $('gameEditName').value.trim();
     const image = $('gameEditImage').value.trim();
+    const bg = $('gameEditBg').value.trim();
     const msg = $('gameEditMsg');
     if (!name) { msg.textContent = 'Укажи название'; msg.style.color = '#ff7a7a'; return; }
     const { error } = await supabase.from('games').update({
-        name, image: image || null
+        name,
+        image: image || null,
+        bg: bg || null
     }).eq('id', editingGame.id);
     if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
     $('gameEditModal').hidden = true;
