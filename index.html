@@ -156,16 +156,23 @@
                     <h2>⚔️ Билды для ПВП</h2>
 
                     <section class="add-form admin-only" hidden>
-                        <input type="text" id="pvpShip" placeholder="Название корабля" maxlength="60">
-                        <input type="text" id="pvpUpgrades" placeholder="Апгрейды (через запятую)" maxlength="200">
+                        <textarea id="pvpShip" placeholder="Название корабля" rows="1" maxlength="60"></textarea>
+                        <textarea id="pvpUpgrades" placeholder="Апгрейды — каждый с новой строки" rows="3"></textarea>
+                        <textarea id="pvpWeapS" placeholder="Малые пушки (до 12 фунтов) — каждая с новой строки" rows="2"></textarea>
+                        <textarea id="pvpWeapM" placeholder="Средние пушки (до 24 фунтов) — каждая с новой строки" rows="2"></textarea>
+                        <textarea id="pvpWeapL" placeholder="Большие пушки (до 48 фунтов) — каждая с новой строки" rows="2"></textarea>
                         <input type="text" id="pvpCons1" placeholder="Расходник 1" maxlength="40">
                         <input type="text" id="pvpCons2" placeholder="Расходник 2" maxlength="40">
                         <input type="text" id="pvpCons3" placeholder="Расходник 3" maxlength="40">
-                        <input type="text" id="pvpCargo" placeholder="Наполнение трюма" maxlength="200">
+                        <textarea id="pvpCargo" placeholder="Наполнение трюма" rows="1" maxlength="200"></textarea>
+                        <textarea id="pvpSpecs" placeholder="Специалисты — каждый с новой строки: Имя | Бонус +5 | Бонус -3" rows="3"></textarea>
+                        <select id="pvpScope">
+                            <option value="__shared__">🌐 Общий (для всех гильдий)</option>
+                        </select>
                         <button id="pvpAddBtn">➕ Добавить</button>
                         <span id="pvpStatus"></span>
                     </section>
-                    <p class="hint admin-only" hidden>💡 Название корабля — обязательно. Остальное — опционально.</p>
+                    <p class="hint admin-only" hidden>💡 Обязательно только название корабля. Остальное — опционально.</p>
 
                     <div id="pvpList" class="builds-list"></div>
                 </div>
@@ -174,17 +181,24 @@
                     <h2>🛡 Билды для ПБ</h2>
 
                     <section class="add-form admin-only" hidden>
-                        <input type="text" id="pbRank" placeholder="Ранг (1-6)" maxlength="10">
-                        <input type="text" id="pbShip" placeholder="Название корабля" maxlength="60">
-                        <input type="text" id="pbUpgrades" placeholder="Апгрейды (через запятую)" maxlength="200">
+                        <textarea id="pbRank" placeholder="Ранг (1-6)" rows="1" maxlength="10"></textarea>
+                        <textarea id="pbShip" placeholder="Название корабля" rows="1" maxlength="60"></textarea>
+                        <textarea id="pbUpgrades" placeholder="Апгрейды — каждый с новой строки" rows="3"></textarea>
+                        <textarea id="pbWeapS" placeholder="Малые пушки (до 12 фунтов) — каждая с новой строки" rows="2"></textarea>
+                        <textarea id="pbWeapM" placeholder="Средние пушки (до 24 фунтов) — каждая с новой строки" rows="2"></textarea>
+                        <textarea id="pbWeapL" placeholder="Большие пушки (до 48 фунтов) — каждая с новой строки" rows="2"></textarea>
                         <input type="text" id="pbCons1" placeholder="Расходник 1" maxlength="40">
                         <input type="text" id="pbCons2" placeholder="Расходник 2" maxlength="40">
                         <input type="text" id="pbCons3" placeholder="Расходник 3" maxlength="40">
-                        <input type="text" id="pbCargo" placeholder="Наполнение трюма" maxlength="200">
+                        <textarea id="pbCargo" placeholder="Наполнение трюма" rows="1" maxlength="200"></textarea>
+                        <textarea id="pbSpecs" placeholder="Специалисты — каждый с новой строки: Имя | Бонус +5 | Бонус -3" rows="3"></textarea>
+                        <select id="pbScope">
+                            <option value="__shared__">🌐 Общий (для всех гильдий)</option>
+                        </select>
                         <button id="pbAddBtn">➕ Добавить</button>
                         <span id="pbStatus"></span>
                     </section>
-                    <p class="hint admin-only" hidden>💡 Ранг и название корабля — обязательны.</p>
+                    <p class="hint admin-only" hidden>💡 Обязательны ранг и название корабля.</p>
 
                     <div id="pbList" class="builds-list"></div>
                 </div>
@@ -236,27 +250,22 @@
                 <label>Гильдия</label>
                 <select id="adminClanSelect"></select>
             </div>
-
             <div class="admin-field">
                 <label>Текущий пароль</label>
                 <input type="text" id="adminCurrentPass" readonly>
             </div>
-
             <div class="admin-field">
                 <label>Новый пароль</label>
                 <input type="text" id="adminNewPass" placeholder="Оставь пустым, чтобы не менять">
             </div>
-
             <div class="admin-field">
                 <label>Discord-ссылка гильдии</label>
                 <input type="text" id="adminDiscord" placeholder="https://discord.gg/xxxxx" maxlength="200">
             </div>
-
             <div class="admin-field">
                 <label>Новости гильдии</label>
                 <textarea id="adminNews" placeholder="Общие новости..." rows="5"></textarea>
             </div>
-
             <div class="admin-field">
                 <label>Правила гильдии</label>
                 <textarea id="adminRules" placeholder="Каждое правило с новой строки..." rows="8"></textarea>
@@ -272,7 +281,7 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА: ДОБАВИТЬ ГИЛЬДИЮ -->
+    <!-- МОДАЛКА: НОВАЯ ГИЛЬДИЯ -->
     <div id="addClanModal" class="modal" hidden>
         <div class="modal-content admin-panel-wide">
             <h2>➕ Новая гильдия</h2>
@@ -282,37 +291,30 @@
                 <label>ID (латиница, без пробелов)</label>
                 <input type="text" id="newClanId" placeholder="clan3" maxlength="20">
             </div>
-
             <div class="admin-field">
                 <label>Название</label>
                 <input type="text" id="newClanName" placeholder="Гильдия Орлов" maxlength="60">
             </div>
-
             <div class="admin-field">
                 <label>Описание</label>
                 <textarea id="newClanDesc" placeholder="Кратко о гильдии..." rows="3"></textarea>
             </div>
-
             <div class="admin-field">
                 <label>Правила</label>
                 <textarea id="newClanRules" placeholder="1. Правило..." rows="5"></textarea>
             </div>
-
             <div class="admin-field">
                 <label>Пароль для входа</label>
                 <input type="text" id="newClanPass" placeholder="Пароль гильдии">
             </div>
-
             <div class="admin-field">
                 <label>Discord-ссылка</label>
                 <input type="text" id="newClanDiscord" placeholder="https://discord.gg/xxxxx">
             </div>
-
             <div class="admin-field">
                 <label>Путь к логотипу</label>
                 <input type="text" id="newClanImage" placeholder="images/clan3.png">
             </div>
-
             <div class="admin-field">
                 <label>Путь к фону</label>
                 <input type="text" id="newClanBg" placeholder="images/bg-clan3.jpg">
@@ -350,37 +352,52 @@
 
             <div class="admin-field" id="buildEditRankField" hidden>
                 <label>Ранг</label>
-                <input type="text" id="buildEditRank" placeholder="1-6" maxlength="10">
+                <textarea id="buildEditRank" rows="1" maxlength="10"></textarea>
             </div>
 
             <div class="admin-field">
                 <label>Название корабля</label>
-                <input type="text" id="buildEditShip" maxlength="60">
+                <textarea id="buildEditShip" rows="1" maxlength="60"></textarea>
             </div>
-
             <div class="admin-field">
-                <label>Апгрейды</label>
-                <textarea id="buildEditUpgrades" rows="3" placeholder="Апгрейды через запятую"></textarea>
+                <label>Апгрейды (каждый с новой строки)</label>
+                <textarea id="buildEditUpgrades" rows="3"></textarea>
             </div>
-
+            <div class="admin-field">
+                <label>Малые пушки (до 12 фунтов)</label>
+                <textarea id="buildEditWeapS" rows="2"></textarea>
+            </div>
+            <div class="admin-field">
+                <label>Средние пушки (до 24 фунтов)</label>
+                <textarea id="buildEditWeapM" rows="2"></textarea>
+            </div>
+            <div class="admin-field">
+                <label>Большие пушки (до 48 фунтов)</label>
+                <textarea id="buildEditWeapL" rows="2"></textarea>
+            </div>
             <div class="admin-field">
                 <label>Расходник 1</label>
-                <input type="text" id="buildEditCons1" maxlength="40">
+                <textarea id="buildEditCons1" rows="1" maxlength="40"></textarea>
             </div>
-
             <div class="admin-field">
                 <label>Расходник 2</label>
-                <input type="text" id="buildEditCons2" maxlength="40">
+                <textarea id="buildEditCons2" rows="1" maxlength="40"></textarea>
             </div>
-
             <div class="admin-field">
                 <label>Расходник 3</label>
-                <input type="text" id="buildEditCons3" maxlength="40">
+                <textarea id="buildEditCons3" rows="1" maxlength="40"></textarea>
             </div>
-
             <div class="admin-field">
                 <label>Наполнение трюма</label>
-                <textarea id="buildEditCargo" rows="2" placeholder="Что везём"></textarea>
+                <textarea id="buildEditCargo" rows="2"></textarea>
+            </div>
+            <div class="admin-field">
+                <label>Специалисты (Имя | Бонус +5 | Бонус -3)</label>
+                <textarea id="buildEditSpecs" rows="4"></textarea>
+            </div>
+            <div class="admin-field">
+                <label>Привязать к</label>
+                <select id="buildEditScope"></select>
             </div>
 
             <p id="buildEditError" class="error"></p>
@@ -388,6 +405,26 @@
             <div class="modal-actions">
                 <button id="saveBuildEdit">💾 Сохранить</button>
                 <button id="cancelBuildEdit" class="secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: ДУБЛИРОВАНИЕ БИЛДА -->
+    <div id="buildDupModal" class="modal" hidden>
+        <div class="modal-content">
+            <h2>📋 Дублировать билд</h2>
+            <p id="buildDupName" class="auth-clan-name"></p>
+
+            <div class="admin-field">
+                <label>Куда скопировать</label>
+                <select id="buildDupScope"></select>
+            </div>
+
+            <p id="buildDupMsg" class="error"></p>
+
+            <div class="modal-actions">
+                <button id="doBuildDup">📋 Создать копию</button>
+                <button id="cancelBuildDup" class="secondary">Отмена</button>
             </div>
         </div>
     </div>
@@ -412,7 +449,7 @@
 
     <footer class="site-footer">
         <span class="footer-left">Mist Time — Сергеев С.В</span>
-        <span class="footer-right">v1.2.2</span>
+        <span class="footer-right">v1.3.0</span>
     </footer>
 
     <script type="module" src="app.js"></script>
