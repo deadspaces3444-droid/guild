@@ -195,7 +195,10 @@
             </aside>
 
             <div class="clan-main">
-                <div id="section-lists" class="clan-section active">
+
+                <!-- СПИСКИ -->
+                <div id="section-lists" class="clan-section">
+                    <h2>📋 Списки гильдии</h2>
                     <nav class="tabs">
                         <button class="tab active" data-tab="enemies">🔴 Враги</button>
                         <button class="tab" data-tab="friends">🟢 Друзья</button>
@@ -213,12 +216,13 @@
                     </section>
                     <p class="hint admin-only" hidden>💡 Достаточно заполнить <b>Гильдию</b> или <b>Никнейм</b>.</p>
 
-                    <section id="tab-enemies" class="tab-content active"><h2>🔴 Враги гильдии</h2><ul class="player-list" data-list="enemies"></ul></section>
-                    <section id="tab-friends" class="tab-content"><h2>🟢 Друзья — полное содействие</h2><ul class="player-list" data-list="friends"></ul></section>
-                    <section id="tab-neutral" class="tab-content"><h2>⚪ Нейтралитет</h2><ul class="player-list" data-list="neutral"></ul></section>
-                    <section id="tab-personal" class="tab-content"><h2>🟡 Не трогать</h2><ul class="player-list" data-list="personal"></ul></section>
+                    <section id="tab-enemies" class="tab-content active"><h3>🔴 Враги гильдии</h3><ul class="player-list" data-list="enemies"></ul></section>
+                    <section id="tab-friends" class="tab-content"><h3>🟢 Друзья — полное содействие</h3><ul class="player-list" data-list="friends"></ul></section>
+                    <section id="tab-neutral" class="tab-content"><h3>⚪ Нейтралитет</h3><ul class="player-list" data-list="neutral"></ul></section>
+                    <section id="tab-personal" class="tab-content"><h3>🟡 Не трогать</h3><ul class="player-list" data-list="personal"></ul></section>
                 </div>
 
+                <!-- СОБЫТИЯ -->
                 <div id="section-events" class="clan-section">
                     <h2>📅 События гильдии</h2>
                     <section class="add-form admin-only" hidden>
@@ -233,6 +237,7 @@
                     <div id="eventsList" class="events-list"></div>
                 </div>
 
+                <!-- КАЗНА -->
                 <div id="section-treasury" class="clan-section">
                     <h2>💰 Казна гильдии</h2>
                     <div class="treasury-balance">
@@ -250,11 +255,13 @@
                     <div id="treasuryList" class="treasury-list"></div>
                 </div>
 
+                <!-- ТОРГОВЛЯ -->
                 <div id="section-trade" class="clan-section">
+                    <h2>🪙 Биржа заявок</h2>
                     <div class="trade-market">
                         <header class="tm-topbar">
-                            <h2 class="tm-title">📣 Биржа заявок</h2>
-                            <span class="tm-subtitle">Гильдейский рынок</span>
+                            <h3 class="tm-title">📣 Гильдейский рынок</h3>
+                            <span class="tm-subtitle">World of Sea Battle</span>
                         </header>
 
                         <div class="tm-counters">
@@ -278,7 +285,7 @@
 
                         <div class="tm-layout">
                             <section class="tm-panel">
-                                <h3 class="tm-panel-title">📝 Новая заявка</h3>
+                                <h4 class="tm-panel-title">📝 Новая заявка</h4>
                                 <div class="tm-type-switch">
                                     <div class="tm-type-btn buy active" data-type="buy">🛒 Покупка</div>
                                     <div class="tm-type-btn sell"       data-type="sell">💰 Продажа</div>
@@ -322,7 +329,7 @@
                             </section>
 
                             <section class="tm-panel">
-                                <h3 class="tm-panel-title">📋 Доска заявок</h3>
+                                <h4 class="tm-panel-title">📋 Доска заявок</h4>
                                 <div class="tm-filters">
                                     <input type="search" id="tm-search" placeholder="🔍 Поиск по названию...">
                                     <div class="tm-filter-row" id="tm-type-filters">
@@ -343,6 +350,7 @@
                     </div>
                 </div>
 
+                <!-- ПВП -->
                 <div id="section-pvp" class="clan-section">
                     <h2>⚔️ Билды для ПВП</h2>
                     <section class="add-form admin-only" hidden>
@@ -363,6 +371,7 @@
                     <div id="pvpList" class="builds-list"></div>
                 </div>
 
+                <!-- ПБ -->
                 <div id="section-pb" class="clan-section">
                     <h2>🛡 Билды для ПБ</h2>
                     <section class="add-form admin-only" hidden>
@@ -384,11 +393,13 @@
                     <div id="pbList" class="builds-list"></div>
                 </div>
 
+                <!-- КОНТАКТЫ -->
                 <div id="section-contacts" class="clan-section">
                     <h2>💬 Контакты гильдий</h2>
                     <div id="contactsList" class="contacts-list"></div>
                 </div>
 
+                <!-- ЗАЯВКИ -->
                 <div id="section-applications" class="clan-section">
                     <h2>📝 Заявки в гильдию</h2>
                     <p class="hint">Все заявки, отправленные через форму на главной</p>
@@ -438,21 +449,6 @@
                     <span class="admin-nav-ico">👁</span>
                     <span>История просмотров</span>
                 </button>
-
-                <div class="admin-nav-divider">В разработке</div>
-
-                <button class="admin-nav-item wip" data-wip="1">
-                    <span class="admin-nav-ico">👥</span>
-                    <span>Пользователи</span>
-                </button>
-                <button class="admin-nav-item wip" data-wip="1">
-                    <span class="admin-nav-ico">📊</span>
-                    <span>Аналитика</span>
-                </button>
-                <button class="admin-nav-item wip" data-wip="1">
-                    <span class="admin-nav-ico">💾</span>
-                    <span>Резервные копии</span>
-                </button>
             </nav>
 
             <div class="admin-sidebar-footer">
@@ -472,6 +468,12 @@
                         <label>Игра</label>
                         <select id="adminClanGame"></select>
                     </div>
+                    <div class="admin-field">
+                        <label>Союзная гильдия</label>
+                        <select id="adminAllyClan">
+                            <option value="">— Нет —</option>
+                        </select>
+                    </div>
                     <div class="admin-field"><label>Текущий пароль</label><input type="text" id="adminCurrentPass" readonly></div>
                     <div class="admin-field"><label>Новый пароль</label><input type="text" id="adminNewPass" placeholder="Оставь пустым, чтобы не менять"></div>
                     <div class="admin-field"><label>Discord-ссылка</label><input type="text" id="adminDiscord" placeholder="https://discord.gg/xxxxx" maxlength="200"></div>
@@ -488,18 +490,13 @@
 
             <section class="admin-section" data-apanel="games">
                 <h2 class="admin-section-title">🎮 Управление играми</h2>
-                <p class="hint">
-                    Редактирование существующих игр. Добавление новых игр — через SQL / разработчика.
-                </p>
+                <p class="hint">Редактирование существующих игр. Добавление новых — через SQL / разработчика.</p>
                 <div id="gamesAdminList" class="partners-admin-list"></div>
             </section>
 
             <section class="admin-section" data-apanel="partners">
                 <h2 class="admin-section-title">🤝 Партнёры и Реклама</h2>
-                <p class="hint">
-                    Для <b>YouTube-ссылок</b> логотип подтягивается автоматически.
-                    Для остальных — можно загрузить картинку с диска.
-                </p>
+                <p class="hint">Для <b>YouTube-ссылок</b> логотип подтягивается автоматически.</p>
                 <div class="admin-card">
                     <div class="admin-field">
                         <label>Название *</label>
@@ -537,17 +534,9 @@
                 <h2 class="admin-section-title">❓ FAQ</h2>
                 <p class="hint">Вопросы и ответы на главной</p>
                 <div class="admin-card">
-                    <div class="admin-field">
-                        <label>Вопрос</label>
-                        <input type="text" id="faqQ" maxlength="200">
-                    </div>
-                    <div class="admin-field">
-                        <label>Ответ</label>
-                        <textarea id="faqA" rows="3"></textarea>
-                    </div>
-                    <div class="modal-actions">
-                        <button id="faqAddBtn">➕ Добавить вопрос</button>
-                    </div>
+                    <div class="admin-field"><label>Вопрос</label><input type="text" id="faqQ" maxlength="200"></div>
+                    <div class="admin-field"><label>Ответ</label><textarea id="faqA" rows="3"></textarea></div>
+                    <div class="modal-actions"><button id="faqAddBtn">➕ Добавить вопрос</button></div>
                 </div>
                 <div id="faqAdminList" class="faq-admin-list"></div>
             </section>
@@ -559,30 +548,25 @@
                         <label>Discord Webhook URL</label>
                         <input type="text" id="adminWebhook" placeholder="https://discord.com/api/webhooks/..." maxlength="400">
                     </div>
-
                     <div class="admin-field">
                         <label>Режим технических работ</label>
                         <label class="switch-row">
                             <input type="checkbox" id="adminMaintenance">
-                            <span class="switch-label">Включить режим техработ (обычные пользователи увидят заглушку)</span>
+                            <span class="switch-label">Включить режим техработ</span>
                         </label>
                     </div>
-
                     <div class="admin-field">
                         <label>Сообщение на экране техработ</label>
                         <textarea id="adminMaintenanceMsg" rows="3" placeholder="Идут технические работы. Заходите позже."></textarea>
                     </div>
-
                     <p id="adminSiteMsg" class="error"></p>
-                    <div class="modal-actions">
-                        <button id="saveSiteSettings">💾 Сохранить</button>
-                    </div>
+                    <div class="modal-actions"><button id="saveSiteSettings">💾 Сохранить</button></div>
                 </div>
             </section>
 
             <section class="admin-section" data-apanel="adminlog">
                 <h2 class="admin-section-title">📜 Журнал действий админов</h2>
-                <p class="hint">Последние 500 операций. Кто, что и когда делал.</p>
+                <p class="hint">Последние 500 операций.</p>
                 <div class="modal-actions" style="margin-bottom:12px">
                     <button id="refreshAdminLog" class="secondary">🔄 Обновить</button>
                 </div>
@@ -634,10 +618,7 @@
     <div id="addClanModal" class="modal" hidden>
         <div class="modal-content admin-panel-wide">
             <h2>➕ Новая гильдия</h2>
-            <div class="admin-field">
-                <label>Игра</label>
-                <select id="newClanGame"></select>
-            </div>
+            <div class="admin-field"><label>Игра</label><select id="newClanGame"></select></div>
             <div class="admin-field"><label>ID (латиница)</label><input type="text" id="newClanId" placeholder="clan3" maxlength="20"></div>
             <div class="admin-field"><label>Название</label><input type="text" id="newClanName" maxlength="60"></div>
             <div class="admin-field"><label>Описание</label><textarea id="newClanDesc" rows="3"></textarea></div>
@@ -660,8 +641,8 @@
             <h2>✏️ Редактировать игру</h2>
             <input type="hidden" id="gameEditId">
             <div class="admin-field"><label>Название</label><input type="text" id="gameEditName" maxlength="80"></div>
-            <div class="admin-field"><label>Логотип</label><input type="text" id="gameEditImage" placeholder="images/wosb.png" maxlength="200"></div>
-            <div class="admin-field"><label>Фон</label><input type="text" id="gameEditBg" placeholder="images/bg-wosb.jpg" maxlength="200"></div>
+            <div class="admin-field"><label>Логотип</label><input type="text" id="gameEditImage" maxlength="200"></div>
+            <div class="admin-field"><label>Фон</label><input type="text" id="gameEditBg" maxlength="200"></div>
             <p id="gameEditMsg" class="error"></p>
             <div class="modal-actions">
                 <button id="saveGameEdit">💾 Сохранить</button>
@@ -757,7 +738,6 @@
                         <li><b>Обвес</b>: тиковые рамы, медная обшивка, гнездо для боеприпасов, защита парусов — ставь на живучесть и ДПС.</li>
                         <li><b>Ремкомплекты</b>: держи древесину, ткань и наборы. Запуск ремонта — клавиша <span class="kbd">R</span>.</li>
                         <li><b>Ром</b>: каждый обмен квестов в таверне стоит 1 единицу — запас не помешает.</li>
-                        <li><b>Копи на Blackwind</b>, не трать ресурсы на La Salamandre — это ловушка.</li>
                     </ul>
                 </section>
 
@@ -766,9 +746,8 @@
                     <ul class="tactics-list">
                         <li><b>Ветер меняется против часовой стрелки</b>. Планируя длинный переход, выходи так, чтобы большую часть пути идти с попутным ветром.</li>
                         <li>При <b>встречном ветре</b> держи галс правого борта (starboard tack) — так ты дольше остаёшься в выгодном курсе.</li>
-                        <li>Смена режимов движения (<span class="kbd">W</span> / <span class="kbd">S</span>) — твой главный инструмент уклонения. По маневрирующему кораблю попасть сложнее.</li>
+                        <li>Смена режимов движения (<span class="kbd">W</span> / <span class="kbd">S</span>) — твой главный инструмент уклонения.</li>
                         <li><b>Не стой на месте.</b> Подставляй <b>нос</b> под залп — урон в носовую часть значительно ниже, чем в борт.</li>
-                        <li>Разворот через нос экономит прочность корабля: корма часто уязвимее борта.</li>
                         <li>Чередуй борта — не давай противнику пристреляться по одному борту.</li>
                     </ul>
                 </section>
@@ -803,39 +782,28 @@
                     </div>
                     <ul class="tactics-list" style="margin-top:12px">
                         <li>Снаряд, вошедший <b>под прямым углом</b>, пробивает лучше — бей в борт, а не вскользь.</li>
-                        <li>Микс <b>карронад</b> (близкий бой) и <b>кулеврин</b> (дальний) даёт гибкость. Попробуй разные комбинации на арене.</li>
+                        <li>Микс <b>карронад</b> (близкий бой) и <b>кулеврин</b> (дальний) даёт гибкость.</li>
                     </ul>
                 </section>
 
                 <section class="tactics-section">
                     <h3>⚔️ Абордаж</h3>
                     <ul class="tactics-list">
-                        <li><b>Условия абордажа</b>: HP врага &lt; 50%, корабли рядом борт к борту, скорость обоих снижена, оба в боевом режиме.</li>
+                        <li><b>Условия абордажа</b>: HP врага &lt; 50%, корабли рядом борт к борту, скорость обоих снижена.</li>
                         <li>Перед абордажем обязательно прореди экипаж врага <b>картечью</b>.</li>
-                        <li>Нажми <span class="kbd">Space</span>, когда появится подсказка — начнётся автоматический расчёт боя.</li>
-                        <li><b>Состав экипажа</b>:
-                            <ul>
-                                <li><b>Мушкетёры</b> — главный урон, но мало HP.</li>
-                                <li><b>Солдаты</b> — сбалансированные.</li>
-                                <li><b>Матросы</b> — слабее, но дешевле.</li>
-                                <li><b>Наёмники</b> — танки, мало урона.</li>
-                            </ul>
-                        </li>
-                        <li>В бою фокусируй атаку на одной группе, не распыляй урон. Если враг защищается — смени цель.</li>
-                        <li>После победы выбери: <b>сжечь</b> (больше лута), <b>взять часть команды</b> или <b>захватить корабль</b> (если есть место в эскадре).</li>
-                        <li>Захваченный корабль хрупок, пока не отремонтирован. В PvP абордаж — риск: третий может вмешаться.</li>
+                        <li>Нажми <span class="kbd">Space</span>, когда появится подсказка.</li>
+                        <li><b>Состав экипажа</b>: мушкетёры — урон, солдаты — баланс, матросы — дешёвые, наёмники — танки.</li>
+                        <li>После победы: <b>сжечь</b> (лут), <b>взять команду</b> или <b>захватить корабль</b>.</li>
                     </ul>
                 </section>
 
                 <section class="tactics-section">
                     <h3>🧠 Тактика боя</h3>
                     <ul class="tactics-list">
-                        <li><b>Читай флаги и полоски HP</b>: жёлтые/красные — игроки, синие — NPC. Красный ветеран втрое больше тебя — беги.</li>
+                        <li><b>Читай флаги</b>: жёлтые/красные — игроки, синие — NPC.</li>
                         <li><b>Не воюй в одиночку против сильных NPC</b> — объединяйся с другими игроками.</li>
-                        <li><b>Фокус огня</b>: всей группой бей одного противника, а не размазывай урон.</li>
-                        <li><b>Корабли-роли</b>: скоростные — для погони, тяжёлые/осадные — для удержания линии и впитывания урона.</li>
-                        <li>В арене выбирай <b>массовый бой</b>, держись своей команды, враги — красные.</li>
-                        <li>Если бой невыгоден — <b>уходи к острову</b>. Умение вовремя выйти из боя сохраняет корабль и груз.</li>
+                        <li><b>Фокус огня</b>: всей группой бей одного противника.</li>
+                        <li>Если бой невыгоден — <b>уходи к острову</b>.</li>
                     </ul>
                 </section>
             </div>
