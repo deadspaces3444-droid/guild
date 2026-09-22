@@ -225,49 +225,114 @@
                     <div id="treasuryList" class="treasury-list"></div>
                 </div>
 
-                <!-- ═══════════ ТОРГОВЛЯ ═══════════ -->
+                <!-- ═══════════ ТОРГОВЛЯ (БИРЖА) ═══════════ -->
                 <div id="section-trade" class="clan-section">
-                    <h2>🪙 Торговля гильдии</h2>
+                    <div class="trade-market">
 
-                    <div class="trade-counters">
-                        <div class="trade-counter">
-                            <div class="trade-counter-label">Всего сделок</div>
-                            <div id="tradeCountTotal" class="trade-counter-value">0</div>
+                        <header class="tm-topbar">
+                            <h2 class="tm-title">📣 Биржа заявок</h2>
+                            <span class="tm-subtitle">Гильдейский рынок</span>
+                        </header>
+
+                        <div class="tm-counters">
+                            <div class="tm-counter buy">
+                                <div class="tm-ci">🛒</div>
+                                <div class="tm-cb">
+                                    <span class="tm-cl">Золото на покупку</span>
+                                    <span class="tm-cv" id="tm-counter-buy-gold">0 🪙</span>
+                                    <span class="tm-cs" id="tm-counter-buy-sub">0 заявок</span>
+                                </div>
+                            </div>
+                            <div class="tm-counter sell">
+                                <div class="tm-ci">💰</div>
+                                <div class="tm-cb">
+                                    <span class="tm-cl">Золото на продажу</span>
+                                    <span class="tm-cv" id="tm-counter-sell-gold">0 🪙</span>
+                                    <span class="tm-cs" id="tm-counter-sell-sub">0 заявок</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="trade-counter active">
-                            <div class="trade-counter-label">Активных</div>
-                            <div id="tradeCountActive" class="trade-counter-value">0</div>
-                        </div>
-                        <div class="trade-counter done">
-                            <div class="trade-counter-label">Завершено</div>
-                            <div id="tradeCountDone" class="trade-counter-value">0</div>
+
+                        <div class="tm-layout">
+
+                            <!-- Форма -->
+                            <section class="tm-panel">
+                                <h3 class="tm-panel-title">📝 Новая заявка</h3>
+
+                                <div class="tm-type-switch">
+                                    <div class="tm-type-btn buy active" data-type="buy">🛒 Покупка</div>
+                                    <div class="tm-type-btn sell"       data-type="sell">💰 Продажа</div>
+                                </div>
+
+                                <div class="tm-fg">
+                                    <label>Категория</label>
+                                    <select id="tm-category"></select>
+                                </div>
+
+                                <div class="tm-fg">
+                                    <label>Название *</label>
+                                    <input type="text" id="tm-name" maxlength="60" placeholder="Например: Дубовые доски">
+                                </div>
+
+                                <div class="tm-frow">
+                                    <div class="tm-fg">
+                                        <label>Цена за ед. *</label>
+                                        <input type="number" id="tm-price" min="1" step="1" placeholder="0">
+                                    </div>
+                                    <div class="tm-fg">
+                                        <label>Количество *</label>
+                                        <input type="number" id="tm-qty" min="1" step="1" value="1">
+                                    </div>
+                                </div>
+
+                                <div class="tm-fg">
+                                    <label>Итого золота</label>
+                                    <input type="text" id="tm-total" readonly value="0 🪙">
+                                </div>
+
+                                <div class="tm-fg">
+                                    <label>Порт (необязательно)</label>
+                                    <input type="text" id="tm-port" maxlength="60" placeholder="Порт-Рояль">
+                                </div>
+
+                                <div class="tm-fg">
+                                    <label>Ваш ник *</label>
+                                    <input type="text" id="tm-nickname" maxlength="32" placeholder="Капитан">
+                                </div>
+
+                                <div class="tm-fg">
+                                    <label>Примечание</label>
+                                    <textarea id="tm-note" maxlength="140" placeholder="Доп. условия, время, контакт..."></textarea>
+                                </div>
+
+                                <button id="tm-submit" class="tm-btn-gold">Опубликовать заявку</button>
+                                <p id="tm-status" class="tm-status"></p>
+                            </section>
+
+                            <!-- Доска -->
+                            <section class="tm-panel">
+                                <h3 class="tm-panel-title">📋 Доска заявок</h3>
+
+                                <div class="tm-filters">
+                                    <input type="search" id="tm-search" placeholder="🔍 Поиск по названию...">
+                                    <div class="tm-filter-row" id="tm-type-filters">
+                                        <span class="tm-chip active" data-type="all">Все</span>
+                                        <span class="tm-chip buy"  data-type="buy">🛒 Покупка</span>
+                                        <span class="tm-chip sell" data-type="sell">💰 Продажа</span>
+                                    </div>
+                                    <div class="tm-filter-row" id="tm-cat-filters"></div>
+                                    <div class="tm-filter-row">
+                                        <label class="tm-mine-check">
+                                            <input type="checkbox" id="tm-only-mine"> Только мои заявки
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div id="tm-listings" class="tm-listings"></div>
+                            </section>
+
                         </div>
                     </div>
-
-                    <nav class="tabs trade-tabs">
-                        <button class="tab active" data-trade-filter="all">Все</button>
-                        <button class="tab" data-trade-filter="buy">🛒 Куплю</button>
-                        <button class="tab" data-trade-filter="sell">💰 Продам</button>
-                        <button class="tab" data-trade-filter="active">🔵 Активные</button>
-                        <button class="tab" data-trade-filter="done">✅ Завершённые</button>
-                    </nav>
-
-                    <section class="add-form trade-form">
-                        <select id="tradeType">
-                            <option value="sell">💰 Продам</option>
-                            <option value="buy">🛒 Куплю</option>
-                        </select>
-                        <input type="text" id="tradeItem" placeholder="Товар *" maxlength="80">
-                        <input type="text" id="tradeNickname" placeholder="Ваш ник *" maxlength="32">
-                        <input type="number" id="tradeAmount" placeholder="Сумма *" min="0" step="1">
-                        <input type="text" id="tradePort" placeholder="Порт (необязательно)" maxlength="60">
-                        <input type="text" id="tradeNote" placeholder="Заметка" maxlength="200">
-                        <button id="tradeAddBtn">➕ Выставить</button>
-                        <span id="tradeStatus"></span>
-                    </section>
-                    <p class="hint">💡 Товар, ник и сумма — обязательны. Порт можно указать, если сделка уже назначена.</p>
-
-                    <div id="tradesList" class="trades-list"></div>
                 </div>
 
                 <div id="section-pvp" class="clan-section">
@@ -389,7 +454,6 @@
 
         <main class="admin-content">
 
-            <!-- РАЗДЕЛ: ГИЛЬДИИ -->
             <section class="admin-section active" data-apanel="clans">
                 <h2 class="admin-section-title">🏰 Управление гильдиями</h2>
 
@@ -416,21 +480,16 @@
                 </div>
             </section>
 
-            <!-- РАЗДЕЛ: ИГРЫ -->
             <section class="admin-section" data-apanel="games">
                 <h2 class="admin-section-title">🎮 Управление играми</h2>
-
                 <p class="hint">
                     Редактирование существующих игр. Добавление новых игр — через SQL / разработчика.
                 </p>
-
                 <div id="gamesAdminList" class="partners-admin-list"></div>
             </section>
 
-            <!-- РАЗДЕЛ: ПАРТНЁРЫ -->
             <section class="admin-section" data-apanel="partners">
                 <h2 class="admin-section-title">🤝 Партнёры и Реклама</h2>
-
                 <p class="hint">
                     Для <b>YouTube-ссылок</b> логотип подтягивается автоматически.
                     Для остальных — можно загрузить картинку с диска.
@@ -470,7 +529,6 @@
                 <div id="partnersAdminList" class="partners-admin-list"></div>
             </section>
 
-            <!-- РАЗДЕЛ: FAQ -->
             <section class="admin-section" data-apanel="faq">
                 <h2 class="admin-section-title">❓ FAQ</h2>
                 <p class="hint">Вопросы и ответы на главной</p>
@@ -492,7 +550,6 @@
                 <div id="faqAdminList" class="faq-admin-list"></div>
             </section>
 
-            <!-- РАЗДЕЛ: НАСТРОЙКИ -->
             <section class="admin-section" data-apanel="settings">
                 <h2 class="admin-section-title">⚙️ Настройки сайта</h2>
 
@@ -522,7 +579,6 @@
                 </div>
             </section>
 
-            <!-- РАЗДЕЛ: ЖУРНАЛ ДЕЙСТВИЙ -->
             <section class="admin-section" data-apanel="adminlog">
                 <h2 class="admin-section-title">📜 Журнал действий админов</h2>
                 <p class="hint">Последние 500 операций. Кто, что и когда делал.</p>
@@ -532,7 +588,6 @@
                 <div id="adminLogList" class="log-list"></div>
             </section>
 
-            <!-- РАЗДЕЛ: ИСТОРИЯ ПРОСМОТРОВ -->
             <section class="admin-section" data-apanel="viewhistory">
                 <h2 class="admin-section-title">👁 История просмотров</h2>
                 <p class="hint">Кто и когда заходил в гильдии.</p>
