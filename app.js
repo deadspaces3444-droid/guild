@@ -32,6 +32,7 @@ let editingBuild  = null;
 let editingGame   = null;
 let duplicatingBuild = null;
 let editingTactic = null;
+let acceptingTrade = null;
 let tradeFormType = 'buy';
 let tradeFilterType = 'all';
 let tradeFilterCat = 'all';
@@ -67,25 +68,43 @@ function getViewerNick() {
 }
 
 async function sendHeartbeat() {
-    const nickname = getViewerNick() || ('guest_' + (sessionStorage.getItem('guest_id') || (() => {
-        const id = Math.random().toString(36).slice(2, 10);
-        sessionStorage.setItem('guest_id', id);
-        return id;
-    })()));
+    let nickname = getViewerNick();
+    if (!nickname) {
+        let gid = sessionStorage.getItem('guest_id');
+        if (!gid) {
+            gid = 'guest_' + Math.random().toString(36).slice(2, 10);
+            sessionStorage.setItem('guest_id', gid);
+        }
+        nickname = gid;
+    }
+    const nowIso = new Date().toISOString();
+    const clanId = currentClan || null;
+
     try {
-        await supabase.from('online_users').upsert({
-            nickname, clan_id: currentClan || null, last_seen: new Date().toISOString()
-        }, { onConflict: 'nickname' });
+        const { data: updated } = await supabase
+            .from('online_users')
+            .update({ last_seen: nowIso, clan_id: clanId })
+            .eq('nickname', nickname)
+            .select('nickname');
+
+        if (!updated || !updated.length) {
+            const { error: insErr } = await supabase
+                .from('online_users')
+                .insert({ nickname, clan_id: clanId, last_seen: nowIso });
+            if (insErr) console.warn('heartbeat insert:', insErr.message);
+        }
     } catch (e) { console.warn('heartbeat:', e); }
+
     updateOnlineCount();
 }
 
 async function updateOnlineCount() {
     const threshold = new Date(Date.now() - ONLINE_WINDOW_MS).toISOString();
-    const { count, error } = await supabase.from('online_users')
+    const { count, error } = await supabase
+        .from('online_users')
         .select('*', { count: 'exact', head: true })
         .gte('last_seen', threshold);
-    if (error) { console.warn('online count:', error); return; }
+    if (error) { console.warn('online count:', error.message); return; }
     const el = $('onlineCount');
     if (el) el.textContent = count || 0;
 }
@@ -178,56 +197,8 @@ async function loadGames() {
     const saved = localStorage.getItem(GAME_STORAGE_KEY);
     if (saved && gamesCache[saved]) currentGame = saved;
     else currentGame = Object.keys(gamesCache)[0] || null;
-    renderGameSelector();
     renderGamesAdmin();
     renderNewClanGameSelect();
-    applyBg();
-}
-
-function renderGameSelector() {
-    const wrap = $('gameToolbar');
-    const tabs = $('gameTabs');
-    if (!wrap || !tabs) return;
-    tabs.innerHTML = '';
-    const games = Object.values(gamesCache);
-    if (!games.length) { wrap.hidden = true; return; }
-    if (games.length === 1) {
-        wrap.hidden = false;
-        const el = document.createElement('div');
-        el.className = 'game-tab active';
-        el.style.cursor = 'default';
-        el.innerHTML = renderGameTabContent(games[0]);
-        tabs.appendChild(el);
-        return;
-    }
-    wrap.hidden = false;
-    games.forEach(g => {
-        const btn = document.createElement('button');
-        btn.className = 'game-tab' + (g.id === currentGame ? ' active' : '');
-        btn.type = 'button';
-        btn.innerHTML = renderGameTabContent(g);
-        btn.addEventListener('click', () => selectGame(g.id));
-        tabs.appendChild(btn);
-    });
-}
-
-function renderGameTabContent(g) {
-    if (g.image) {
-        return `<img src="${escapeHtml(g.image)}" alt="" onerror="this.style.display='none'"><span>${escapeHtml(g.name)}</span>`;
-    }
-    return `<span class="game-tab-emoji">🎮</span><span>${escapeHtml(g.name)}</span>`;
-}
-
-function selectGame(gameId) {
-    if (!gamesCache[gameId]) return;
-    currentGame = gameId;
-    localStorage.setItem(GAME_STORAGE_KEY, gameId);
-    renderGameSelector();
-    renderHomeCards();
-    renderApplyClanSelect();
-    renderAdminClanSelect();
-    renderScopeSelects();
-    renderTradeClanSelect();
     applyBg();
 }
 
@@ -376,7 +347,7 @@ function renderHomeCards() {
     const grid = $('clanGrid');
     if (!grid) return;
     grid.innerHTML = '';
-    const list = currentGame ? getClansForGame(currentGame) : [];
+    const list = currentGame ? getClansForGame(currentGame) : Object.values(clansCache);
     if (!list.length) {
         grid.innerHTML = '<div class="empty">В этой игре пока нет гильдий</div>';
         return;
@@ -515,10 +486,12 @@ function openClan(id) {
     renderEvents();
     renderTreasury();
     renderApplications();
+    sendHeartbeat();
 }
 $('backBtn').addEventListener('click', () => {
     showScreen('home');
     applyBg();
+    sendHeartbeat();
 });
 $('clanLeaveBtn').addEventListener('click', () => {
     if (!confirm('Заблокировать просмотр? Пароль потребуется ввести снова.')) return;
@@ -527,6 +500,7 @@ $('clanLeaveBtn').addEventListener('click', () => {
     currentClan = null;
     showScreen('home');
     applyBg();
+    sendHeartbeat();
 });
 
 /* ===================== ВКЛАДКИ ===================== */
@@ -1028,7 +1002,7 @@ $('trAddBtn').addEventListener('click', async () => {
     renderTreasury();
 });
 
-/* ===================== ТОРГОВЛЯ НА ГЛАВНОЙ ===================== */
+/* ===================== ТОРГОВЛЯ ===================== */
 const TRADE_CATEGORIES = [
     { id: 'resource',  name: 'Ресурс',    icon: '🪵' },
     { id: 'ship',      name: 'Корабль',   icon: '⛵' },
@@ -1118,6 +1092,7 @@ async function renderTrades() {
 function renderTradeCounters() {
     let buyGold = 0, sellGold = 0, buyN = 0, sellN = 0;
     tradesCache.forEach(t => {
+        if (t.status === 'done') return;
         const total = Number(t.price) * Number(t.qty);
         if (t.type === 'buy') { buyGold += total; buyN++; }
         else { sellGold += total; sellN++; }
@@ -1156,16 +1131,49 @@ function renderTradeListings() {
     }
     const myNick = getViewerNick().toLowerCase();
     container.innerHTML = '';
+
     items.forEach(t => {
-        const cat = tradeCatById(t.category);
+        const cat   = tradeCatById(t.category);
         const total = Number(t.price) * Number(t.qty);
-        const isMine = myNick && (t.nickname || '').toLowerCase() === myNick;
-        const canDelete = isAdmin || isMine;
-        const typeLabel = t.type === 'buy' ? '🛒 Куплю' : '💰 Продам';
-        const clanName = clansCache[t.clan]?.name || t.clan;
+        const isMine        = myNick && (t.nickname || '').toLowerCase() === myNick;
+        const isDone        = t.status === 'done';
+        const isAccepted    = !isDone && !!t.accepted_by;
+        const iAmAccepter   = myNick && isAccepted && (t.accepted_by || '').toLowerCase() === myNick;
+        const canDelete     = isAdmin || (isMine && !isAccepted && !isDone);
+        const typeLabel     = t.type === 'buy' ? '🛒 Куплю' : '💰 Продам';
+        const clanName      = clansCache[t.clan]?.name || t.clan;
+
+        let statusBadge = '';
+        if (isDone)          statusBadge = `<span class="tm-badge done">✅ Завершено</span>`;
+        else if (isAccepted) statusBadge = `<span class="tm-badge progress">⏳ В работе</span>`;
+        else                 statusBadge = `<span class="tm-badge free">🔵 Свободна</span>`;
+
+        let actionsHtml = '';
+        if (!isDone && !isAccepted && !isMine) {
+            actionsHtml = `<div class="tm-listing-actions">
+                <button class="tm-accept" data-id="${t.id}">🤝 Принять</button>
+            </div>`;
+        } else if (!isDone && isAccepted && isMine) {
+            actionsHtml = `<div class="tm-listing-actions">
+                <button class="tm-confirm" data-id="${t.id}">✅ Подтвердить сделку</button>
+                <button class="tm-cancel" data-id="${t.id}">✖ Отменить принятие</button>
+            </div>`;
+        }
+
+        let acceptedNote = '';
+        if (isAccepted) {
+            acceptedNote = `<div class="tm-accepted-note">
+                🤝 Принял: <b>${escapeHtml(t.accepted_by)}</b>
+                ${iAmAccepter ? ' — ждём подтверждения от владельца' : ''}
+            </div>`;
+        } else if (isDone) {
+            acceptedNote = `<div class="tm-accepted-note">
+                ✅ Сделка завершена${t.accepted_by ? ` — с <b>${escapeHtml(t.accepted_by)}</b>` : ''}
+            </div>`;
+        }
 
         const el = document.createElement('article');
-        el.className = 'tm-listing ' + t.type + (isMine ? ' mine' : '');
+        el.className = 'tm-listing ' + t.type + (isMine ? ' mine' : '') + (isDone ? ' done' : '');
         el.dataset.id = t.id;
         el.innerHTML = `
             <div class="tm-listing-head">
@@ -1176,6 +1184,7 @@ function renderTradeListings() {
                         <span class="tm-tag ${t.type}">${typeLabel}</span>
                         <span class="tm-tag cat">${cat.name}</span>
                         <span class="tm-tag clan">🏰 ${escapeHtml(clanName)}</span>
+                        ${statusBadge}
                     </div>
                 </div>
             </div>
@@ -1186,6 +1195,8 @@ function renderTradeListings() {
             </div>
             ${t.port ? `<div class="tm-listing-port">⚓ Порт: ${escapeHtml(t.port)}</div>` : ''}
             ${t.note ? `<div class="tm-listing-note">«${escapeHtml(t.note)}»</div>` : ''}
+            ${acceptedNote}
+            ${actionsHtml}
             <div class="tm-listing-foot">
                 <span class="author">👤 ${escapeHtml(t.nickname)}</span>
                 <span class="time">${tradeTimeAgo(t.created_at)}</span>
@@ -1249,17 +1260,57 @@ $('tm-clan-filters')?.addEventListener('click', e => {
     tradeFilterClan = chip.dataset.clan;
     renderTradeListings();
 });
+
 $('tm-listings')?.addEventListener('click', async e => {
-    const btn = e.target.closest('.tm-delete');
-    if (!btn) return;
-    const id = btn.dataset.id;
-    const t = tradesCache.find(x => String(x.id) === String(id));
-    if (!t) return;
-    if (!confirm(`Удалить заявку «${t.name}»?`)) return;
-    const { error } = await supabase.from('trades').delete().eq('id', id);
-    if (error) return alert(error.message);
-    await logAdminAction('Удалил торговую заявку', `${t.nickname} — ${t.name}`);
-    renderTrades();
+    const delBtn = e.target.closest('.tm-delete');
+    if (delBtn) {
+        const id = delBtn.dataset.id;
+        const t = tradesCache.find(x => String(x.id) === String(id));
+        if (!t) return;
+        if (!confirm(`Удалить заявку «${t.name}»?`)) return;
+        const { error } = await supabase.from('trades').delete().eq('id', id);
+        if (error) return alert(error.message);
+        await logAdminAction('Удалил торговую заявку', `${t.nickname} — ${t.name}`);
+        renderTrades();
+        return;
+    }
+
+    const acceptBtn = e.target.closest('.tm-accept');
+    if (acceptBtn) {
+        const id = acceptBtn.dataset.id;
+        const t = tradesCache.find(x => String(x.id) === String(id));
+        if (!t) return;
+        openAcceptTradeModal(t);
+        return;
+    }
+
+    const confirmBtn = e.target.closest('.tm-confirm');
+    if (confirmBtn) {
+        const id = confirmBtn.dataset.id;
+        const t = tradesCache.find(x => String(x.id) === String(id));
+        if (!t) return;
+        if (!confirm(`Подтвердить сделку с «${t.accepted_by}»?`)) return;
+        const { error } = await supabase.from('trades').update({ status: 'done' }).eq('id', id);
+        if (error) return alert(error.message);
+        await logAdminAction('Подтвердил сделку', `${t.name} — с ${t.accepted_by}`);
+        renderTrades();
+        return;
+    }
+
+    const cancelBtn = e.target.closest('.tm-cancel');
+    if (cancelBtn) {
+        const id = cancelBtn.dataset.id;
+        const t = tradesCache.find(x => String(x.id) === String(id));
+        if (!t) return;
+        if (!confirm('Отменить принятие? Заявка снова станет свободной.')) return;
+        const { error } = await supabase.from('trades').update({
+            accepted_by: null, accepted_at: null
+        }).eq('id', id);
+        if (error) return alert(error.message);
+        await logAdminAction('Отменил принятие сделки', t.name);
+        renderTrades();
+        return;
+    }
 });
 
 $('tm-submit')?.addEventListener('click', async () => {
@@ -1301,6 +1352,62 @@ $('tm-submit')?.addEventListener('click', async () => {
     updateTradeFormTotal();
 
     setTradeStatus('✅ Заявка опубликована!', 'success');
+    renderTrades();
+});
+
+/* ===================== ПРИНЯТИЕ СДЕЛКИ ===================== */
+function openAcceptTradeModal(t) {
+    acceptingTrade = t;
+    $('acceptTradeName').textContent = t.name;
+    $('acceptTradeInfo').textContent =
+        `${t.type === 'buy' ? 'Покупка' : 'Продажа'} · ${Number(t.price).toLocaleString('ru-RU')} 🪙/шт · ${t.qty} шт`;
+    const savedNick = getViewerNick();
+    $('acceptTradeNickname').value = savedNick || '';
+    $('acceptTradeError').textContent = '';
+    $('acceptTradeModal').hidden = false;
+    ($('acceptTradeNickname').value ? $('doAcceptTrade') : $('acceptTradeNickname')).focus();
+}
+
+function closeAcceptTradeModal() {
+    $('acceptTradeModal').hidden = true;
+    acceptingTrade = null;
+}
+
+$('cancelAcceptTrade')?.addEventListener('click', closeAcceptTradeModal);
+$('acceptTradeModal')?.addEventListener('click', e => {
+    if (e.target.id === 'acceptTradeModal') closeAcceptTradeModal();
+});
+
+$('doAcceptTrade')?.addEventListener('click', async () => {
+    if (!acceptingTrade) return;
+    const nick = $('acceptTradeNickname').value.trim();
+    const err = $('acceptTradeError');
+    err.textContent = '';
+    if (!nick) { err.textContent = 'Укажите ваш ник'; return; }
+    if (nick.length < 2) { err.textContent = 'Ник слишком короткий'; return; }
+    if (nick.toLowerCase() === (acceptingTrade.nickname || '').toLowerCase()) {
+        err.textContent = 'Нельзя принять собственную заявку';
+        return;
+    }
+
+    $('doAcceptTrade').disabled = true;
+    const { error } = await supabase.from('trades').update({
+        accepted_by: nick,
+        accepted_at: new Date().toISOString()
+    }).eq('id', acceptingTrade.id);
+    $('doAcceptTrade').disabled = false;
+
+    if (error) { err.textContent = 'Ошибка: ' + error.message; return; }
+
+    localStorage.setItem(VIEWER_NICK_KEY, nick);
+    sendHeartbeat();
+
+    await logAdminAction('Принял торговую заявку', `${acceptingTrade.name} — ${nick}`);
+
+    const tn = $('tm-nickname');
+    if (tn) tn.value = nick;
+
+    closeAcceptTradeModal();
     renderTrades();
 });
 
@@ -1783,7 +1890,7 @@ async function loadSettings() {
     settingsCache = data;
 }
 
-/* ===================== СЧЁТЧИКИ ===================== */
+/* ===================== СТАТИСТИКА ===================== */
 async function loadStats() {
     const row = $('statsRow');
     if (!row) return;
