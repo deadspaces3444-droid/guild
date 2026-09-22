@@ -42,6 +42,7 @@ let heartbeatTimer = null;
 const $ = id => document.getElementById(id);
 const screenHome  = $('screen-home');
 const screenClan  = $('screen-clan');
+const screenAdmin = $('screen-admin');
 const clanView    = $('clanView');
 const bgFileInput = $('bgFileInput');
 
@@ -52,14 +53,14 @@ async function logAdminAction(action, target = null, details = null) {
             admin_nickname: localStorage.getItem(VIEWER_NICK_KEY) || 'админ',
             action, target, details
         });
-    } catch (e) { console.warn('logAdminAction:', e); }
+    } catch (e) { /* таблицы может не быть — молча */ }
 }
 
 async function logView(nickname, clanId, page) {
     if (!nickname) return;
     try {
         await supabase.from('view_history').insert({ nickname, clan_id: clanId, page });
-    } catch (e) { console.warn('logView:', e); }
+    } catch (e) { /* опционально */ }
 }
 
 /* ===================== ОНЛАЙН ===================== */
@@ -79,22 +80,17 @@ async function sendHeartbeat() {
     }
     const nowIso = new Date().toISOString();
     const clanId = currentClan || null;
-
     try {
         const { data: updated } = await supabase
             .from('online_users')
             .update({ last_seen: nowIso, clan_id: clanId })
             .eq('nickname', nickname)
             .select('nickname');
-
         if (!updated || !updated.length) {
-            const { error: insErr } = await supabase
-                .from('online_users')
+            await supabase.from('online_users')
                 .insert({ nickname, clan_id: clanId, last_seen: nowIso });
-            if (insErr) console.warn('heartbeat insert:', insErr.message);
         }
-    } catch (e) { console.warn('heartbeat:', e); }
-
+    } catch (e) { /* молча */ }
     updateOnlineCount();
 }
 
@@ -104,7 +100,7 @@ async function updateOnlineCount() {
         .from('online_users')
         .select('*', { count: 'exact', head: true })
         .gte('last_seen', threshold);
-    if (error) { console.warn('online count:', error.message); return; }
+    if (error) return;
     const el = $('onlineCount');
     if (el) el.textContent = count || 0;
 }
@@ -135,8 +131,9 @@ function currentBgFallback() {
 }
 function applyBg() {
     const key = currentBgKey();
-    const url = getOverrides()[key] || currentBgFallback();
-    document.body.style.backgroundImage = `url('${url}')`;
+    const override = getOverrides()[key];
+    const url = override || currentBgFallback();
+    document.body.style.backgroundImage = url ? `url('${url}')` : '';
 }
 function compressImage(file, maxW = 1920, quality = 0.8) {
     return new Promise((resolve, reject) => {
@@ -180,10 +177,12 @@ $('bgResetBtn').addEventListener('click', () => {
 
 /* ===================== ЭКРАНЫ ===================== */
 function showScreen(name) {
-    screenHome.hidden = name !== 'home';
-    screenClan.hidden = name !== 'clan';
-    clanView.hidden   = name !== 'lists';
+    screenHome.hidden  = name !== 'home';
+    screenClan.hidden  = name !== 'clan';
+    clanView.hidden    = name !== 'lists';
+    screenAdmin.hidden = name !== 'admin';
     window.scrollTo(0, 0);
+    applyBg();
 }
 
 /* ===================== ИГРЫ ===================== */
@@ -202,7 +201,7 @@ async function loadGames() {
     applyBg();
 }
 
-/* ===================== САЙДБАР ===================== */
+/* ===================== САЙДБАР ГИЛЬДИИ ===================== */
 document.querySelectorAll('.side-item').forEach(btn => {
     btn.addEventListener('click', () => {
         const section = btn.dataset.section;
@@ -221,10 +220,35 @@ document.querySelectorAll('.side-item').forEach(btn => {
     });
 });
 
+/* ===================== САЙДБАР АДМИНА ===================== */
+document.querySelectorAll('.admin-nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const panel = btn.dataset.apanel;
+        if (!panel) return;
+        document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        const section = document.querySelector(`.admin-section[data-apanel="${panel}"]`);
+        if (section) section.classList.add('active');
+
+        if (panel === 'clans')    renderAdminClanSelect();
+        if (panel === 'games')    renderGamesAdmin();
+        if (panel === 'partners') renderPartnersAdmin();
+        if (panel === 'faq')      renderFaqAdmin();
+        if (panel === 'tactics')  renderTacticsAdmin();
+        if (panel === 'settings') renderSiteFields();
+    });
+});
+
+$('adminBackHome').addEventListener('click', () => {
+    currentClan = null;
+    showScreen('home');
+});
+
 /* ===================== ТАКТИКА ===================== */
 async function loadTactics() {
     const { data, error } = await supabase.from('tactics').select('*').order('sort_order');
-    if (error) { console.warn('Tactics load error:', error); return; }
+    if (error) { console.warn('Tactics load error:', error.message); return; }
     tacticsCache = data || [];
     renderTacticsModal();
     renderTacticsAdmin();
@@ -242,8 +266,8 @@ function renderTacticsModal() {
         const section = document.createElement('section');
         section.className = 'tactics-section';
         section.innerHTML = `
-            <h3>${escapeHtml(t.icon || '📖')} ${escapeHtml(t.title)}</h3>
-            <div class="tactics-text">${t.content}</div>
+            <h3>${escapeHtml(t.icon || '📖')} ${escapeHtml(t.title || '')}</h3>
+            <div class="tactics-text">${t.content || ''}</div>
         `;
         body.appendChild(section);
     });
@@ -297,7 +321,7 @@ $('doAdminLogin').addEventListener('click', async () => {
 $('adminPassword').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('doAdminLogin').click();
 });
-async function adminLogout() { await supabase.auth.signOut(); closeAdminPanel(); }
+async function adminLogout() { await supabase.auth.signOut(); }
 $('adminLogoutBtn').addEventListener('click', adminLogout);
 $('adminLogoutBtn2').addEventListener('click', adminLogout);
 supabase.auth.onAuthStateChange((_e, session) => {
@@ -324,6 +348,22 @@ function applyAdminUI() {
     });
     renderAll();
 }
+
+function openAdminPage() {
+    if (!isAdmin) return;
+    const firstNav = document.querySelector('.admin-nav-item[data-apanel="clans"]');
+    if (firstNav) firstNav.click();
+    renderAdminClanSelect();
+    renderSiteFields();
+    renderFaqAdmin();
+    renderPartnersAdmin();
+    renderGamesAdmin();
+    renderTacticsAdmin();
+    showScreen('admin');
+}
+$('adminPanelBtn').addEventListener('click', openAdminPage);
+$('adminPanelBtn2').addEventListener('click', openAdminPage);
+$('adminPanelBtn3').addEventListener('click', openAdminPage);
 
 /* ===================== ГИЛЬДИИ ===================== */
 async function loadClans() {
@@ -471,7 +511,6 @@ function openClan(id) {
     $('clanIcon').src = clan.image || '';
     $('clanIcon').alt = clan.name;
     showScreen('lists');
-    applyBg();
     document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b.dataset.section === 'lists'));
     document.querySelectorAll('.clan-section').forEach(s => s.classList.toggle('active', s.id === 'section-lists'));
     currentTab = 'enemies';
@@ -489,8 +528,8 @@ function openClan(id) {
     sendHeartbeat();
 }
 $('backBtn').addEventListener('click', () => {
+    currentClan = null;
     showScreen('home');
-    applyBg();
     sendHeartbeat();
 });
 $('clanLeaveBtn').addEventListener('click', () => {
@@ -499,7 +538,6 @@ $('clanLeaveBtn').addEventListener('click', () => {
     localStorage.removeItem(LAST_CLAN_KEY);
     currentClan = null;
     showScreen('home');
-    applyBg();
     sendHeartbeat();
 });
 
@@ -1797,7 +1835,7 @@ function renderTacticsAdmin() {
         el.className = 'partners-admin-item';
         el.innerHTML = `
             <div class="logo-mini"><span>${escapeHtml(t.icon || '📖')}</span></div>
-            <div class="txt"><b>${escapeHtml(t.title)}</b>
+            <div class="txt"><b>${escapeHtml(t.title || t.id)}</b>
                 <span style="color:var(--muted);font-size:11px">Порядок: ${t.sort_order ?? 0}</span>
             </div>
             <div class="actions">
@@ -1809,7 +1847,7 @@ function renderTacticsAdmin() {
         el.querySelector('.up')?.addEventListener('click', () => moveTactic(t.id, -1));
         el.querySelector('.down')?.addEventListener('click', () => moveTactic(t.id, +1));
         el.querySelector('.edit').addEventListener('click', () => openTacticEdit(t));
-        el.querySelector('.delete').addEventListener('click', () => deleteTactic(t.id, t.title));
+        el.querySelector('.delete').addEventListener('click', () => deleteTactic(t.id, t.title || t.id));
         container.appendChild(el);
     });
 }
@@ -1826,10 +1864,10 @@ async function moveTactic(id, dir) {
 function openTacticEdit(t) {
     editingTactic = t;
     $('tacEditId').value = t.id;
-    $('tacEditTitle').value = t.title;
+    $('tacEditTitle').value = t.title || '';
     $('tacEditIcon').value = t.icon || '';
     $('tacEditOrder').value = t.sort_order ?? 0;
-    $('tacEditContent').value = t.content;
+    $('tacEditContent').value = t.content || '';
     $('tacEditMsg').textContent = '';
     $('tacticsEditModal').hidden = false;
     $('tacEditTitle').focus();
@@ -1909,8 +1947,8 @@ async function loadStats() {
         const stats = [
             { label: 'Врагов', value: e.count || 0, ico: '🔴' },
             { label: 'Друзей', value: f.count || 0, ico: '🟢' },
-            { label: 'Нейтралов', value: n.count || 0, ico: '⚪' },
-            { label: 'В личном', value: p.count || 0, ico: '🟡' },
+            { label: 'Нейтралов', value: n.count || 0, ico: '🟡' },
+            { label: 'В личном', value: p.count || 0, ico: '🟠' },
             { label: 'Билды ПВП', value: b1.count || 0, ico: '⚔️' },
             { label: 'Билды ПБ', value: b2.count || 0, ico: '🛡' },
             { label: 'Гильдий', value: c.count || 0, ico: '🏰' },
@@ -1923,7 +1961,7 @@ async function loadStats() {
                 <div class="stat-label">${s.label}</div>`;
             row.appendChild(el);
         });
-    } catch (err) { console.warn('Stats error:', err); }
+    } catch (err) { /* молча */ }
 }
 
 /* ===================== DISCORD ===================== */
@@ -1940,13 +1978,12 @@ async function sendDiscordWebhook(title, content) {
     };
     const proxied = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(webhookUrl);
     try {
-        const res = await fetch(proxied, {
+        await fetch(proxied, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        console.log('Discord webhook response:', res.status);
-    } catch (err) { console.warn('Webhook error:', err); }
+    } catch (err) { /* молча */ }
 }
 
 /* ===================== КОНТАКТЫ ===================== */
@@ -1974,41 +2011,7 @@ function renderContacts() {
     });
 }
 
-/* ===================== АДМИН-ПАНЕЛЬ ===================== */
-function openAdminPanel() {
-    if (!isAdmin) return;
-    renderAdminClanSelect();
-    renderSiteFields();
-    renderFaqAdmin();
-    renderPartnersAdmin();
-    renderGamesAdmin();
-    renderTacticsAdmin();
-    $('adminPanelMsg').textContent = '';
-    $('adminSiteMsg').textContent = '';
-    $('adminNewPass').value = '';
-    $('adminPanelModal').hidden = false;
-}
-$('adminPanelBtn').addEventListener('click', openAdminPanel);
-$('adminPanelBtn2').addEventListener('click', openAdminPanel);
-$('adminPanelBtn3').addEventListener('click', openAdminPanel);
-function closeAdminPanel() { $('adminPanelModal').hidden = true; }
-$('closeAdminPanel').addEventListener('click', closeAdminPanel);
-document.querySelectorAll('.admin-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        const target = tab.dataset.atab;
-        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        $('atab-' + target).classList.add('active');
-        if (target === 'site') renderSiteFields();
-        if (target === 'faq') renderFaqAdmin();
-        if (target === 'partners') renderPartnersAdmin();
-        if (target === 'games') renderGamesAdmin();
-        if (target === 'tactics') renderTacticsAdmin();
-    });
-});
-
-/* ---------- АДМИН: ИГРЫ ---------- */
+/* ===================== АДМИН: ИГРЫ ===================== */
 function renderGamesAdmin() {
     const container = $('gamesAdminList');
     if (!container) return;
@@ -2115,7 +2118,7 @@ async function deleteGame(id, name) {
     renderHomeCards();
 }
 
-/* ---------- АДМИН: ГИЛЬДИИ ---------- */
+/* ===================== АДМИН: ГИЛЬДИИ ===================== */
 function renderAdminClanSelect() {
     const sel = $('adminClanSelect');
     if (!sel) return;
@@ -2247,7 +2250,6 @@ $('deleteClanBtn').addEventListener('click', async () => {
             currentClan = null;
             localStorage.removeItem(LAST_CLAN_KEY);
             localStorage.removeItem(UNLOCK_KEY);
-            showScreen('home');
         }
         renderHomeCards();
         renderAdminClanSelect();
@@ -2479,7 +2481,6 @@ function escapeHtml(str) {
     applyAdminUI();
 
     showScreen('home');
-    applyBg();
 
     startHeartbeat();
 
