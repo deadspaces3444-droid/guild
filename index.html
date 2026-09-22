@@ -39,7 +39,7 @@
         </div>
 
         <div class="home-wrap">
-            <div class="hero-video">
+            <div class="hero-video" id="heroVideo">
                 <video autoplay muted loop playsinline preload="auto">
                     <source src="videoshero.mp4" type="video/mp4">
                 </video>
@@ -50,8 +50,32 @@
                 </div>
             </div>
 
-            <h2 class="section-title">Гильдии</h2>
+            <h2 class="section-title" id="guildsTitle">Гильдии</h2>
             <div id="clanGrid" class="clan-grid"></div>
+
+            <!-- ═══ СПИСКИ ГИЛЬДИИ НА ГЛАВНОЙ (только для авторизованных) ═══ -->
+            <section id="homeListsSection" class="home-lists-section" hidden>
+                <div class="home-lists-header">
+                    <img id="homeListsLogo" class="home-lists-logo" src="" alt="">
+                    <h2 id="homeListsTitle" class="home-lists-title"></h2>
+                    <button id="homeListsClose" class="home-lists-close" title="Скрыть списки">✕</button>
+                </div>
+
+                <nav class="tabs home-lists-tabs">
+                    <button class="tab active" data-home-tab="enemies">🔴 Враги</button>
+                    <button class="tab" data-home-tab="friends">🟢 Друзья</button>
+                    <button class="tab" data-home-tab="neutral">⚪ Нейтралитет</button>
+                    <button class="tab" data-home-tab="personal">🟡 Не трогать</button>
+                </nav>
+
+                <input type="text" id="homeSearchInput" class="search-input" placeholder="🔍 Поиск по списку...">
+                <ul class="player-list" id="homePlayerList"></ul>
+
+                <div class="home-lists-actions">
+                    <button id="homeOpenFullBtn" class="big-btn secondary">📂 Все разделы гильдии →</button>
+                    <button id="homeLeaveBtn" class="big-btn secondary">🚪 Заблокировать просмотр</button>
+                </div>
+            </section>
 
             <section id="applySection" class="apply-section">
                 <h2 class="section-title">📝 Подать заявку в гильдию</h2>
@@ -137,7 +161,7 @@
         </div>
     </div>
 
-    <!-- ВНУТРИ ГИЛЬДИИ -->
+    <!-- ВНУТРИ ГИЛЬДИИ (полный вид) -->
     <div id="clanView" hidden>
         <header>
             <button id="backBtn" class="back-btn">← Назад</button>
@@ -225,10 +249,8 @@
                     <div id="treasuryList" class="treasury-list"></div>
                 </div>
 
-                <!-- ═══════════ ТОРГОВЛЯ (БИРЖА) ═══════════ -->
                 <div id="section-trade" class="clan-section">
                     <div class="trade-market">
-
                         <header class="tm-topbar">
                             <h2 class="tm-title">📣 Биржа заявок</h2>
                             <span class="tm-subtitle">Гильдейский рынок</span>
@@ -254,26 +276,20 @@
                         </div>
 
                         <div class="tm-layout">
-
-                            <!-- Форма -->
                             <section class="tm-panel">
                                 <h3 class="tm-panel-title">📝 Новая заявка</h3>
-
                                 <div class="tm-type-switch">
                                     <div class="tm-type-btn buy active" data-type="buy">🛒 Покупка</div>
                                     <div class="tm-type-btn sell"       data-type="sell">💰 Продажа</div>
                                 </div>
-
                                 <div class="tm-fg">
                                     <label>Категория</label>
                                     <select id="tm-category"></select>
                                 </div>
-
                                 <div class="tm-fg">
                                     <label>Название *</label>
                                     <input type="text" id="tm-name" maxlength="60" placeholder="Например: Дубовые доски">
                                 </div>
-
                                 <div class="tm-frow">
                                     <div class="tm-fg">
                                         <label>Цена за ед. *</label>
@@ -284,35 +300,28 @@
                                         <input type="number" id="tm-qty" min="1" step="1" value="1">
                                     </div>
                                 </div>
-
                                 <div class="tm-fg">
                                     <label>Итого золота</label>
                                     <input type="text" id="tm-total" readonly value="0 🪙">
                                 </div>
-
                                 <div class="tm-fg">
                                     <label>Порт (необязательно)</label>
                                     <input type="text" id="tm-port" maxlength="60" placeholder="Порт-Рояль">
                                 </div>
-
                                 <div class="tm-fg">
                                     <label>Ваш ник *</label>
                                     <input type="text" id="tm-nickname" maxlength="32" placeholder="Капитан">
                                 </div>
-
                                 <div class="tm-fg">
                                     <label>Примечание</label>
                                     <textarea id="tm-note" maxlength="140" placeholder="Доп. условия, время, контакт..."></textarea>
                                 </div>
-
                                 <button id="tm-submit" class="tm-btn-gold">Опубликовать заявку</button>
                                 <p id="tm-status" class="tm-status"></p>
                             </section>
 
-                            <!-- Доска -->
                             <section class="tm-panel">
                                 <h3 class="tm-panel-title">📋 Доска заявок</h3>
-
                                 <div class="tm-filters">
                                     <input type="search" id="tm-search" placeholder="🔍 Поиск по названию...">
                                     <div class="tm-filter-row" id="tm-type-filters">
@@ -327,10 +336,8 @@
                                         </label>
                                     </div>
                                 </div>
-
                                 <div id="tm-listings" class="tm-listings"></div>
                             </section>
-
                         </div>
                     </div>
                 </div>
@@ -453,10 +460,8 @@
         </aside>
 
         <main class="admin-content">
-
             <section class="admin-section active" data-apanel="clans">
                 <h2 class="admin-section-title">🏰 Управление гильдиями</h2>
-
                 <div class="admin-card">
                     <div class="admin-field">
                         <label>Гильдия</label>
@@ -494,7 +499,6 @@
                     Для <b>YouTube-ссылок</b> логотип подтягивается автоматически.
                     Для остальных — можно загрузить картинку с диска.
                 </p>
-
                 <div class="admin-card">
                     <div class="admin-field">
                         <label>Название *</label>
@@ -525,14 +529,12 @@
                         <button id="partnerAddBtn">➕ Добавить партнёра</button>
                     </div>
                 </div>
-
                 <div id="partnersAdminList" class="partners-admin-list"></div>
             </section>
 
             <section class="admin-section" data-apanel="faq">
                 <h2 class="admin-section-title">❓ FAQ</h2>
                 <p class="hint">Вопросы и ответы на главной</p>
-
                 <div class="admin-card">
                     <div class="admin-field">
                         <label>Вопрос</label>
@@ -546,13 +548,11 @@
                         <button id="faqAddBtn">➕ Добавить вопрос</button>
                     </div>
                 </div>
-
                 <div id="faqAdminList" class="faq-admin-list"></div>
             </section>
 
             <section class="admin-section" data-apanel="settings">
                 <h2 class="admin-section-title">⚙️ Настройки сайта</h2>
-
                 <div class="admin-card">
                     <div class="admin-field">
                         <label>Discord Webhook URL</label>
