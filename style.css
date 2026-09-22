@@ -144,29 +144,10 @@ body::before {
     50%  { transform: rotate(12deg); }
     100% { transform: rotate(-12deg); }
 }
-.maintenance-title {
-    font-size: 26px;
-    color: #ffd479;
-    text-shadow: 0 2px 12px rgba(0, 0, 0, .8);
-}
-.maintenance-text {
-    font-size: 15px;
-    line-height: 1.6;
-    color: #cfd3dc;
-    white-space: pre-line;
-    word-break: break-word;
-}
-.maintenance-hint {
-    font-size: 13px;
-    color: var(--muted);
-    font-style: italic;
-}
-.maintenance-actions {
-    margin-top: 8px;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-}
+.maintenance-title { font-size: 26px; color: #ffd479; text-shadow: 0 2px 12px rgba(0, 0, 0, .8); }
+.maintenance-text { font-size: 15px; line-height: 1.6; color: #cfd3dc; white-space: pre-line; word-break: break-word; }
+.maintenance-hint { font-size: 13px; color: var(--muted); font-style: italic; }
+.maintenance-actions { margin-top: 8px; width: 100%; display: flex; justify-content: center; }
 
 /* ============ ГЛАВНАЯ ============ */
 .home-wrap {
@@ -268,8 +249,7 @@ body::before {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 .home-lists-logo {
-    width: 48px;
-    height: 48px;
+    width: 48px; height: 48px;
     object-fit: contain;
     flex-shrink: 0;
     filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .5));
@@ -397,12 +377,7 @@ body::before {
     color: #cfd3dc;
     white-space: pre-line;
 }
-.faq-admin-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 16px;
-}
+.faq-admin-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
 .faq-admin-item {
     display: flex;
     gap: 8px;
@@ -425,10 +400,7 @@ body::before {
     cursor: pointer;
     font-size: 13px;
 }
-.faq-admin-item button:hover {
-    background: rgba(255, 122, 122, 0.1);
-    border-color: var(--red);
-}
+.faq-admin-item button:hover { background: rgba(255, 122, 122, 0.1); border-color: var(--red); }
 
 /* ============ ПАРТНЁРЫ ============ */
 .promo-section {
@@ -468,8 +440,7 @@ body::before {
     box-shadow: 0 12px 40px rgba(255, 0, 0, 0.25);
 }
 .yt-promo-logo {
-    width: 96px;
-    height: 96px;
+    width: 96px; height: 96px;
     object-fit: cover;
     border-radius: 50%;
     background: #000;
@@ -511,10 +482,7 @@ body::before {
     transition: all .15s;
 }
 .yt-promo-btn::before { content: '▶'; font-size: 12px; }
-.yt-promo-card:hover .yt-promo-btn {
-    background: #cc0000;
-    box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5);
-}
+.yt-promo-card:hover .yt-promo-btn { background: #cc0000; box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5); }
 .partner-card {
     display: flex;
     align-items: flex-start;
@@ -567,12 +535,7 @@ body::before {
     word-break: break-all;
     opacity: .8;
 }
-.partners-admin-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 16px;
-}
+.partners-admin-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
 .partners-admin-item {
     display: flex;
     gap: 12px;
@@ -619,12 +582,7 @@ body::before {
 .partners-admin-item .actions button.edit:hover { color: #ffd479; border-color: #ffd479; }
 .partners-admin-item .actions button.delete:hover { color: var(--red); border-color: var(--red); }
 
-.logo-upload {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
+.logo-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .logo-pick-btn {
     padding: 10px 16px;
     background: var(--accent);
@@ -811,8 +769,14 @@ body::before {
 .side-item.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 4px 16px rgba(43, 108, 176, 0.5); }
 .side-ico { font-size: 18px; line-height: 1; }
 .clan-main { flex: 1; min-width: 0; max-width: 900px; padding-bottom: 40px; }
-.clan-section { display: none; }
-.clan-section.active { display: block; }
+
+/* Все секции видны одновременно */
+.clan-section {
+    display: block;
+    margin-bottom: 48px;
+    scroll-margin-top: 20px;
+}
+.clan-section:last-child { margin-bottom: 0; }
 
 /* ============ ВКЛАДКИ ============ */
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -884,7 +848,9 @@ body::before {
 .hint b { color: #cfd3dc; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
-h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0, .8); }
+h2 { margin-bottom: 14px; font-size: 22px; text-shadow: 0 2px 10px rgba(0, 0, 0, .8); }
+h3 { margin-bottom: 12px; font-size: 17px; text-shadow: 0 2px 8px rgba(0, 0, 0, .6); }
+h4 { margin-bottom: 10px; font-size: 15px; text-shadow: 0 2px 6px rgba(0, 0, 0, .5); }
 
 /* ============ СПИСКИ ============ */
 .player-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
@@ -895,6 +861,9 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     backdrop-filter: blur(6px);
     border: 1px solid var(--border);
     border-radius: 8px;
+}
+.player-list li.ally-row {
+    border-left: 3px solid rgba(180, 138, 255, 0.55);
 }
 .player-list li .info { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; }
 .player-list li .row-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -930,6 +899,20 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
 .empty {
     color: var(--muted); font-style: italic; padding: 12px;
     background: rgba(23, 26, 33, 0.7); border-radius: 8px;
+}
+
+/* ============ БЕЙДЖ СОЮЗНОЙ ГИЛЬДИИ ============ */
+.ally-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #b48aff;
+    background: rgba(180, 138, 255, 0.12);
+    border: 1px solid rgba(180, 138, 255, 0.4);
+    padding: 2px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+    margin-left: 6px;
 }
 
 /* ============ БИЛДЫ ============ */
@@ -1149,6 +1132,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     font-family: Georgia, 'Times New Roman', serif;
     color: var(--tm-text);
     font-size: 14px;
+    margin-top: 12px;
 }
 .tm-topbar {
     display: flex;
@@ -1160,7 +1144,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     margin-bottom: 20px;
 }
 .tm-title {
-    font-size: 22px;
+    font-size: 20px;
     color: var(--tm-gold-light);
     letter-spacing: 1px;
     text-shadow: none;
@@ -1548,17 +1532,8 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     margin-bottom: 12px;
 }
 .admin-sidebar-logo { font-size: 24px; }
-.admin-sidebar-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #fff;
-}
-.admin-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
-}
+.admin-sidebar-title { font-size: 16px; font-weight: 700; color: #fff; }
+.admin-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .admin-nav-item {
     display: flex;
     align-items: center;
@@ -1587,10 +1562,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     box-shadow: 0 4px 12px rgba(43, 108, 176, 0.4);
 }
 .admin-nav-ico { font-size: 18px; line-height: 1; }
-.admin-nav-item.wip {
-    color: var(--muted);
-    opacity: .75;
-}
+.admin-nav-item.wip { color: var(--muted); opacity: .75; }
 .admin-nav-item.wip:hover {
     background: rgba(255, 212, 121, 0.08);
     border-color: rgba(255, 212, 121, 0.3);
@@ -1626,15 +1598,8 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     text-align: left;
     transition: all .15s;
 }
-.admin-back-btn:hover {
-    background: rgba(31, 36, 48, 0.95);
-    color: #fff;
-}
-.admin-content {
-    flex: 1;
-    min-width: 0;
-    padding-bottom: 40px;
-}
+.admin-back-btn:hover { background: rgba(31, 36, 48, 0.95); color: #fff; }
+.admin-content { flex: 1; min-width: 0; padding-bottom: 40px; }
 .admin-section { display: none; }
 .admin-section.active { display: block; }
 .admin-section-title {
@@ -1655,12 +1620,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
 }
 
 /* ============ ЖУРНАЛЫ ============ */
-.log-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 8px;
-}
+.log-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .log-item {
     padding: 12px 16px;
     background: rgba(23, 26, 33, 0.9);
@@ -1774,14 +1734,8 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     background: #cfd3dc;
     transition: all .2s;
 }
-.switch-row input[type="checkbox"]:checked {
-    background: #ff7a7a;
-    border-color: #ff7a7a;
-}
-.switch-row input[type="checkbox"]:checked::after {
-    left: 22px;
-    background: #fff;
-}
+.switch-row input[type="checkbox"]:checked { background: #ff7a7a; border-color: #ff7a7a; }
+.switch-row input[type="checkbox"]:checked::after { left: 22px; background: #fff; }
 .switch-label {
     font-size: 13px !important;
     color: var(--text) !important;
@@ -1805,10 +1759,7 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
     color: var(--red);
     border: 1px solid var(--red);
 }
-.modal-actions button.danger:hover {
-    background: rgba(255, 122, 122, 0.15);
-    color: #ff9999;
-}
+.modal-actions button.danger:hover { background: rgba(255, 122, 122, 0.15); color: #ff9999; }
 .move-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .move-grid button {
     padding: 12px;
@@ -1888,8 +1839,7 @@ a.icon-btn:hover {
     text-shadow: 0 2px 10px rgba(0, 0, 0, .6);
 }
 .tactics-close {
-    width: 34px;
-    height: 34px;
+    width: 34px; height: 34px;
     background: transparent;
     border: 1px solid var(--border);
     color: var(--muted);
@@ -1943,9 +1893,7 @@ a.icon-btn:hover {
     color: #ffd479;
     font-weight: 700;
 }
-.tactics-list li b {
-    color: #fff;
-}
+.tactics-list li b { color: #fff; }
 .tactics-list ul {
     list-style: none;
     margin-top: 6px;
@@ -1954,10 +1902,7 @@ a.icon-btn:hover {
     flex-direction: column;
     gap: 4px;
 }
-.tactics-list ul li::before {
-    content: '·';
-    color: #7db9ff;
-}
+.tactics-list ul li::before { content: '·'; color: #7db9ff; }
 .tactics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1976,17 +1921,8 @@ a.icon-btn:hover {
     background: rgba(25, 30, 42, 0.9);
     transform: translateY(-2px);
 }
-.tactics-card-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 4px;
-}
-.tactics-card-desc {
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.4;
-}
+.tactics-card-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.tactics-card-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
 .tactics-footer {
     padding: 12px 22px;
     background: rgba(15, 17, 21, 0.6);
@@ -2011,26 +1947,21 @@ a.icon-btn:hover {
     #clanView header { padding: 0; }
     .clan-layout { flex-direction: column; padding: 0; }
     .sidebar {
-        width: 100%; position: static; flex-direction: row;
-        overflow-x: auto; padding-bottom: 4px;
+        width: 100%; position: sticky; top: 0; z-index: 20;
+        flex-direction: row;
+        overflow-x: auto; padding: 6px 0; gap: 6px;
+        background: rgba(15, 17, 21, 0.9);
+        backdrop-filter: blur(8px);
+        border-radius: 10px;
+        margin-bottom: 12px;
     }
     .side-item { flex: 1 1 auto; min-width: 130px; justify-content: center; padding: 10px 12px; font-size: 13px; }
     .side-ico { font-size: 16px; }
     .clan-main { width: 100%; }
 
-    #adminView {
-        flex-direction: column;
-        padding: 12px;
-    }
-    .admin-sidebar {
-        width: 100%;
-        position: static;
-        max-height: none;
-    }
-    .admin-nav {
-        flex-direction: row;
-        flex-wrap: wrap;
-    }
+    #adminView { flex-direction: column; padding: 12px; }
+    .admin-sidebar { width: 100%; position: static; max-height: none; }
+    .admin-nav { flex-direction: row; flex-wrap: wrap; }
     .admin-nav-item {
         flex: 1 1 auto;
         min-width: 130px;
@@ -2047,12 +1978,10 @@ a.icon-btn:hover {
 @media (max-width: 700px) {
     body { padding: 12px 12px 50px; }
     .top-right { position: static; justify-content: center; margin-bottom: 14px; }
-
     .maintenance-wrap { padding: 60px 12px 40px; }
     .maintenance-card { padding: 28px 20px; border-radius: 16px; }
     .maintenance-icon { font-size: 52px; }
     .maintenance-title { font-size: 22px; }
-
     .home-wrap { padding: 80px 8px 30px; gap: 24px; }
     .hero-video { aspect-ratio: 16 / 10; border-radius: 14px; }
     .hero-text { padding: 16px; }
@@ -2113,20 +2042,17 @@ a.icon-btn:hover {
     .yt-promo-logo { width: 80px; height: 80px; }
     .yt-promo-btn { align-self: center; }
     .yt-promo-name { font-size: 18px; justify-content: center; }
-
     .trade-market { padding: 14px; }
     .tm-counters { grid-template-columns: 1fr; gap: 10px; }
     .tm-counter { padding: 12px 14px; }
     .tm-ci { font-size: 26px; }
     .tm-cv { font-size: 20px; }
     .tm-listings { grid-template-columns: 1fr; }
-
     .home-lists-header { padding: 12px 14px; gap: 10px; flex-wrap: wrap; }
     .home-lists-logo { width: 36px; height: 36px; }
     .home-lists-title { font-size: 17px; }
     .home-lists-close { font-size: 12px; padding: 6px 10px; }
     .home-lists-actions .big-btn { min-width: 100%; }
-
     .tactics-modal { padding: 10px; }
     .tactics-content { border-radius: 12px; max-height: 95vh; }
     .tactics-header { padding: 14px 16px; }
