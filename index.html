@@ -8,11 +8,6 @@
 </head>
 <body>
 
-    <!-- ТУЛБАР ИГР -->
-    <div id="gameToolbar" class="game-toolbar" hidden>
-        <div id="gameTabs" class="game-toolbar-tabs"></div>
-    </div>
-
     <!-- ГЛАВНАЯ -->
     <div id="screen-home" class="screen">
         <div class="top-right">
@@ -388,6 +383,21 @@
         </div>
     </div>
 
+    <!-- МОДАЛКА: ПРИНЯТЬ ЗАЯВКУ -->
+    <div id="acceptTradeModal" class="modal" hidden>
+        <div class="modal-content">
+            <h2>🤝 Принять заявку</h2>
+            <p id="acceptTradeName" class="auth-clan-name"></p>
+            <p id="acceptTradeInfo" class="accept-trade-info"></p>
+            <input type="text" id="acceptTradeNickname" placeholder="Ваш игровой ник" maxlength="32" autocomplete="nickname">
+            <p id="acceptTradeError" class="error"></p>
+            <div class="modal-actions">
+                <button id="doAcceptTrade">Принять</button>
+                <button id="cancelAcceptTrade" class="secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
     <!-- МОДАЛКА: ВХОД АДМИНА -->
     <div id="adminAuthModal" class="modal" hidden>
         <div class="modal-content">
@@ -454,7 +464,6 @@
             <div id="atab-partners" class="admin-tab-content">
                 <p class="hint admin-hint">
                     Для <b>YouTube-ссылок</b> логотип подтягивается автоматически.
-                    Для остальных — можно загрузить картинку с диска.
                 </p>
                 <div class="add-form" style="border-style:solid">
                     <input type="text" id="partnerName" placeholder="Название *" maxlength="80">
@@ -536,7 +545,7 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА: ТАКТИКА БОЯ (просмотр) -->
+    <!-- МОДАЛКА: ТАКТИКА БОЯ -->
     <div id="tacticsModal" class="tactics-modal" hidden>
         <div class="tactics-content">
             <header class="tactics-header">
@@ -580,8 +589,8 @@
             <h2>✏️ Редактировать игру</h2>
             <input type="hidden" id="gameEditId">
             <div class="admin-field"><label>Название</label><input type="text" id="gameEditName" maxlength="80"></div>
-            <div class="admin-field"><label>Логотип</label><input type="text" id="gameEditImage" placeholder="images/wosb.png" maxlength="200"></div>
-            <div class="admin-field"><label>Фон</label><input type="text" id="gameEditBg" placeholder="images/bg-wosb.jpg" maxlength="200"></div>
+            <div class="admin-field"><label>Логотип</label><input type="text" id="gameEditImage" maxlength="200"></div>
+            <div class="admin-field"><label>Фон</label><input type="text" id="gameEditBg" maxlength="200"></div>
             <p id="gameEditMsg" class="error"></p>
             <div class="modal-actions">
                 <button id="saveGameEdit">💾 Сохранить</button>
