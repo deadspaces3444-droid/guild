@@ -38,10 +38,9 @@ const adminView          = $('adminView');
 const bgFileInput        = $('bgFileInput');
 
 /* ===================== ПРОВЕРКА АДМИНА ===================== */
-/* Флаг is_admin живёт в защищённых user_metadata Supabase —
-   в исходниках никакого email нет */
 function checkIsAdmin(session) {
-    return session?.user?.user_metadata?.is_admin === true;
+    const v = session?.user?.user_metadata?.is_admin;
+    return v === true || v === 'true' || v === 1 || v === '1';
 }
 
 /* ===================== ЛОГИ ===================== */
@@ -180,10 +179,11 @@ document.querySelectorAll('.side-item').forEach(btn => {
     btn.addEventListener('click', () => {
         const section = btn.dataset.section;
         if (!section) return;
+        const el = document.getElementById('section-' + section);
+        if (!el) return;
         document.querySelectorAll('.side-item').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.clan-section').forEach(s => s.classList.remove('active'));
         btn.classList.add('active');
-        $('section-' + section).classList.add('active');
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         if (section === 'lists') TABS.forEach(loadList);
         else if (section === 'events') renderEvents();
         else if (section === 'treasury') renderTreasury();
@@ -233,6 +233,7 @@ $('adminBackHome').addEventListener('click', () => {
 function openAdminAuth() {
     $('adminAuthModal').hidden = false;
     $('adminAuthError').textContent = '';
+    $('adminAuthError').style.color = '';
     $('adminNickname').value = localStorage.getItem(ADMIN_NICK_KEY) || '';
     $('adminEmail').value = '';
     $('adminPassword').value = '';
@@ -247,16 +248,36 @@ $('doAdminLogin').addEventListener('click', async () => {
     const nick = $('adminNickname').value.trim();
     const email = $('adminEmail').value.trim();
     const password = $('adminPassword').value;
-    const err = $('adminAuthError'); err.textContent = '';
+    const err = $('adminAuthError');
+    err.textContent = '';
+    err.style.color = '';
+
     if (!nick) { err.textContent = 'Укажите ваш ник'; return; }
     if (nick.length < 2) { err.textContent = 'Ник слишком короткий'; return; }
     if (!email || !password) { err.textContent = 'Заполни email и пароль'; return; }
 
     localStorage.setItem(ADMIN_NICK_KEY, nick);
     $('doAdminLogin').disabled = true;
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     $('doAdminLogin').disabled = false;
-    if (error) { err.textContent = error.message; return; }
+
+    if (error) {
+        err.textContent = error.message;
+        return;
+    }
+
+    if (!checkIsAdmin(data.session)) {
+        await supabase.auth.signOut();
+        localStorage.removeItem(ADMIN_NICK_KEY);
+        err.style.color = '#ff7a7a';
+        err.textContent = 'У этого пользователя нет прав администратора. ' +
+                          'Установите is_admin: true в User Metadata в Supabase.';
+        console.warn('⚠️ is_admin не найден в user_metadata. Метаданные:',
+                     data.session?.user?.user_metadata);
+        return;
+    }
+
     await logAdminAction('Вход в админ-панель', null, `ник: ${nick}`);
     closeAdminAuth();
 });
@@ -373,15 +394,11 @@ function handleClanClick(id) {
     else openClanInfo(id);
 }
 
-/* Видимость формы «Подать заявку» — только для неавторизованных */
 function updateApplyVisibility() {
     const el = $('applySection');
     if (!el) return;
     const panel = $('homeListsSection');
-    if (panel && !panel.hidden) {
-        el.hidden = true;
-        return;
-    }
+    if (panel && !panel.hidden) { el.hidden = true; return; }
     el.hidden = isUnlocked();
 }
 
@@ -523,7 +540,6 @@ function openHomeLists(id) {
 
     loadHomeList('enemies');
     updateApplyVisibility();
-
     window.scrollTo(0, 0);
 }
 
@@ -540,8 +556,11 @@ function closeHomeLists() {
     const panel = $('homeListsSection');
     if (panel) panel.hidden = true;
 
-    updateApplyVisibility();
+    /* Сброс гильдии, чтобы фон вернулся к главному */
+    currentClan = null;
+    applyBg();
 
+    updateApplyVisibility();
     window.scrollTo(0, 0);
 }
 
@@ -551,8 +570,12 @@ async function loadHomeList(tab) {
     if (!ul) return;
     ul.innerHTML = '<li class="empty">Загрузка…</li>';
 
+    const clanIds = [currentClan];
+    const allyId = clansCache[currentClan]?.ally_clan_id;
+    if (allyId && clansCache[allyId]) clanIds.push(allyId);
+
     const { data, error } = await supabase.from(tab).select('*')
-        .eq('clan', currentClan)
+        .in('clan', clanIds)
         .order('created_at', { ascending: false });
 
     ul.innerHTML = '';
@@ -561,10 +584,16 @@ async function loadHomeList(tab) {
 
     data.forEach(item => {
         const li = document.createElement('li');
+        const isAlly = item.clan !== currentClan;
+        if (isAlly) li.classList.add('ally-row');
+
         const parts = [];
         if (item.nickname)     parts.push(`<span class="nick">${escapeHtml(item.nickname)}</span>`);
         if (item.player_guild) parts.push(`<span class="guild">${escapeHtml(item.player_guild)}</span>`);
         if (item.faction)      parts.push(`<span class="faction">${escapeHtml(item.faction)}</span>`);
+        if (isAlly) {
+            parts.push(`<span class="ally-badge">🏰 ${escapeHtml(clansCache[item.clan]?.name || item.clan)}</span>`);
+        }
 
         const actions = isAdmin ? `<div class="actions">
             <button class="edit" title="Ред.">✏️</button>
@@ -639,6 +668,11 @@ function openClan(id) {
     const clan = clansCache[id];
     if (!clan) return;
     if (!isUnlocked()) { openClanInfo(id); return; }
+
+    /* Скрываем панель списков на главной, если открыта */
+    const panel = $('homeListsSection');
+    if (panel) panel.hidden = true;
+
     currentClan = id;
     localStorage.setItem(LAST_CLAN_KEY, id);
     $('clanTitle').textContent = clan.name;
@@ -650,11 +684,20 @@ function openClan(id) {
     const viewerNick = localStorage.getItem(VIEWER_NICK_KEY);
     if (viewerNick) logView(viewerNick, id, 'открытие гильдии');
 
-    document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b.dataset.section === 'lists'));
-    document.querySelectorAll('.clan-section').forEach(s => s.classList.toggle('active', s.id === 'section-lists'));
+    /* Сайдбар — сброс активной вкладки на "Списки" */
+    document.querySelectorAll('.side-item').forEach(b =>
+        b.classList.toggle('active', b.dataset.section === 'lists')
+    );
+
+    /* Текущая вкладка внутри списков — "Враги" */
     currentTab = 'enemies';
-    document.querySelectorAll('.tab:not([data-trade-filter]):not([data-home-tab])').forEach(b => b.classList.toggle('active', b.dataset.tab === 'enemies'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-enemies'));
+    document.querySelectorAll('.tab:not([data-trade-filter]):not([data-home-tab])').forEach(b =>
+        b.classList.toggle('active', b.dataset.tab === 'enemies')
+    );
+    document.querySelectorAll('.tab-content').forEach(c =>
+        c.classList.toggle('active', c.id === 'tab-enemies')
+    );
+
     renderScopeSelects();
     applyAdminUI();
     renderAll();
@@ -674,9 +717,9 @@ function openClan(id) {
 }
 $('backBtn').addEventListener('click', () => {
     if (applyAccessControl()) return;
-    closeHomeLists();
-    showScreen('home');
+    currentClan = null;
     applyBg();
+    showScreen('home');
 });
 $('clanLeaveBtn').addEventListener('click', () => {
     if (!confirm('Заблокировать просмотр? Пароль потребуется ввести снова.')) return;
@@ -724,29 +767,47 @@ function renderAll() {
     if (!currentClan) return;
     TABS.forEach(refreshLists);
 }
+
 async function loadList(tab) {
     if (!currentClan) return;
     const ul = document.querySelector(`[data-list="${tab}"]`);
     if (!ul) return;
     ul.innerHTML = '<li class="empty">Загрузка…</li>';
-    const { data, error } = await supabase.from(tab).select('*').eq('clan', currentClan)
+
+    const clanIds = [currentClan];
+    const allyId = clansCache[currentClan]?.ally_clan_id;
+    if (allyId && clansCache[allyId]) clanIds.push(allyId);
+
+    const { data, error } = await supabase.from(tab).select('*')
+        .in('clan', clanIds)
         .order('created_at', { ascending: false });
+
     ul.innerHTML = '';
     if (error) { ul.innerHTML = `<li class="empty">Ошибка: ${error.message}</li>`; return; }
     if (!data?.length) { ul.innerHTML = '<li class="empty">Список пуст</li>'; return; }
+
     data.forEach(item => {
         const li = document.createElement('li');
+        const isAlly = item.clan !== currentClan;
+        if (isAlly) li.classList.add('ally-row');
+
         const parts = [];
         if (item.nickname)     parts.push(`<span class="nick">${escapeHtml(item.nickname)}</span>`);
         if (item.player_guild) parts.push(`<span class="guild">${escapeHtml(item.player_guild)}</span>`);
         if (item.faction)      parts.push(`<span class="faction">${escapeHtml(item.faction)}</span>`);
+        if (isAlly) {
+            parts.push(`<span class="ally-badge">🏰 ${escapeHtml(clansCache[item.clan]?.name || item.clan)}</span>`);
+        }
+
         const actions = isAdmin ? `<div class="actions">
             <button class="edit" title="Ред.">✏️</button>
             <button class="move" title="Пер.">↔</button>
             <button class="delete" title="Уд.">🗑</button>
         </div>` : '';
+
         li.innerHTML = `<div class="info"><div class="row-main">${parts.join('')}</div>
             ${item.note ? `<span class="note">${escapeHtml(item.note)}</span>` : ''}</div>${actions}`;
+
         if (isAdmin) {
             li.querySelector('.edit').addEventListener('click', () => openEditModal(tab, item));
             li.querySelector('.move').addEventListener('click', () => openMoveModal(tab, item.id));
@@ -780,9 +841,14 @@ async function renderBuilds(type) {
     const container = type === 'pvp' ? $('pvpList') : $('pbList');
     if (!container) return;
     container.innerHTML = '<div class="empty">Загрузка…</div>';
+
+    const allyId = clansCache[currentClan]?.ally_clan_id;
+    const orParts = [`is_shared.eq.true`, `clan.eq.${currentClan}`];
+    if (allyId) orParts.push(`clan.eq.${allyId}`);
+
     const { data, error } = await supabase.from('builds').select('*')
         .eq('type', type)
-        .or(`is_shared.eq.true,clan.eq.${currentClan}`)
+        .or(orParts.join(','))
         .order('created_at', { ascending: false });
     if (error) { container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
     if (!data?.length) { container.innerHTML = '<div class="empty">Билды пока не добавлены</div>'; return; }
@@ -803,7 +869,7 @@ async function renderBuilds(type) {
         ranks.forEach(rank => {
             const g = document.createElement('div');
             g.className = 'build-group';
-            const t = document.createElement('h3');
+            const t = document.createElement('h4');
             t.className = 'build-group-title';
             t.textContent = `Ранг ${rank}`;
             g.appendChild(t);
@@ -842,7 +908,7 @@ function createBuildCard(item) {
 
     card.innerHTML = `
         <div class="build-header">
-            <h3 class="build-ship">${escapeHtml(item.ship_name)}</h3>
+            <h4 class="build-ship">${escapeHtml(item.ship_name)}</h4>
             ${rankBadge}${scopeBadge}${actions}
         </div>
         ${upgrades.length ? `<div class="build-section">
@@ -2023,6 +2089,21 @@ function renderGameSelectForClanAdmin() {
     });
     if (cur && gamesCache[cur]) sel.value = cur;
 }
+function renderAllyClanSelect() {
+    const sel = $('adminAllyClan');
+    if (!sel) return;
+    const cur = sel.value;
+    const currentClanId = $('adminClanSelect')?.value;
+    sel.innerHTML = '<option value="">— Нет —</option>';
+    Object.values(clansCache).forEach(c => {
+        if (c.id === currentClanId) return;
+        const o = document.createElement('option');
+        o.value = c.id;
+        o.textContent = c.name;
+        sel.appendChild(o);
+    });
+    if (cur && clansCache[cur] && cur !== currentClanId) sel.value = cur;
+}
 function renderNewClanGameSelect() {
     const sel = $('newClanGame');
     if (!sel) return;
@@ -2040,8 +2121,11 @@ function updateAdminFields() {
     const cid = $('adminClanSelect').value;
     const clan = clansCache[cid];
     renderGameSelectForClanAdmin();
+    renderAllyClanSelect();
     if (clan) {
         $('adminClanGame').value = clan.game_id || 'wosb';
+        const allySel = $('adminAllyClan');
+        if (allySel) allySel.value = clan.ally_clan_id || '';
     }
     $('adminCurrentPass').value = clan?.password || '—';
     $('adminNewPass').value = '';
@@ -2057,14 +2141,23 @@ $('saveAdminSettings').addEventListener('click', async () => {
     const newNews = $('adminNews').value;
     const newRules = $('adminRules').value;
     const newGame = $('adminClanGame').value;
+    const newAlly = $('adminAllyClan').value || null;
     const msg = $('adminPanelMsg');
     if (!cid) return;
     const clan = clansCache[cid]; if (!clan) return;
+
+    if (newAlly === cid) {
+        msg.textContent = 'Гильдия не может быть союзником сама себе';
+        msg.style.color = '#ff7a7a';
+        return;
+    }
+
     const payload = {
         discord: newDiscord || null,
         news: newNews || null,
         rules: newRules,
         game_id: newGame || null,
+        ally_clan_id: newAlly,
         updated_at: new Date().toISOString()
     };
     if (newPass) payload.password = newPass;
@@ -2073,7 +2166,9 @@ $('saveAdminSettings').addEventListener('click', async () => {
     await logAdminAction(
         'Изменил настройки гильдии',
         clan.name,
-        `игра: ${gamesCache[newGame]?.name || newGame}` + (newPass ? ', сменён пароль' : '')
+        `игра: ${gamesCache[newGame]?.name || newGame}` +
+        (newAlly ? `, союзник: ${clansCache[newAlly]?.name || newAlly}` : '') +
+        (newPass ? ', сменён пароль' : '')
     );
     Object.assign(clansCache[cid], payload);
     msg.textContent = '✔ Сохранено'; msg.style.color = '#6ee7a7';
@@ -2124,6 +2219,9 @@ $('deleteClanBtn').addEventListener('click', async () => {
         await supabase.from('treasury').delete().eq('clan', cid);
         await supabase.from('trades').delete().eq('clan', cid);
         await supabase.from('builds').delete().eq('clan', cid).eq('is_shared', false);
+
+        /* Отвязываем союзников */
+        await supabase.from('clans').update({ ally_clan_id: null }).eq('ally_clan_id', cid);
 
         const { error } = await supabase.from('clans').delete().eq('id', cid);
         if (error) throw error;
@@ -2209,7 +2307,8 @@ $('saveNewClan').addEventListener('click', async () => {
         password: pass,
         discord: $('newClanDiscord').value.trim() || null,
         image: $('newClanImage').value.trim() || 'images/aov.png',
-        bg: $('newClanBg').value.trim() || 'images/bg-main.jpg'
+        bg: $('newClanBg').value.trim() || 'images/bg-main.jpg',
+        ally_clan_id: null
     };
     const { error } = await supabase.from('clans').insert(payload);
     if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
