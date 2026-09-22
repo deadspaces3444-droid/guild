@@ -28,13 +28,16 @@ let editingItem   = null;
 let editingBuild  = null;
 let editingGame   = null;
 let duplicatingBuild = null;
+let tradesCache   = [];
+let currentTradeFilter = 'all';
 
 const $ = id => document.getElementById(id);
-const screenHome  = $('screen-home');
-const screenClan  = $('screen-clan');
-const clanView    = $('clanView');
-const adminView   = $('adminView');
-const bgFileInput = $('bgFileInput');
+const screenHome         = $('screen-home');
+const screenClan         = $('screen-clan');
+const screenMaintenance  = $('screen-maintenance');
+const clanView           = $('clanView');
+const adminView          = $('adminView');
+const bgFileInput        = $('bgFileInput');
 
 /* ===================== ЛОГИ ===================== */
 async function logAdminAction(action, target = null, details = null) {
@@ -125,11 +128,35 @@ $('bgResetBtn').addEventListener('click', async () => {
 
 /* ===================== ЭКРАНЫ ===================== */
 function showScreen(name) {
-    screenHome.hidden = name !== 'home';
-    screenClan.hidden = name !== 'clan';
-    clanView.hidden   = name !== 'lists';
-    adminView.hidden  = name !== 'admin';
+    screenHome.hidden        = name !== 'home';
+    screenClan.hidden        = name !== 'clan';
+    clanView.hidden          = name !== 'lists';
+    adminView.hidden         = name !== 'admin';
+    screenMaintenance.hidden = name !== 'maintenance';
     window.scrollTo(0, 0);
+}
+
+/* ===================== ТЕХРАБОТЫ ===================== */
+function isMaintenanceOn() {
+    return settingsCache?.maintenance_mode === true;
+}
+
+function showMaintenanceScreen() {
+    const msg = $('maintenanceMessage');
+    if (msg) {
+        msg.textContent = settingsCache?.maintenance_message
+            || 'Идут технические работы. Заходите позже.';
+    }
+    showScreen('maintenance');
+}
+
+function applyAccessControl() {
+    if (isAdmin) return false;
+    if (isMaintenanceOn()) {
+        showMaintenanceScreen();
+        return true;
+    }
+    return false;
 }
 
 /* ===================== ИГРЫ ===================== */
@@ -160,6 +187,12 @@ document.querySelectorAll('.side-item').forEach(btn => {
         if (section === 'lists') TABS.forEach(loadList);
         else if (section === 'events') renderEvents();
         else if (section === 'treasury') renderTreasury();
+        else if (section === 'trade') {
+            renderTrades();
+            const nick = localStorage.getItem(VIEWER_NICK_KEY)
+                       || localStorage.getItem(ADMIN_NICK_KEY) || '';
+            if (nick && !$('tradeNickname').value) $('tradeNickname').value = nick;
+        }
         else if (section === 'pvp') renderBuilds('pvp');
         else if (section === 'pb') renderBuilds('pb');
         else if (section === 'contacts') renderContacts();
@@ -193,6 +226,7 @@ document.querySelectorAll('.admin-nav-item').forEach(btn => {
 });
 
 $('adminBackHome').addEventListener('click', () => {
+    if (applyAccessControl()) return;
     showScreen('home');
 });
 
@@ -207,6 +241,7 @@ function openAdminAuth() {
 }
 function closeAdminAuth() { $('adminAuthModal').hidden = true; }
 $('adminLoginBtn').addEventListener('click', openAdminAuth);
+$('adminLoginBtnM').addEventListener('click', openAdminAuth);
 $('cancelAdminLogin').addEventListener('click', closeAdminAuth);
 
 $('doAdminLogin').addEventListener('click', async () => {
@@ -241,10 +276,20 @@ async function adminLogout() {
 }
 $('adminLogoutBtn').addEventListener('click', adminLogout);
 $('adminLogoutBtn2').addEventListener('click', adminLogout);
+$('adminLogoutBtnM').addEventListener('click', adminLogout);
 
 supabase.auth.onAuthStateChange((_e, session) => {
     isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
     applyAdminUI();
+
+    if (isAdmin) {
+        if (!screenMaintenance.hidden) {
+            showScreen('home');
+            applyBg();
+        }
+    } else {
+        applyAccessControl();
+    }
 });
 
 function applyAdminUI() {
@@ -254,9 +299,13 @@ function applyAdminUI() {
     $('adminLogoutBtn2').hidden = !isAdmin;
     $('adminPanelBtn2').hidden = !isAdmin;
     $('adminPanelBtn3').hidden = !isAdmin;
+    $('adminLoginBtnM').hidden = isAdmin;
+    $('adminLogoutBtnM').hidden = !isAdmin;
+    $('adminPanelBtnM').hidden = !isAdmin;
+
     const nick = localStorage.getItem(ADMIN_NICK_KEY);
     const label = isAdmin ? ('👑 ' + (nick || 'Админ')) : '';
-    ['adminInfo','adminInfo2','adminInfo3'].forEach(id => {
+    ['adminInfo','adminInfo2','adminInfo3','adminInfoM'].forEach(id => {
         const el = $(id); if (el) el.textContent = label;
     });
     document.querySelectorAll('.admin-only').forEach(el => {
@@ -269,7 +318,6 @@ function applyAdminUI() {
     renderAll();
 }
 
-/* Открытие админ-страницы */
 function openAdminPage() {
     if (!isAdmin) return;
     const firstNav = document.querySelector('.admin-nav-item[data-apanel="clans"]');
@@ -279,6 +327,9 @@ function openAdminPage() {
 $('adminPanelBtn').addEventListener('click', openAdminPage);
 $('adminPanelBtn2').addEventListener('click', openAdminPage);
 $('adminPanelBtn3').addEventListener('click', openAdminPage);
+$('adminPanelBtnM').addEventListener('click', openAdminPage);
+
+$('maintenanceRefresh')?.addEventListener('click', () => location.reload());
 
 /* ===================== ГИЛЬДИИ ===================== */
 async function loadClans() {
@@ -320,7 +371,10 @@ function renderHomeCards() {
     });
 }
 function isUnlocked() { return isAdmin || localStorage.getItem(UNLOCK_KEY) === '1'; }
-function handleClanClick(id) { isUnlocked() ? openClan(id) : openClanInfo(id); }
+function handleClanClick(id) {
+    if (applyAccessControl()) return;
+    isUnlocked() ? openClan(id) : openClanInfo(id);
+}
 
 /* ===================== SCOPE ===================== */
 function renderScopeSelects() {
@@ -350,6 +404,7 @@ function renderScopeSelects() {
 
 /* ===================== ОПИСАНИЕ ===================== */
 function openClanInfo(id) {
+    if (applyAccessControl()) return;
     const clan = clansCache[id];
     if (!clan) return;
     pendingClanId = id;
@@ -367,7 +422,11 @@ function openClanInfo(id) {
     $('clanViewBtn').hidden = !isUnlocked();
     showScreen('clan');
 }
-$('backToHomeBtn').addEventListener('click', () => { pendingClanId = null; showScreen('home'); });
+$('backToHomeBtn').addEventListener('click', () => {
+    pendingClanId = null;
+    if (applyAccessControl()) return;
+    showScreen('home');
+});
 $('clanViewBtn').addEventListener('click', () => { if (pendingClanId) openClan(pendingClanId); });
 
 /* ===================== ВХОД ПО ПАРОЛЮ ===================== */
@@ -411,6 +470,7 @@ $('clanPassword').addEventListener('keydown', e => {
 
 /* ===================== ОТКРЫТИЕ ГИЛЬДИИ ===================== */
 function openClan(id) {
+    if (applyAccessControl()) return;
     const clan = clansCache[id];
     if (!clan) return;
     if (!isUnlocked()) { openClanInfo(id); return; }
@@ -438,9 +498,14 @@ function openClan(id) {
     renderContacts();
     renderEvents();
     renderTreasury();
+    renderTrades();
     renderApplications();
+
+    const nick = viewerNick || localStorage.getItem(ADMIN_NICK_KEY) || '';
+    if (nick && !$('tradeNickname').value) $('tradeNickname').value = nick;
 }
 $('backBtn').addEventListener('click', () => {
+    if (applyAccessControl()) return;
     showScreen('home');
     applyBg();
 });
@@ -450,19 +515,30 @@ $('clanLeaveBtn').addEventListener('click', () => {
     localStorage.removeItem(LAST_CLAN_KEY);
     localStorage.removeItem(VIEWER_NICK_KEY);
     currentClan = null;
+    if (applyAccessControl()) return;
     showScreen('home');
     applyBg();
 });
 
 /* ===================== ВКЛАДКИ ===================== */
-document.querySelectorAll('.tab').forEach(btn => {
+document.querySelectorAll('.tab:not([data-trade-filter])').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab:not([data-trade-filter])').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
         currentTab = btn.dataset.tab;
         $('tab-' + currentTab).classList.add('active');
         applySearchFilter();
+    });
+});
+
+/* Фильтры торговли */
+document.querySelectorAll('[data-trade-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-trade-filter]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTradeFilter = btn.dataset.tradeFilter;
+        applyTradeFilter();
     });
 });
 
@@ -974,6 +1050,165 @@ $('trAddBtn').addEventListener('click', async () => {
     renderTreasury();
 });
 
+/* ===================== ТОРГОВЛЯ ===================== */
+async function renderTrades() {
+    if (!currentClan) return;
+    const container = $('tradesList');
+    if (!container) return;
+    container.innerHTML = '<div class="empty">Загрузка…</div>';
+    const { data, error } = await supabase.from('trades').select('*')
+        .eq('clan', currentClan)
+        .order('created_at', { ascending: false });
+    if (error) { container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
+    tradesCache = data || [];
+    updateTradeCounters();
+    applyTradeFilter();
+}
+
+function updateTradeCounters() {
+    const total  = tradesCache.length;
+    const active = tradesCache.filter(t => t.status === 'active').length;
+    const done   = tradesCache.filter(t => t.status === 'done').length;
+    const elTotal  = $('tradeCountTotal');
+    const elActive = $('tradeCountActive');
+    const elDone   = $('tradeCountDone');
+    if (elTotal)  elTotal.textContent  = total;
+    if (elActive) elActive.textContent = active;
+    if (elDone)   elDone.textContent   = done;
+}
+
+function applyTradeFilter() {
+    const container = $('tradesList');
+    if (!container) return;
+    let list = tradesCache;
+    if (currentTradeFilter === 'buy')         list = list.filter(t => t.type === 'buy');
+    else if (currentTradeFilter === 'sell')   list = list.filter(t => t.type === 'sell');
+    else if (currentTradeFilter === 'active') list = list.filter(t => t.status === 'active');
+    else if (currentTradeFilter === 'done')   list = list.filter(t => t.status === 'done');
+
+    container.innerHTML = '';
+    if (!list.length) {
+        container.innerHTML = '<div class="empty">Сделок пока нет</div>';
+        return;
+    }
+    list.forEach(t => container.appendChild(createTradeCard(t)));
+}
+
+function createTradeCard(t) {
+    const card = document.createElement('div');
+    const isDone = t.status === 'done';
+    card.className = 'trade-card ' + (t.type === 'buy' ? 'buy' : 'sell') + (isDone ? ' done' : '');
+
+    const d = new Date(t.created_at);
+    const dateStr = d.toLocaleDateString('ru-RU') + ' ' +
+        String(d.getHours()).padStart(2, '0') + ':' +
+        String(d.getMinutes()).padStart(2, '0');
+
+    const viewerNick = (localStorage.getItem(VIEWER_NICK_KEY) || '').toLowerCase();
+    const isOwner = viewerNick && viewerNick === (t.nickname || '').toLowerCase();
+    const canManage = isAdmin || isOwner;
+
+    const statusBadge = isDone
+        ? `<span class="trade-badge done">✅ Завершено</span>`
+        : `<span class="trade-badge active">🔵 Активно</span>`;
+
+    const typeLabel = t.type === 'buy' ? '🛒 Куплю' : '💰 Продам';
+
+    const actions = canManage ? `
+        <div class="trade-actions">
+            ${!isDone
+                ? `<button class="done-btn" title="Отметить завершённой">✅</button>`
+                : `<button class="undone-btn" title="Вернуть в активные">↩️</button>`}
+            <button class="delete" title="Удалить">🗑</button>
+        </div>` : '';
+
+    const amountStr = Number(t.amount).toLocaleString('ru-RU');
+
+    card.innerHTML = `
+        <div class="trade-header">
+            <div class="trade-type-badge ${t.type}">${typeLabel}</div>
+            ${statusBadge}
+            ${actions}
+        </div>
+        <div class="trade-item">${escapeHtml(t.item)}</div>
+        <div class="trade-meta">
+            <div class="trade-meta-row"><span class="trade-meta-label">Ник:</span> <b>${escapeHtml(t.nickname)}</b></div>
+            <div class="trade-meta-row"><span class="trade-meta-label">Сумма:</span> <b class="trade-amount">${amountStr}</b></div>
+            ${t.port ? `<div class="trade-meta-row"><span class="trade-meta-label">Порт:</span> ${escapeHtml(t.port)}</div>` : ''}
+            <div class="trade-meta-row trade-date">${dateStr}</div>
+        </div>
+        ${t.note ? `<div class="trade-note">${escapeHtml(t.note)}</div>` : ''}
+    `;
+
+    if (canManage) {
+        const doneBtn   = card.querySelector('.done-btn');
+        const undoneBtn = card.querySelector('.undone-btn');
+        const delBtn    = card.querySelector('.delete');
+        if (doneBtn)   doneBtn.addEventListener('click',   () => toggleTradeStatus(t.id, 'done',   t.nickname));
+        if (undoneBtn) undoneBtn.addEventListener('click', () => toggleTradeStatus(t.id, 'active', t.nickname));
+        if (delBtn)    delBtn.addEventListener('click',    () => deleteTrade(t.id, t.nickname));
+    }
+
+    return card;
+}
+
+async function toggleTradeStatus(id, status, nickname) {
+    const { error } = await supabase.from('trades').update({ status }).eq('id', id);
+    if (error) return alert(error.message);
+    await logAdminAction(
+        status === 'done' ? 'Отметил сделку завершённой' : 'Вернул сделку в активные',
+        nickname || null,
+        `id: ${id}`
+    );
+    renderTrades();
+}
+
+async function deleteTrade(id, nickname) {
+    if (!confirm('Удалить сделку?')) return;
+    const { error } = await supabase.from('trades').delete().eq('id', id);
+    if (error) return alert(error.message);
+    await logAdminAction('Удалил сделку', nickname || null, `id: ${id}`);
+    renderTrades();
+}
+
+$('tradeAddBtn').addEventListener('click', async () => {
+    if (!currentClan) return;
+    const type = $('tradeType').value;
+    const item = $('tradeItem').value.trim();
+    const nickname = $('tradeNickname').value.trim();
+    const amount = Number($('tradeAmount').value);
+    const port = $('tradePort').value.trim();
+    const note = $('tradeNote').value.trim();
+    const statusEl = $('tradeStatus');
+
+    if (!item) { flashStatusEl(statusEl, 'Укажите товар', '#ff7a7a'); return; }
+    if (!nickname) { flashStatusEl(statusEl, 'Укажите ваш ник', '#ff7a7a'); return; }
+    if (nickname.length < 2) { flashStatusEl(statusEl, 'Ник слишком короткий', '#ff7a7a'); return; }
+    if (!amount || amount <= 0) { flashStatusEl(statusEl, 'Укажите сумму > 0', '#ff7a7a'); return; }
+
+    const { error } = await supabase.from('trades').insert({
+        clan: currentClan,
+        type, item, nickname, amount,
+        port: port || null,
+        note: note || null,
+        status: 'active'
+    });
+    if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
+
+    await logAdminAction(
+        `Новая сделка (${type === 'buy' ? 'куплю' : 'продам'})`,
+        `${nickname} — ${item} — ${amount}`,
+        port ? `порт: ${port}` : null
+    );
+
+    // Сохраняем ник, чтобы в следующий раз подставился автоматически
+    localStorage.setItem(VIEWER_NICK_KEY, nickname);
+
+    ['tradeItem','tradeAmount','tradePort','tradeNote'].forEach(id => $(id).value = '');
+    flashStatusEl(statusEl, '✔ Выставлено', '#6ee7a7');
+    renderTrades();
+});
+
 /* ===================== ЗАЯВКИ ===================== */
 async function renderApplications() {
     const container = $('applicationsList');
@@ -1047,6 +1282,7 @@ function renderApplyClanSelect() {
     });
 }
 $('applyBtn').addEventListener('click', async () => {
+    if (applyAccessControl()) return;
     const nick = $('applyNick').value.trim();
     const why = $('applyWhy').value.trim();
     const msg = $('applyMsg');
@@ -1593,6 +1829,7 @@ $('deleteClanBtn').addEventListener('click', async () => {
         `• Списки игроков (враги, друзья, нейтралы, личное)\n` +
         `• События гильдии\n` +
         `• Операции казны\n` +
+        `• Сделки торговли\n` +
         `• Билды ПВП и ПБ (только этой гильдии, общие останутся)\n\n` +
         `Это действие НЕОБРАТИМО. Продолжить?`;
 
@@ -1614,6 +1851,7 @@ $('deleteClanBtn').addEventListener('click', async () => {
         }
         await supabase.from('events').delete().eq('clan', cid).eq('is_shared', false);
         await supabase.from('treasury').delete().eq('clan', cid);
+        await supabase.from('trades').delete().eq('clan', cid);
         await supabase.from('builds').delete().eq('clan', cid).eq('is_shared', false);
 
         const { error } = await supabase.from('clans').delete().eq('id', cid);
@@ -1647,19 +1885,28 @@ $('deleteClanBtn').addEventListener('click', async () => {
 function renderSiteFields() {
     const s = settingsCache || {};
     $('adminWebhook').value = s.discord_webhook || '';
+    $('adminMaintenance').checked = s.maintenance_mode === true;
+    $('adminMaintenanceMsg').value = s.maintenance_message || '';
     $('adminSiteMsg').textContent = '';
 }
 $('saveSiteSettings').addEventListener('click', async () => {
     const msg = $('adminSiteMsg');
     msg.style.color = '';
+    const maintenanceOn = $('adminMaintenance').checked;
     const payload = {
         discord_webhook: $('adminWebhook').value.trim() || null,
+        maintenance_mode: maintenanceOn,
+        maintenance_message: $('adminMaintenanceMsg').value.trim() || null,
         updated_at: new Date().toISOString()
     };
     const { error } = await supabase.from('site_settings').update(payload).eq('id', 'main');
     if (error) { msg.textContent = 'Ошибка: ' + error.message; msg.style.color = '#ff7a7a'; return; }
     settingsCache = Object.assign({ id: 'main' }, settingsCache || {}, payload);
-    await logAdminAction('Изменил настройки сайта');
+    await logAdminAction(
+        maintenanceOn ? 'Включил режим техработ' : 'Отключил режим техработ',
+        null,
+        maintenanceOn ? (payload.maintenance_message || '') : null
+    );
     msg.textContent = '✔ Сохранено';
     msg.style.color = '#6ee7a7';
 });
@@ -1877,6 +2124,7 @@ $('refreshViewHistory')?.addEventListener('click', renderViewHistory);
 
 /* ===================== #build=ID ===================== */
 async function handleBuildHash() {
+    if (applyAccessControl()) return;
     const m = location.hash.match(/^#build=([a-f0-9-]+)$/i);
     if (!m) return;
     const { data, error } = await supabase.from('builds').select('*').eq('id', m[1]).single();
@@ -1919,6 +2167,11 @@ function escapeHtml(str) {
     const { data: { session } } = await supabase.auth.getSession();
     isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
     applyAdminUI();
+
+    if (applyAccessControl()) {
+        applyBg();
+        return;
+    }
 
     showScreen('home');
     applyBg();
