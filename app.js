@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
 
 const ADMIN_EMAILS = ['kolibri@wosb.ru'];
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.6.1';
 
 const TABS = ['enemies', 'friends', 'neutral', 'personal'];
 const UNLOCK_KEY = 'guild_unlocked';
@@ -324,8 +324,12 @@ $('adminPassword').addEventListener('keydown', e => {
 async function adminLogout() { await supabase.auth.signOut(); }
 $('adminLogoutBtn').addEventListener('click', adminLogout);
 $('adminLogoutBtn2').addEventListener('click', adminLogout);
-supabase.auth.onAuthStateChange((_e, session) => {
+
+// ✏️ ПРАВКА 3: после смены auth-состояния перезагружаем clans
+// (админ читает полную таблицу clans, гость — view clans_public без password)
+supabase.auth.onAuthStateChange(async (_e, session) => {
     isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
+    await loadClans();
     applyAdminUI();
 });
 function applyAdminUI() {
@@ -366,9 +370,11 @@ $('adminPanelBtn2').addEventListener('click', openAdminPage);
 $('adminPanelBtn3').addEventListener('click', openAdminPage);
 
 /* ===================== ГИЛЬДИИ ===================== */
+// ✏️ ПРАВКА 1: админ читает таблицу clans (с password), гость — view clans_public (без password)
 async function loadClans() {
-    const { data, error } = await supabase.from('clans').select('*');
-    if (error) { console.error(error); return; }
+    const source = isAdmin ? 'clans' : 'clans_public';
+    const { data, error } = await supabase.from(source).select('*');
+    if (error) { console.error('loadClans error:', error); return; }
     clansCache = {};
     (data || []).forEach(c => { clansCache[c.id] = c; });
     renderHomeCards();
@@ -470,6 +476,8 @@ $('clanLoginBtn').addEventListener('click', () => {
 });
 $('cancelClanLogin').addEventListener('click', () => { $('clanPassModal').hidden = true; });
 
+// ✏️ ПРАВКА 2: проверка пароля через RPC verify_clan_password
+// (пароль больше не читается из БД на клиенте)
 $('doClanLogin').addEventListener('click', async () => {
     const nick = $('clanNickname').value.trim();
     const entered = $('clanPassword').value;
@@ -478,7 +486,15 @@ $('doClanLogin').addEventListener('click', async () => {
     if (!nick) { $('clanPassError').textContent = 'Введите ваш ник'; return; }
     if (nick.length < 2) { $('clanPassError').textContent = 'Ник слишком короткий'; return; }
     if (!entered) { $('clanPassError').textContent = 'Введите пароль'; return; }
-    if (entered !== clan.password) { $('clanPassError').textContent = 'Неверный пароль'; return; }
+
+    const { data: ok, error: rpcErr } = await supabase.rpc('verify_clan_password', {
+        clan_id: pendingClanId,
+        entered_password: entered
+    });
+    if (rpcErr || !ok) {
+        $('clanPassError').textContent = 'Неверный пароль';
+        return;
+    }
 
     localStorage.setItem(VIEWER_NICK_KEY, nick);
     localStorage.setItem(UNLOCK_KEY, '1');
@@ -2460,6 +2476,10 @@ function escapeHtml(str) {
     const verEl = document.querySelector('.footer-right');
     if (verEl) verEl.textContent = 'v' + APP_VERSION;
 
+    // Сначала узнаём, кто мы (админ или гость) — от этого зависит источник clans
+    const { data: { session } } = await supabase.auth.getSession();
+    isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
+
     await loadGames();
     await loadClans();
     await loadSettings();
@@ -2476,8 +2496,6 @@ function escapeHtml(str) {
     renderTradeClanFilters();
     await renderTrades();
 
-    const { data: { session } } = await supabase.auth.getSession();
-    isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
     applyAdminUI();
 
     showScreen('home');
