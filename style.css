@@ -1572,4 +1572,179 @@ h2 { margin-bottom: 14px; font-size: 20px; text-shadow: 0 2px 10px rgba(0, 0, 0,
 .modal-actions button {
     flex: 1; min-width: 100px; padding: 10px;
     border-radius: 8px; border: none;
-    cursor: pointer; font-size: 14
+    cursor: pointer; font-size: 14px;
+    background: var(--accent); color: #fff; font-family: inherit;
+    transition: all .15s;
+}
+.modal-actions button:hover { background: var(--accent-hover); }
+.modal-actions button.secondary { background: var(--border); color: #cfd3dc; }
+.modal-actions button.secondary:hover { background: #3a4150; }
+.modal-actions button.danger {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid var(--red);
+}
+.modal-actions button.danger:hover {
+    background: rgba(255, 122, 122, 0.15);
+    color: #ff9999;
+}
+.move-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.move-grid button {
+    padding: 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px;
+    cursor: pointer; font-size: 13px; font-family: inherit;
+}
+.move-grid button:hover { background: #1f2430; border-color: var(--accent); }
+.error { color: var(--red); font-size: 13px; min-height: 18px; }
+
+/* ============ ИКОНКИ ============ */
+a.icon-btn,
+.icon-btn {
+    width: 34px; height: 34px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(23, 26, 33, 0.85);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--border);
+    border-radius: 6px; color: #cfd3dc;
+    cursor: pointer; font-size: 15px;
+    text-decoration: none; transition: all .15s; font-family: inherit;
+}
+.icon-btn:hover {
+    background: rgba(43, 108, 176, 0.9);
+    border-color: var(--accent); color: #fff;
+    transform: translateY(-1px);
+}
+a.icon-btn:hover {
+    background: rgba(110, 231, 167, 0.15);
+    border-color: var(--green); color: var(--green);
+}
+
+/* ============ АДАПТИВ ============ */
+@media (max-width: 900px) {
+    #clanView header { padding: 0; }
+    .clan-layout { flex-direction: column; padding: 0; }
+    .sidebar {
+        width: 100%; position: static; flex-direction: row;
+        overflow-x: auto; padding-bottom: 4px;
+    }
+    .side-item { flex: 1 1 auto; min-width: 130px; justify-content: center; padding: 10px 12px; font-size: 13px; }
+    .side-ico { font-size: 16px; }
+    .clan-main { width: 100%; }
+
+    #adminView {
+        flex-direction: column;
+        padding: 12px;
+    }
+    .admin-sidebar {
+        width: 100%;
+        position: static;
+        max-height: none;
+    }
+    .admin-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    .admin-nav-item {
+        flex: 1 1 auto;
+        min-width: 130px;
+        justify-content: center;
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    .admin-nav-divider { display: none; }
+    .admin-nav-item.wip { display: none; }
+}
+
+@media (max-width: 700px) {
+    body { padding: 12px 12px 50px; }
+    .top-right { position: static; justify-content: center; margin-bottom: 14px; }
+
+    .maintenance-wrap { padding: 60px 12px 40px; }
+    .maintenance-card { padding: 28px 20px; border-radius: 16px; }
+    .maintenance-icon { font-size: 52px; }
+    .maintenance-title { font-size: 22px; }
+
+    .home-wrap { padding: 80px 8px 30px; gap: 24px; }
+    .hero-video { aspect-ratio: 16 / 10; border-radius: 14px; }
+    .hero-text { padding: 16px; }
+    .hero-text h1 { font-size: 22px; }
+    .hero-text p { font-size: 13px; }
+    .section-title { font-size: 20px; }
+    .clan-grid { grid-template-columns: 1fr; gap: 16px; }
+    .clan-card { min-height: auto; padding: 20px; }
+    .clan-card img { width: 80px; height: 80px; }
+    .back-btn { position: static; margin-bottom: 12px; }
+    .clan-info-wrap { padding: 10px 0 30px; min-height: auto; }
+    .clan-info { padding: 26px 20px; border-radius: 16px; }
+    .clan-info-logo { width: 110px; height: 110px; }
+    .clan-info-name { font-size: 22px; }
+    .clan-info-desc { font-size: 14px; }
+    .clan-info-rules-wrap,
+    .clan-info-news-wrap { padding: 14px 16px; }
+    .clan-info-rules,
+    .clan-info-news { font-size: 13px; }
+    #clanView header {
+        flex-direction: column; gap: 12px;
+        align-items: stretch; text-align: left; margin-bottom: 20px;
+    }
+    #clanView header h1 {
+        font-size: 20px; justify-content: flex-start;
+        gap: 8px; order: -1;
+    }
+    #clanView .back-btn { align-self: flex-start; }
+    #clanView .top-right { justify-content: flex-start; }
+    .tabs { gap: 6px; margin-bottom: 16px; }
+    .tab { padding: 8px 12px; font-size: 13px; flex: 1 1 auto; }
+    .add-form { padding: 12px; gap: 6px; }
+    .add-form input,
+    .add-form textarea,
+    .add-form select { min-width: 100%; padding: 10px 12px; }
+    .add-form button { width: 100%; padding: 12px; }
+    .player-list li { padding: 10px 12px; align-items: flex-start; gap: 8px; }
+    .player-list li .actions { flex-direction: column; }
+    .player-list li .actions button { width: 32px; height: 32px; font-size: 13px; }
+    .modal-content { padding: 20px; }
+    .contact-card { padding: 12px; gap: 12px; }
+    .contact-card img { width: 40px; height: 40px; }
+    .contact-btn { padding: 8px 12px; font-size: 13px; }
+    .thanks-card { padding: 20px 18px; }
+    .thanks-text { font-size: 14px; }
+    .apply-grid { grid-template-columns: 1fr; }
+    .treasury-balance { padding: 14px 18px; flex-direction: column; gap: 6px; align-items: flex-start; }
+    .treasury-balance-value { font-size: 22px; }
+    .event-card { flex-direction: column; gap: 10px; }
+    .event-date-block { flex-direction: row; gap: 6px; min-width: auto; align-self: flex-start; padding: 6px 12px; }
+    .event-day { font-size: 18px; }
+    .event-month { margin-top: 0; }
+    .partners-list { grid-template-columns: 1fr; }
+    .partner-card { padding: 14px 16px; }
+    .partner-logo { width: 48px; height: 48px; }
+    .partner-letter { font-size: 20px; }
+    .yt-promo-card { flex-direction: column; text-align: center; padding: 20px; }
+    .yt-promo-logo { width: 80px; height: 80px; }
+    .yt-promo-btn { align-self: center; }
+    .yt-promo-name { font-size: 18px; justify-content: center; }
+
+    .trade-counters { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .trade-counter { padding: 10px 12px; }
+    .trade-counter-value { font-size: 20px; }
+    .trades-list { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 520px) {
+    .hero-text h1 { font-size: 18px; }
+    .hero-text p { display: none; }
+    #adminInfo, #adminInfo2, #adminInfo3, #adminInfoM { max-width: 100px; font-size: 11px; }
+    .site-footer { font-size: 11px; padding: 6px 10px; }
+    .side-item span:not(.side-ico) { display: none; }
+    .side-item { min-width: auto; padding: 10px 14px; }
+    .side-ico { font-size: 20px; }
+    .admin-nav-item span:not(.admin-nav-ico) { display: none; }
+    .admin-nav-item { min-width: auto; padding: 10px 14px; }
+    .admin-nav-ico { font-size: 20px; }
+    .trade-counter { padding: 8px 10px; }
+    .trade-counter-label { font-size: 10px; }
+    .trade-counter-value { font-size: 18px; }
+}
