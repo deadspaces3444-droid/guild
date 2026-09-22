@@ -8,25 +8,9 @@
 </head>
 <body>
 
-    <!-- ЭКРАН ТЕХРАБОТ -->
-    <div id="screen-maintenance" class="screen" hidden>
-        <div class="top-right">
-            <span id="adminInfoM"></span>
-            <button id="adminPanelBtnM" hidden title="Админ-панель">⚙️</button>
-            <button id="adminLoginBtnM">🔐 Админ</button>
-            <button id="adminLogoutBtnM" hidden>🚪 Выйти</button>
-        </div>
-        <div class="maintenance-wrap">
-            <div class="maintenance-card">
-                <div class="maintenance-icon">🛠️</div>
-                <h1 class="maintenance-title">Технические работы</h1>
-                <p id="maintenanceMessage" class="maintenance-text">Идут технические работы. Заходите позже.</p>
-                <p class="maintenance-hint">Приносим извинения за неудобства.</p>
-                <div class="maintenance-actions">
-                    <button id="maintenanceRefresh" class="big-btn primary">🔄 Обновить страницу</button>
-                </div>
-            </div>
-        </div>
+    <!-- ТУЛБАР ИГР -->
+    <div id="gameToolbar" class="game-toolbar" hidden>
+        <div id="gameTabs" class="game-toolbar-tabs"></div>
     </div>
 
     <!-- ГЛАВНАЯ -->
@@ -39,7 +23,7 @@
         </div>
 
         <div class="home-wrap">
-            <div class="hero-video" id="heroVideo">
+            <div class="hero-video">
                 <video autoplay muted loop playsinline preload="auto">
                     <source src="videoshero.mp4" type="video/mp4">
                 </video>
@@ -50,32 +34,8 @@
                 </div>
             </div>
 
-            <h2 class="section-title" id="guildsTitle">Гильдии</h2>
+            <h2 class="section-title">Гильдии</h2>
             <div id="clanGrid" class="clan-grid"></div>
-
-            <!-- СПИСКИ ГИЛЬДИИ НА ГЛАВНОЙ -->
-            <section id="homeListsSection" class="home-lists-section" hidden>
-                <div class="home-lists-header">
-                    <img id="homeListsLogo" class="home-lists-logo" src="" alt="">
-                    <h2 id="homeListsTitle" class="home-lists-title"></h2>
-                    <button id="homeListsClose" class="home-lists-close" title="Вернуться к гильдиям">К гильдиям</button>
-                </div>
-
-                <nav class="tabs home-lists-tabs">
-                    <button class="tab active" data-home-tab="enemies">🔴 Враги</button>
-                    <button class="tab" data-home-tab="friends">🟢 Друзья</button>
-                    <button class="tab" data-home-tab="neutral">⚪ Нейтралитет</button>
-                    <button class="tab" data-home-tab="personal">🟡 Не трогать</button>
-                </nav>
-
-                <input type="text" id="homeSearchInput" class="search-input" placeholder="🔍 Поиск по списку...">
-                <ul class="player-list" id="homePlayerList"></ul>
-
-                <div class="home-lists-actions">
-                    <button id="homeOpenFullBtn" class="big-btn secondary">📂 Все разделы гильдии →</button>
-                    <button id="homeLeaveBtn" class="big-btn secondary">🚪 Заблокировать просмотр</button>
-                </div>
-            </section>
 
             <section id="applySection" class="apply-section">
                 <h2 class="section-title">📝 Подать заявку в гильдию</h2>
@@ -161,7 +121,7 @@
         </div>
     </div>
 
-    <!-- ВНУТРИ ГИЛЬДИИ (полный вид) -->
+    <!-- ВНУТРИ ГИЛЬДИИ -->
     <div id="clanView" hidden>
         <header>
             <button id="backBtn" class="back-btn">← Назад</button>
@@ -186,19 +146,15 @@
                 <button class="side-item active" data-section="lists"><span class="side-ico">📋</span><span>Списки</span></button>
                 <button class="side-item" data-section="events"><span class="side-ico">📅</span><span>События</span></button>
                 <button class="side-item" data-section="treasury"><span class="side-ico">💰</span><span>Казна</span></button>
-                <button class="side-item" data-section="trade"><span class="side-ico">🪙</span><span>Торговля</span></button>
                 <button class="side-item" data-section="pvp"><span class="side-ico">⚔️</span><span>Билды ПВП</span></button>
                 <button class="side-item" data-section="pb"><span class="side-ico">🛡</span><span>Билды ПБ</span></button>
                 <button class="side-item" data-section="contacts"><span class="side-ico">💬</span><span>Контакты</span></button>
-                <button class="side-item admin-only" id="openTacticsBtn" hidden><span class="side-ico">📖</span><span>Тактика боя</span></button>
+                <button class="side-item" id="openTacticsBtn"><span class="side-ico">📖</span><span>Тактика боя</span></button>
                 <button class="side-item admin-only" data-section="applications" hidden><span class="side-ico">📝</span><span>Заявки</span></button>
             </aside>
 
             <div class="clan-main">
-
-                <!-- СПИСКИ -->
-                <div id="section-lists" class="clan-section">
-                    <h2>📋 Списки гильдии</h2>
+                <div id="section-lists" class="clan-section active">
                     <nav class="tabs">
                         <button class="tab active" data-tab="enemies">🔴 Враги</button>
                         <button class="tab" data-tab="friends">🟢 Друзья</button>
@@ -216,13 +172,12 @@
                     </section>
                     <p class="hint admin-only" hidden>💡 Достаточно заполнить <b>Гильдию</b> или <b>Никнейм</b>.</p>
 
-                    <section id="tab-enemies" class="tab-content active"><h3>🔴 Враги гильдии</h3><ul class="player-list" data-list="enemies"></ul></section>
-                    <section id="tab-friends" class="tab-content"><h3>🟢 Друзья — полное содействие</h3><ul class="player-list" data-list="friends"></ul></section>
-                    <section id="tab-neutral" class="tab-content"><h3>⚪ Нейтралитет</h3><ul class="player-list" data-list="neutral"></ul></section>
-                    <section id="tab-personal" class="tab-content"><h3>🟡 Не трогать</h3><ul class="player-list" data-list="personal"></ul></section>
+                    <section id="tab-enemies" class="tab-content active"><h2>🔴 Враги гильдии</h2><ul class="player-list" data-list="enemies"></ul></section>
+                    <section id="tab-friends" class="tab-content"><h2>🟢 Друзья — полное содействие</h2><ul class="player-list" data-list="friends"></ul></section>
+                    <section id="tab-neutral" class="tab-content"><h2>⚪ Нейтралитет</h2><ul class="player-list" data-list="neutral"></ul></section>
+                    <section id="tab-personal" class="tab-content"><h2>🟡 Не трогать</h2><ul class="player-list" data-list="personal"></ul></section>
                 </div>
 
-                <!-- СОБЫТИЯ -->
                 <div id="section-events" class="clan-section">
                     <h2>📅 События гильдии</h2>
                     <section class="add-form admin-only" hidden>
@@ -237,7 +192,6 @@
                     <div id="eventsList" class="events-list"></div>
                 </div>
 
-                <!-- КАЗНА -->
                 <div id="section-treasury" class="clan-section">
                     <h2>💰 Казна гильдии</h2>
                     <div class="treasury-balance">
@@ -255,102 +209,6 @@
                     <div id="treasuryList" class="treasury-list"></div>
                 </div>
 
-                <!-- ТОРГОВЛЯ -->
-                <div id="section-trade" class="clan-section">
-                    <h2>🪙 Биржа заявок</h2>
-                    <div class="trade-market">
-                        <header class="tm-topbar">
-                            <h3 class="tm-title">📣 Гильдейский рынок</h3>
-                            <span class="tm-subtitle">World of Sea Battle</span>
-                        </header>
-
-                        <div class="tm-counters">
-                            <div class="tm-counter buy">
-                                <div class="tm-ci">🛒</div>
-                                <div class="tm-cb">
-                                    <span class="tm-cl">Золото на покупку</span>
-                                    <span class="tm-cv" id="tm-counter-buy-gold">0 🪙</span>
-                                    <span class="tm-cs" id="tm-counter-buy-sub">0 заявок</span>
-                                </div>
-                            </div>
-                            <div class="tm-counter sell">
-                                <div class="tm-ci">💰</div>
-                                <div class="tm-cb">
-                                    <span class="tm-cl">Золото на продажу</span>
-                                    <span class="tm-cv" id="tm-counter-sell-gold">0 🪙</span>
-                                    <span class="tm-cs" id="tm-counter-sell-sub">0 заявок</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="tm-layout">
-                            <section class="tm-panel">
-                                <h4 class="tm-panel-title">📝 Новая заявка</h4>
-                                <div class="tm-type-switch">
-                                    <div class="tm-type-btn buy active" data-type="buy">🛒 Покупка</div>
-                                    <div class="tm-type-btn sell"       data-type="sell">💰 Продажа</div>
-                                </div>
-                                <div class="tm-fg">
-                                    <label>Категория</label>
-                                    <select id="tm-category"></select>
-                                </div>
-                                <div class="tm-fg">
-                                    <label>Название *</label>
-                                    <input type="text" id="tm-name" maxlength="60" placeholder="Например: Дубовые доски">
-                                </div>
-                                <div class="tm-frow">
-                                    <div class="tm-fg">
-                                        <label>Цена за ед. *</label>
-                                        <input type="number" id="tm-price" min="1" step="1" placeholder="0">
-                                    </div>
-                                    <div class="tm-fg">
-                                        <label>Количество *</label>
-                                        <input type="number" id="tm-qty" min="1" step="1" value="1">
-                                    </div>
-                                </div>
-                                <div class="tm-fg">
-                                    <label>Итого золота</label>
-                                    <input type="text" id="tm-total" readonly value="0 🪙">
-                                </div>
-                                <div class="tm-fg">
-                                    <label>Порт (необязательно)</label>
-                                    <input type="text" id="tm-port" maxlength="60" placeholder="Порт-Рояль">
-                                </div>
-                                <div class="tm-fg">
-                                    <label>Ваш ник *</label>
-                                    <input type="text" id="tm-nickname" maxlength="32" placeholder="Капитан">
-                                </div>
-                                <div class="tm-fg">
-                                    <label>Примечание</label>
-                                    <textarea id="tm-note" maxlength="140" placeholder="Доп. условия, время, контакт..."></textarea>
-                                </div>
-                                <button id="tm-submit" class="tm-btn-gold">Опубликовать заявку</button>
-                                <p id="tm-status" class="tm-status"></p>
-                            </section>
-
-                            <section class="tm-panel">
-                                <h4 class="tm-panel-title">📋 Доска заявок</h4>
-                                <div class="tm-filters">
-                                    <input type="search" id="tm-search" placeholder="🔍 Поиск по названию...">
-                                    <div class="tm-filter-row" id="tm-type-filters">
-                                        <span class="tm-chip active" data-type="all">Все</span>
-                                        <span class="tm-chip buy"  data-type="buy">🛒 Покупка</span>
-                                        <span class="tm-chip sell" data-type="sell">💰 Продажа</span>
-                                    </div>
-                                    <div class="tm-filter-row" id="tm-cat-filters"></div>
-                                    <div class="tm-filter-row">
-                                        <label class="tm-mine-check">
-                                            <input type="checkbox" id="tm-only-mine"> Только мои заявки
-                                        </label>
-                                    </div>
-                                </div>
-                                <div id="tm-listings" class="tm-listings"></div>
-                            </section>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ПВП -->
                 <div id="section-pvp" class="clan-section">
                     <h2>⚔️ Билды для ПВП</h2>
                     <section class="add-form admin-only" hidden>
@@ -371,7 +229,6 @@
                     <div id="pvpList" class="builds-list"></div>
                 </div>
 
-                <!-- ПБ -->
                 <div id="section-pb" class="clan-section">
                     <h2>🛡 Билды для ПБ</h2>
                     <section class="add-form admin-only" hidden>
@@ -393,13 +250,11 @@
                     <div id="pbList" class="builds-list"></div>
                 </div>
 
-                <!-- КОНТАКТЫ -->
                 <div id="section-contacts" class="clan-section">
                     <h2>💬 Контакты гильдий</h2>
                     <div id="contactsList" class="contacts-list"></div>
                 </div>
 
-                <!-- ЗАЯВКИ -->
                 <div id="section-applications" class="clan-section">
                     <h2>📝 Заявки в гильдию</h2>
                     <p class="hint">Все заявки, отправленные через форму на главной</p>
@@ -409,7 +264,7 @@
         </div>
     </div>
 
-    <!-- АДМИН-ПАНЕЛЬ -->
+    <!-- ═══════════ АДМИН-ПАНЕЛЬ ═══════════ -->
     <div id="adminView" hidden>
         <aside class="admin-sidebar">
             <div class="admin-sidebar-brand">
@@ -439,15 +294,23 @@
                     <span>Настройки</span>
                 </button>
 
-                <div class="admin-nav-divider">Журналы</div>
+                <div class="admin-nav-divider">В разработке</div>
 
-                <button class="admin-nav-item" data-apanel="adminlog">
+                <button class="admin-nav-item wip" data-wip="1">
+                    <span class="admin-nav-ico">👥</span>
+                    <span>Пользователи</span>
+                </button>
+                <button class="admin-nav-item wip" data-wip="1">
+                    <span class="admin-nav-ico">📊</span>
+                    <span>Аналитика</span>
+                </button>
+                <button class="admin-nav-item wip" data-wip="1">
                     <span class="admin-nav-ico">📜</span>
                     <span>Журнал действий</span>
                 </button>
-                <button class="admin-nav-item" data-apanel="viewhistory">
-                    <span class="admin-nav-ico">👁</span>
-                    <span>История просмотров</span>
+                <button class="admin-nav-item wip" data-wip="1">
+                    <span class="admin-nav-ico">💾</span>
+                    <span>Резервные копии</span>
                 </button>
             </nav>
 
@@ -457,8 +320,10 @@
         </aside>
 
         <main class="admin-content">
+
             <section class="admin-section active" data-apanel="clans">
                 <h2 class="admin-section-title">🏰 Управление гильдиями</h2>
+
                 <div class="admin-card">
                     <div class="admin-field">
                         <label>Гильдия</label>
@@ -467,12 +332,6 @@
                     <div class="admin-field">
                         <label>Игра</label>
                         <select id="adminClanGame"></select>
-                    </div>
-                    <div class="admin-field">
-                        <label>Союзная гильдия</label>
-                        <select id="adminAllyClan">
-                            <option value="">— Нет —</option>
-                        </select>
                     </div>
                     <div class="admin-field"><label>Текущий пароль</label><input type="text" id="adminCurrentPass" readonly></div>
                     <div class="admin-field"><label>Новый пароль</label><input type="text" id="adminNewPass" placeholder="Оставь пустым, чтобы не менять"></div>
@@ -497,6 +356,7 @@
             <section class="admin-section" data-apanel="partners">
                 <h2 class="admin-section-title">🤝 Партнёры и Реклама</h2>
                 <p class="hint">Для <b>YouTube-ссылок</b> логотип подтягивается автоматически.</p>
+
                 <div class="admin-card">
                     <div class="admin-field">
                         <label>Название *</label>
@@ -527,69 +387,47 @@
                         <button id="partnerAddBtn">➕ Добавить партнёра</button>
                     </div>
                 </div>
+
                 <div id="partnersAdminList" class="partners-admin-list"></div>
             </section>
 
             <section class="admin-section" data-apanel="faq">
                 <h2 class="admin-section-title">❓ FAQ</h2>
                 <p class="hint">Вопросы и ответы на главной</p>
+
                 <div class="admin-card">
                     <div class="admin-field"><label>Вопрос</label><input type="text" id="faqQ" maxlength="200"></div>
                     <div class="admin-field"><label>Ответ</label><textarea id="faqA" rows="3"></textarea></div>
-                    <div class="modal-actions"><button id="faqAddBtn">➕ Добавить вопрос</button></div>
+                    <div class="modal-actions">
+                        <button id="faqAddBtn">➕ Добавить вопрос</button>
+                    </div>
                 </div>
+
                 <div id="faqAdminList" class="faq-admin-list"></div>
             </section>
 
             <section class="admin-section" data-apanel="settings">
                 <h2 class="admin-section-title">⚙️ Настройки сайта</h2>
+
                 <div class="admin-card">
                     <div class="admin-field">
                         <label>Discord Webhook URL</label>
                         <input type="text" id="adminWebhook" placeholder="https://discord.com/api/webhooks/..." maxlength="400">
                     </div>
-                    <div class="admin-field">
-                        <label>Режим технических работ</label>
-                        <label class="switch-row">
-                            <input type="checkbox" id="adminMaintenance">
-                            <span class="switch-label">Включить режим техработ</span>
-                        </label>
-                    </div>
-                    <div class="admin-field">
-                        <label>Сообщение на экране техработ</label>
-                        <textarea id="adminMaintenanceMsg" rows="3" placeholder="Идут технические работы. Заходите позже."></textarea>
-                    </div>
                     <p id="adminSiteMsg" class="error"></p>
-                    <div class="modal-actions"><button id="saveSiteSettings">💾 Сохранить</button></div>
+                    <div class="modal-actions">
+                        <button id="saveSiteSettings">💾 Сохранить</button>
+                    </div>
                 </div>
-            </section>
-
-            <section class="admin-section" data-apanel="adminlog">
-                <h2 class="admin-section-title">📜 Журнал действий админов</h2>
-                <p class="hint">Последние 500 операций.</p>
-                <div class="modal-actions" style="margin-bottom:12px">
-                    <button id="refreshAdminLog" class="secondary">🔄 Обновить</button>
-                </div>
-                <div id="adminLogList" class="log-list"></div>
-            </section>
-
-            <section class="admin-section" data-apanel="viewhistory">
-                <h2 class="admin-section-title">👁 История просмотров</h2>
-                <p class="hint">Кто и когда заходил в гильдии.</p>
-                <div class="modal-actions" style="margin-bottom:12px">
-                    <button id="refreshViewHistory" class="secondary">🔄 Обновить</button>
-                </div>
-                <div id="viewHistoryList" class="log-list"></div>
             </section>
         </main>
     </div>
 
-    <!-- МОДАЛКА: ПАРОЛЬ ГИЛЬДИИ -->
+    <!-- МОДАЛКА: ПАРОЛЬ -->
     <div id="clanPassModal" class="modal" hidden>
         <div class="modal-content">
             <h2>🔐 Вход в гильдию</h2>
             <p id="clanPassName" class="auth-clan-name"></p>
-            <input type="text" id="clanNickname" placeholder="Ваш игровой ник" maxlength="32" autocomplete="nickname">
             <input type="password" id="clanPassword" placeholder="Пароль гильдии" autocomplete="current-password">
             <p id="clanPassError" class="error"></p>
             <div class="modal-actions">
@@ -603,7 +441,6 @@
     <div id="adminAuthModal" class="modal" hidden>
         <div class="modal-content">
             <h2>🔐 Вход администратора</h2>
-            <input type="text" id="adminNickname" placeholder="Ваш ник" maxlength="32" autocomplete="nickname">
             <input type="email" id="adminEmail" placeholder="Email" autocomplete="username">
             <input type="password" id="adminPassword" placeholder="Пароль" autocomplete="current-password">
             <p id="adminAuthError" class="error"></p>
@@ -618,7 +455,10 @@
     <div id="addClanModal" class="modal" hidden>
         <div class="modal-content admin-panel-wide">
             <h2>➕ Новая гильдия</h2>
-            <div class="admin-field"><label>Игра</label><select id="newClanGame"></select></div>
+            <div class="admin-field">
+                <label>Игра</label>
+                <select id="newClanGame"></select>
+            </div>
             <div class="admin-field"><label>ID (латиница)</label><input type="text" id="newClanId" placeholder="clan3" maxlength="20"></div>
             <div class="admin-field"><label>Название</label><input type="text" id="newClanName" maxlength="60"></div>
             <div class="admin-field"><label>Описание</label><textarea id="newClanDesc" rows="3"></textarea></div>
@@ -641,8 +481,8 @@
             <h2>✏️ Редактировать игру</h2>
             <input type="hidden" id="gameEditId">
             <div class="admin-field"><label>Название</label><input type="text" id="gameEditName" maxlength="80"></div>
-            <div class="admin-field"><label>Логотип</label><input type="text" id="gameEditImage" maxlength="200"></div>
-            <div class="admin-field"><label>Фон</label><input type="text" id="gameEditBg" maxlength="200"></div>
+            <div class="admin-field"><label>Логотип</label><input type="text" id="gameEditImage" placeholder="images/wosb.png" maxlength="200"></div>
+            <div class="admin-field"><label>Фон</label><input type="text" id="gameEditBg" placeholder="images/bg-wosb.jpg" maxlength="200"></div>
             <p id="gameEditMsg" class="error"></p>
             <div class="modal-actions">
                 <button id="saveGameEdit">💾 Сохранить</button>
@@ -730,6 +570,48 @@
             </header>
 
             <div class="tactics-body">
+
+                <!-- НАКАЧКА -->
+                <section class="tactics-section">
+                    <h3>💪 Накачка орудий (поднятие напряжения)</h3>
+                    <ul class="tactics-list">
+                        <li><b>Что это</b>: удержание кнопки выстрела (<span class="kbd">ЛКМ</span>) накачивает орудия — растёт дальность, урон и пробитие следующего залпа. В интерфейсе виден индикатор накачки над полосой орудий.</li>
+                        <li><b>Как работает</b>:
+                            <ul>
+                                <li>Держишь <span class="kbd">ЛКМ</span> — идёт накачка, стрельба заблокирована.</li>
+                                <li>Отпустил — вылетает залп с накопленной мощностью.</li>
+                                <li>Дальность накачанного залпа может вырасти в <b>1.5–2 раза</b> относительно обычной.</li>
+                            </ul>
+                        </li>
+                        <li><b>Плюсы</b>:
+                            <ul>
+                                <li>Стреляешь дальше, чем противник ожидает — «первый удар» с безопасной дистанции.</li>
+                                <li>Пробитие и урон выше — на дальней дистанции накачанный залп страшнее обычного в разы.</li>
+                                <li>Идеально против тех, кто ещё не развернулся в борт или только заходит в зону боя.</li>
+                            </ul>
+                        </li>
+                        <li><b>Минусы</b>:
+                            <ul>
+                                <li>Пока накачиваешь — не стреляешь. Время простоя = упущенный ДПС.</li>
+                                <li>Противник видит накачку и может уйти в манёвр или наоборот пойти на сближение.</li>
+                                <li>Долгая накачка = риск получить борт в ответ или быть абордированным.</li>
+                            </ul>
+                        </li>
+                        <li><b>Тактика применения</b>:
+                            <ul>
+                                <li>Начинай накачку <b>заранее</b> — до того, как противник войдёт в свою зону стрельбы.</li>
+                                <li>Первый залп делай накачанным — сбиваешь паруса и снимаешь максимум HP.</li>
+                                <li>Дальше переходи в обычный режим или накачивай <b>короткими импульсами</b> (0.5–1 сек).</li>
+                                <li>Против абордажников накачивай <b>картечь</b> — один залп выкашивает полкоманды.</li>
+                                <li>Против быстрых — накачивай <b>цепные</b>, чтобы сбить ход и догнать.</li>
+                                <li>Если у тебя перевес в дальности — накачивай у самой границы своей зоны, не подпуская противника.</li>
+                            </ul>
+                        </li>
+                        <li><b>Бинды</b>: обычно <span class="kbd">ЛКМ</span> (удержание) — накачка, отпустил — выстрел. Проверь своё назначение в настройках игры.</li>
+                    </ul>
+                </section>
+
+                <!-- ПОДГОТОВКА -->
                 <section class="tactics-section">
                     <h3>🎒 Подготовка к бою</h3>
                     <ul class="tactics-list">
@@ -741,6 +623,7 @@
                     </ul>
                 </section>
 
+                <!-- ВЕТЕР -->
                 <section class="tactics-section">
                     <h3>🌬 Ветер и манёвры</h3>
                     <ul class="tactics-list">
@@ -752,6 +635,7 @@
                     </ul>
                 </section>
 
+                <!-- ВООРУЖЕНИЕ -->
                 <section class="tactics-section">
                     <h3>💣 Вооружение и снаряды</h3>
                     <div class="tactics-grid">
@@ -786,23 +670,33 @@
                     </ul>
                 </section>
 
+                <!-- АБОРДАЖ -->
                 <section class="tactics-section">
                     <h3>⚔️ Абордаж</h3>
                     <ul class="tactics-list">
-                        <li><b>Условия абордажа</b>: HP врага &lt; 50%, корабли рядом борт к борту, скорость обоих снижена.</li>
+                        <li><b>Условия абордажа</b>: HP врага &lt; 50%, корабли рядом борт к борту, скорость обоих снижена, оба в боевом режиме.</li>
                         <li>Перед абордажем обязательно прореди экипаж врага <b>картечью</b>.</li>
                         <li>Нажми <span class="kbd">Space</span>, когда появится подсказка.</li>
-                        <li><b>Состав экипажа</b>: мушкетёры — урон, солдаты — баланс, матросы — дешёвые, наёмники — танки.</li>
-                        <li>После победы: <b>сжечь</b> (лут), <b>взять команду</b> или <b>захватить корабль</b>.</li>
+                        <li><b>Состав экипажа</b>:
+                            <ul>
+                                <li><b>Мушкетёры</b> — главный урон, но мало HP.</li>
+                                <li><b>Солдаты</b> — сбалансированные.</li>
+                                <li><b>Матросы</b> — слабее, но дешевле.</li>
+                                <li><b>Наёмники</b> — танки, мало урона.</li>
+                            </ul>
+                        </li>
+                        <li>После победы выбери: <b>сжечь</b> (больше лута), <b>взять часть команды</b> или <b>захватить корабль</b>.</li>
                     </ul>
                 </section>
 
+                <!-- ТАКТИКА -->
                 <section class="tactics-section">
                     <h3>🧠 Тактика боя</h3>
                     <ul class="tactics-list">
-                        <li><b>Читай флаги</b>: жёлтые/красные — игроки, синие — NPC.</li>
+                        <li><b>Читай флаги и полоски HP</b>: жёлтые/красные — игроки, синие — NPC.</li>
                         <li><b>Не воюй в одиночку против сильных NPC</b> — объединяйся с другими игроками.</li>
-                        <li><b>Фокус огня</b>: всей группой бей одного противника.</li>
+                        <li><b>Фокус огня</b>: всей группой бей одного противника, а не размазывай урон.</li>
+                        <li><b>Корабли-роли</b>: скоростные — для погони, тяжёлые/осадные — для удержания линии.</li>
                         <li>Если бой невыгоден — <b>уходи к острову</b>.</li>
                     </ul>
                 </section>
