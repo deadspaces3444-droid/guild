@@ -1932,3 +1932,96 @@ a.icon-btn:hover {
     .admin-nav-item { min-width: auto; padding: 10px 14px; }
     .admin-nav-ico { font-size: 20px; }
 }
+/* ============ СПИСКИ ГИЛЬДИИ НА ГЛАВНОЙ ============ */
+.home-lists-section {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.home-lists-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: rgba(23, 26, 33, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.home-lists-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .5));
+}
+
+.home-lists-title {
+    font-size: 20px;
+    margin: 0;
+    text-shadow: none;
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+}
+
+.home-lists-close {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: inherit;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+}
+.home-lists-close:hover {
+    background: rgba(255, 122, 122, 0.1);
+    border-color: var(--red);
+    color: var(--red);
+}
+
+.home-lists-tabs {
+    margin-bottom: 0;
+}
+
+.home-lists-section .search-input {
+    margin-bottom: 0;
+}
+
+.home-lists-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 8px;
+}
+.home-lists-actions .big-btn {
+    flex: 1;
+    min-width: 200px;
+    max-width: 320px;
+}
+
+/* Адаптив */
+@media (max-width: 700px) {
+    .home-lists-header {
+        padding: 12px 14px;
+        gap: 10px;
+    }
+    .home-lists-logo { width: 36px; height: 36px; }
+    .home-lists-title { font-size: 17px; }
+    .home-lists-actions .big-btn { min-width: 100%; }
+}
