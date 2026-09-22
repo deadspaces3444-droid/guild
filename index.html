@@ -58,7 +58,7 @@
                 <div class="home-lists-header">
                     <img id="homeListsLogo" class="home-lists-logo" src="" alt="">
                     <h2 id="homeListsTitle" class="home-lists-title"></h2>
-                    <button id="homeListsClose" class="home-lists-close" title="Скрыть списки">✕</button>
+                    <button id="homeListsClose" class="home-lists-close" title="Вернуться к гильдиям">К гильдиям</button>
                 </div>
 
                 <nav class="tabs home-lists-tabs">
@@ -190,6 +190,7 @@
                 <button class="side-item" data-section="pvp"><span class="side-ico">⚔️</span><span>Билды ПВП</span></button>
                 <button class="side-item" data-section="pb"><span class="side-ico">🛡</span><span>Билды ПБ</span></button>
                 <button class="side-item" data-section="contacts"><span class="side-ico">💬</span><span>Контакты</span></button>
+                <button class="side-item" id="openTacticsBtn"><span class="side-ico">📖</span><span>Тактика боя</span></button>
                 <button class="side-item admin-only" data-section="applications" hidden><span class="side-ico">📝</span><span>Заявки</span></button>
             </aside>
 
@@ -736,6 +737,112 @@
             <div class="modal-actions">
                 <button id="cancelMove" class="secondary">Отмена</button>
             </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: ТАКТИКА БОЯ WoSB -->
+    <div id="tacticsModal" class="tactics-modal" hidden>
+        <div class="tactics-content">
+            <header class="tactics-header">
+                <h2>⚓ Тактика боя — World of Sea Battle</h2>
+                <button id="closeTactics" class="tactics-close" title="Закрыть">✕</button>
+            </header>
+
+            <div class="tactics-body">
+                <section class="tactics-section">
+                    <h3>🎒 Подготовка к бою</h3>
+                    <ul class="tactics-list">
+                        <li><b>Сними мирный флаг</b> перед выходом из порта — иначе бой с игроками невозможен.</li>
+                        <li><b>Разгрузи трюм</b>: возьми только 200 ядер на каждый тип пушек и 3–5 пороховых/зажигательных бочек. Лёгкий корабль быстрее маневрирует.</li>
+                        <li><b>Обвес</b>: тиковые рамы, медная обшивка, гнездо для боеприпасов, защита парусов — ставь на живучесть и ДПС.</li>
+                        <li><b>Ремкомплекты</b>: держи древесину, ткань и наборы. Запуск ремонта — клавиша <span class="kbd">R</span>.</li>
+                        <li><b>Ром</b>: каждый обмен квестов в таверне стоит 1 единицу — запас не помешает.</li>
+                        <li><b>Копи на Blackwind</b>, не трать ресурсы на La Salamandre — это ловушка.</li>
+                    </ul>
+                </section>
+
+                <section class="tactics-section">
+                    <h3>🌬 Ветер и манёвры</h3>
+                    <ul class="tactics-list">
+                        <li><b>Ветер меняется против часовой стрелки</b>. Планируя длинный переход, выходи так, чтобы большую часть пути идти с попутным ветром.</li>
+                        <li>При <b>встречном ветре</b> держи галс правого борта (starboard tack) — так ты дольше остаёшься в выгодном курсе.</li>
+                        <li>Смена режимов движения (<span class="kbd">W</span> / <span class="kbd">S</span>) — твой главный инструмент уклонения. По маневрирующему кораблю попасть сложнее.</li>
+                        <li><b>Не стой на месте.</b> Подставляй <b>нос</b> под залп — урон в носовую часть значительно ниже, чем в борт.</li>
+                        <li>Разворот через нос экономит прочность корабля: корма часто уязвимее борта.</li>
+                        <li>Чередуй борта — не давай противнику пристреляться по одному борту.</li>
+                    </ul>
+                </section>
+
+                <section class="tactics-section">
+                    <h3>💣 Вооружение и снаряды</h3>
+                    <div class="tactics-grid">
+                        <div class="tactics-card">
+                            <div class="tactics-card-title">🔘 Полые ядра</div>
+                            <div class="tactics-card-desc">Основной урон. Рабочая лошадка любого боя.</div>
+                        </div>
+                        <div class="tactics-card">
+                            <div class="tactics-card-title">🔥 Брандскугели</div>
+                            <div class="tactics-card-desc">Поджигают корабль, наносят периодический урон.</div>
+                        </div>
+                        <div class="tactics-card">
+                            <div class="tactics-card-title">⛓ Цепные снаряды</div>
+                            <div class="tactics-card-desc">Рвут паруса, замедляют противника.</div>
+                        </div>
+                        <div class="tactics-card">
+                            <div class="tactics-card-title">💥 Картечь</div>
+                            <div class="tactics-card-desc">Убивает экипаж. Готовит почву для абордажа.</div>
+                        </div>
+                        <div class="tactics-card">
+                            <div class="tactics-card-title">🎯 Стрелы</div>
+                            <div class="tactics-card-desc">Для фальконетов, хороши против парусов и команды.</div>
+                        </div>
+                        <div class="tactics-card">
+                            <div class="tactics-card-title">🟢 Фосфор</div>
+                            <div class="tactics-card-desc">Дополнительный урон, дорогой, но эффективный.</div>
+                        </div>
+                    </div>
+                    <ul class="tactics-list" style="margin-top:12px">
+                        <li>Снаряд, вошедший <b>под прямым углом</b>, пробивает лучше — бей в борт, а не вскользь.</li>
+                        <li>Микс <b>карронад</b> (близкий бой) и <b>кулеврин</b> (дальний) даёт гибкость. Попробуй разные комбинации на арене.</li>
+                    </ul>
+                </section>
+
+                <section class="tactics-section">
+                    <h3>⚔️ Абордаж</h3>
+                    <ul class="tactics-list">
+                        <li><b>Условия абордажа</b>: HP врага &lt; 50%, корабли рядом борт к борту, скорость обоих снижена, оба в боевом режиме.</li>
+                        <li>Перед абордажем обязательно прореди экипаж врага <b>картечью</b>.</li>
+                        <li>Нажми <span class="kbd">Space</span>, когда появится подсказка — начнётся автоматический расчёт боя.</li>
+                        <li><b>Состав экипажа</b>:
+                            <ul>
+                                <li><b>Мушкетёры</b> — главный урон, но мало HP.</li>
+                                <li><b>Солдаты</b> — сбалансированные.</li>
+                                <li><b>Матросы</b> — слабее, но дешевле.</li>
+                                <li><b>Наёмники</b> — танки, мало урона.</li>
+                            </ul>
+                        </li>
+                        <li>В бою фокусируй атаку на одной группе, не распыляй урон. Если враг защищается — смени цель.</li>
+                        <li>После победы выбери: <b>сжечь</b> (больше лута), <b>взять часть команды</b> или <b>захватить корабль</b> (если есть место в эскадре).</li>
+                        <li>Захваченный корабль хрупок, пока не отремонтирован. В PvP абордаж — риск: третий может вмешаться.</li>
+                    </ul>
+                </section>
+
+                <section class="tactics-section">
+                    <h3>🧠 Тактика боя</h3>
+                    <ul class="tactics-list">
+                        <li><b>Читай флаги и полоски HP</b>: жёлтые/красные — игроки, синие — NPC. Красный ветеран втрое больше тебя — беги.</li>
+                        <li><b>Не воюй в одиночку против сильных NPC</b> — объединяйся с другими игроками.</li>
+                        <li><b>Фокус огня</b>: всей группой бей одного противника, а не размазывай урон.</li>
+                        <li><b>Корабли-роли</b>: скоростные — для погони, тяжёлые/осадные — для удержания линии и впитывания урона.</li>
+                        <li>В арене выбирай <b>массовый бой</b>, держись своей команды, враги — красные.</li>
+                        <li>Если бой невыгоден — <b>уходи к острову</b>. Умение вовремя выйти из боя сохраняет корабль и груз.</li>
+                    </ul>
+                </section>
+            </div>
+
+            <footer class="tactics-footer">
+                <span>💡 Нажми <span class="kbd">Esc</span> или кликни вне окна, чтобы закрыть</span>
+            </footer>
         </div>
     </div>
 
