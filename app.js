@@ -28,8 +28,6 @@ let editingItem   = null;
 let editingBuild  = null;
 let editingGame   = null;
 let duplicatingBuild = null;
-let tradesCache   = [];
-let currentTradeFilter = 'all';
 
 const $ = id => document.getElementById(id);
 const screenHome         = $('screen-home');
@@ -188,10 +186,12 @@ document.querySelectorAll('.side-item').forEach(btn => {
         else if (section === 'events') renderEvents();
         else if (section === 'treasury') renderTreasury();
         else if (section === 'trade') {
+            const tn = $('tm-nickname');
+            if (tn && !tn.value) {
+                const n = currentViewerNick();
+                if (n) tn.value = n;
+            }
             renderTrades();
-            const nick = localStorage.getItem(VIEWER_NICK_KEY)
-                       || localStorage.getItem(ADMIN_NICK_KEY) || '';
-            if (nick && !$('tradeNickname').value) $('tradeNickname').value = nick;
         }
         else if (section === 'pvp') renderBuilds('pvp');
         else if (section === 'pb') renderBuilds('pb');
@@ -488,7 +488,7 @@ function openClan(id) {
     document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b.dataset.section === 'lists'));
     document.querySelectorAll('.clan-section').forEach(s => s.classList.toggle('active', s.id === 'section-lists'));
     currentTab = 'enemies';
-    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === 'enemies'));
+    document.querySelectorAll('.tab:not([data-trade-filter])').forEach(b => b.classList.toggle('active', b.dataset.tab === 'enemies'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-enemies'));
     renderScopeSelects();
     applyAdminUI();
@@ -501,8 +501,11 @@ function openClan(id) {
     renderTrades();
     renderApplications();
 
-    const nick = viewerNick || localStorage.getItem(ADMIN_NICK_KEY) || '';
-    if (nick && !$('tradeNickname').value) $('tradeNickname').value = nick;
+    const tn = $('tm-nickname');
+    if (tn && !tn.value) {
+        const n = currentViewerNick();
+        if (n) tn.value = n;
+    }
 }
 $('backBtn').addEventListener('click', () => {
     if (applyAccessControl()) return;
@@ -529,16 +532,6 @@ document.querySelectorAll('.tab:not([data-trade-filter])').forEach(btn => {
         currentTab = btn.dataset.tab;
         $('tab-' + currentTab).classList.add('active');
         applySearchFilter();
-    });
-});
-
-/* Фильтры торговли */
-document.querySelectorAll('[data-trade-filter]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('[data-trade-filter]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentTradeFilter = btn.dataset.tradeFilter;
-        applyTradeFilter();
     });
 });
 
@@ -1050,162 +1043,275 @@ $('trAddBtn').addEventListener('click', async () => {
     renderTreasury();
 });
 
-/* ===================== ТОРГОВЛЯ ===================== */
+/* ===================== ТОРГОВЛЯ (БИРЖА) ===================== */
+const TRADE_CATEGORIES = [
+    { id: 'resource',  name: 'Ресурс',    icon: '🪵' },
+    { id: 'ship',      name: 'Корабль',   icon: '⛵' },
+    { id: 'module',    name: 'Модуль',    icon: '⚙️' },
+    { id: 'weapon',    name: 'Оружие',    icon: '⚔️' },
+    { id: 'ammo',      name: 'Боеприпас', icon: '💣' },
+    { id: 'blueprint', name: 'Чертёж',    icon: '📜' },
+    { id: 'consum',    name: 'Расходник', icon: '🧪' },
+    { id: 'other',     name: 'Прочее',    icon: '📦' },
+];
+
+let tradesCache = [];
+let tradeFormType = 'buy';
+let tradeFilterType = 'all';
+let tradeFilterCat = 'all';
+
+function tradeCatById(id) {
+    return TRADE_CATEGORIES.find(c => c.id === id)
+        || TRADE_CATEGORIES[TRADE_CATEGORIES.length - 1];
+}
+
+function tradeFmtGold(n) {
+    return Number(n).toLocaleString('ru-RU') + ' 🪙';
+}
+
+function tradePlural(n, one, few, many) {
+    const m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+    return many;
+}
+
+function tradeTimeAgo(iso) {
+    const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60)    return 'только что';
+    if (s < 3600)  return `${Math.floor(s / 60)} мин назад`;
+    if (s < 86400) return `${Math.floor(s / 3600)} ч назад`;
+    return `${Math.floor(s / 86400)} дн назад`;
+}
+
+function currentViewerNick() {
+    return (localStorage.getItem(VIEWER_NICK_KEY)
+        || localStorage.getItem(ADMIN_NICK_KEY) || '').trim();
+}
+
 async function renderTrades() {
     if (!currentClan) return;
-    const container = $('tradesList');
+    const container = $('tm-listings');
     if (!container) return;
     container.innerHTML = '<div class="empty">Загрузка…</div>';
     const { data, error } = await supabase.from('trades').select('*')
         .eq('clan', currentClan)
         .order('created_at', { ascending: false });
-    if (error) { container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`; return; }
-    tradesCache = data || [];
-    updateTradeCounters();
-    applyTradeFilter();
-}
-
-function updateTradeCounters() {
-    const total  = tradesCache.length;
-    const active = tradesCache.filter(t => t.status === 'active').length;
-    const done   = tradesCache.filter(t => t.status === 'done').length;
-    const elTotal  = $('tradeCountTotal');
-    const elActive = $('tradeCountActive');
-    const elDone   = $('tradeCountDone');
-    if (elTotal)  elTotal.textContent  = total;
-    if (elActive) elActive.textContent = active;
-    if (elDone)   elDone.textContent   = done;
-}
-
-function applyTradeFilter() {
-    const container = $('tradesList');
-    if (!container) return;
-    let list = tradesCache;
-    if (currentTradeFilter === 'buy')         list = list.filter(t => t.type === 'buy');
-    else if (currentTradeFilter === 'sell')   list = list.filter(t => t.type === 'sell');
-    else if (currentTradeFilter === 'active') list = list.filter(t => t.status === 'active');
-    else if (currentTradeFilter === 'done')   list = list.filter(t => t.status === 'done');
-
-    container.innerHTML = '';
-    if (!list.length) {
-        container.innerHTML = '<div class="empty">Сделок пока нет</div>';
+    if (error) {
+        container.innerHTML = `<div class="empty">Ошибка: ${error.message}</div>`;
         return;
     }
-    list.forEach(t => container.appendChild(createTradeCard(t)));
+    tradesCache = data || [];
+    renderTradeCounters();
+    renderTradeListings();
 }
 
-function createTradeCard(t) {
-    const card = document.createElement('div');
-    const isDone = t.status === 'done';
-    card.className = 'trade-card ' + (t.type === 'buy' ? 'buy' : 'sell') + (isDone ? ' done' : '');
+function renderTradeCounters() {
+    let buyGold = 0, sellGold = 0, buyN = 0, sellN = 0;
+    tradesCache.forEach(t => {
+        const total = Number(t.price) * Number(t.qty);
+        if (t.type === 'buy') { buyGold  += total; buyN++;  }
+        else                  { sellGold += total; sellN++; }
+    });
+    const elBuy     = $('tm-counter-buy-gold');
+    const elSell    = $('tm-counter-sell-gold');
+    const elBuySub  = $('tm-counter-buy-sub');
+    const elSellSub = $('tm-counter-sell-sub');
+    if (elBuy)     elBuy.textContent     = tradeFmtGold(buyGold);
+    if (elSell)    elSell.textContent    = tradeFmtGold(sellGold);
+    if (elBuySub)  elBuySub.textContent  = buyN  + ' ' + tradePlural(buyN,  'заявка', 'заявки', 'заявок');
+    if (elSellSub) elSellSub.textContent = sellN + ' ' + tradePlural(sellN, 'заявка', 'заявки', 'заявок');
+}
 
-    const d = new Date(t.created_at);
-    const dateStr = d.toLocaleDateString('ru-RU') + ' ' +
-        String(d.getHours()).padStart(2, '0') + ':' +
-        String(d.getMinutes()).padStart(2, '0');
+function tradeVisibleListings() {
+    const q        = ($('tm-search')?.value || '').trim().toLowerCase();
+    const onlyMine = $('tm-only-mine')?.checked;
+    const myNick   = currentViewerNick().toLowerCase();
 
-    const viewerNick = (localStorage.getItem(VIEWER_NICK_KEY) || '').toLowerCase();
-    const isOwner = viewerNick && viewerNick === (t.nickname || '').toLowerCase();
-    const canManage = isAdmin || isOwner;
+    return tradesCache.filter(t => {
+        if (tradeFilterType !== 'all' && t.type !== tradeFilterType) return false;
+        if (tradeFilterCat  !== 'all' && t.category !== tradeFilterCat) return false;
+        if (q && !(t.name || '').toLowerCase().includes(q)) return false;
+        if (onlyMine && (t.nickname || '').toLowerCase() !== myNick) return false;
+        return true;
+    });
+}
 
-    const statusBadge = isDone
-        ? `<span class="trade-badge done">✅ Завершено</span>`
-        : `<span class="trade-badge active">🔵 Активно</span>`;
-
-    const typeLabel = t.type === 'buy' ? '🛒 Куплю' : '💰 Продам';
-
-    const actions = canManage ? `
-        <div class="trade-actions">
-            ${!isDone
-                ? `<button class="done-btn" title="Отметить завершённой">✅</button>`
-                : `<button class="undone-btn" title="Вернуть в активные">↩️</button>`}
-            <button class="delete" title="Удалить">🗑</button>
-        </div>` : '';
-
-    const amountStr = Number(t.amount).toLocaleString('ru-RU');
-
-    card.innerHTML = `
-        <div class="trade-header">
-            <div class="trade-type-badge ${t.type}">${typeLabel}</div>
-            ${statusBadge}
-            ${actions}
-        </div>
-        <div class="trade-item">${escapeHtml(t.item)}</div>
-        <div class="trade-meta">
-            <div class="trade-meta-row"><span class="trade-meta-label">Ник:</span> <b>${escapeHtml(t.nickname)}</b></div>
-            <div class="trade-meta-row"><span class="trade-meta-label">Сумма:</span> <b class="trade-amount">${amountStr}</b></div>
-            ${t.port ? `<div class="trade-meta-row"><span class="trade-meta-label">Порт:</span> ${escapeHtml(t.port)}</div>` : ''}
-            <div class="trade-meta-row trade-date">${dateStr}</div>
-        </div>
-        ${t.note ? `<div class="trade-note">${escapeHtml(t.note)}</div>` : ''}
-    `;
-
-    if (canManage) {
-        const doneBtn   = card.querySelector('.done-btn');
-        const undoneBtn = card.querySelector('.undone-btn');
-        const delBtn    = card.querySelector('.delete');
-        if (doneBtn)   doneBtn.addEventListener('click',   () => toggleTradeStatus(t.id, 'done',   t.nickname));
-        if (undoneBtn) undoneBtn.addEventListener('click', () => toggleTradeStatus(t.id, 'active', t.nickname));
-        if (delBtn)    delBtn.addEventListener('click',    () => deleteTrade(t.id, t.nickname));
+function renderTradeListings() {
+    const container = $('tm-listings');
+    if (!container) return;
+    const items = tradeVisibleListings();
+    if (!items.length) {
+        container.innerHTML = '<p class="empty">Заявок пока нет. Будьте первым!</p>';
+        return;
     }
+    const myNick = currentViewerNick().toLowerCase();
+    container.innerHTML = '';
 
-    return card;
+    items.forEach(t => {
+        const cat   = tradeCatById(t.category);
+        const total = Number(t.price) * Number(t.qty);
+        const isMine    = myNick && (t.nickname || '').toLowerCase() === myNick;
+        const canDelete = isAdmin || isMine;
+        const typeLabel = t.type === 'buy' ? '🛒 Куплю' : '💰 Продам';
+
+        const el = document.createElement('article');
+        el.className = 'tm-listing ' + t.type + (isMine ? ' mine' : '');
+        el.dataset.id = t.id;
+        el.innerHTML = `
+            <div class="tm-listing-head">
+                <div class="tm-listing-icon">${cat.icon}</div>
+                <div class="tm-listing-title">
+                    <h4>${escapeHtml(t.name)}</h4>
+                    <div class="tm-listing-tags">
+                        <span class="tm-tag ${t.type}">${typeLabel}</span>
+                        <span class="tm-tag cat">${cat.name}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="tm-listing-price">
+                <span class="amount">${Number(t.price).toLocaleString('ru-RU')}</span>
+                <span class="per">🪙 / шт.</span>
+                ${Number(t.qty) > 1 ? `<span class="total">×${t.qty} = ${tradeFmtGold(total)}</span>` : ''}
+            </div>
+            ${t.port ? `<div class="tm-listing-port">⚓ Порт: ${escapeHtml(t.port)}</div>` : ''}
+            ${t.note ? `<div class="tm-listing-note">«${escapeHtml(t.note)}»</div>` : ''}
+            <div class="tm-listing-foot">
+                <span class="author">👤 ${escapeHtml(t.nickname)}</span>
+                <span class="time">${tradeTimeAgo(t.created_at)}</span>
+                ${canDelete ? `<button class="tm-delete" data-id="${t.id}" title="Удалить">✕</button>` : ''}
+            </div>
+        `;
+        container.appendChild(el);
+    });
 }
 
-async function toggleTradeStatus(id, status, nickname) {
-    const { error } = await supabase.from('trades').update({ status }).eq('id', id);
-    if (error) return alert(error.message);
-    await logAdminAction(
-        status === 'done' ? 'Отметил сделку завершённой' : 'Вернул сделку в активные',
-        nickname || null,
-        `id: ${id}`
-    );
-    renderTrades();
+function updateTradeFormTotal() {
+    const p = parseInt($('tm-price')?.value) || 0;
+    const q = parseInt($('tm-qty')?.value)   || 0;
+    const el = $('tm-total');
+    if (el) el.value = tradeFmtGold(p * q);
 }
 
-async function deleteTrade(id, nickname) {
-    if (!confirm('Удалить сделку?')) return;
+function setTradeStatus(msg, type = '') {
+    const el = $('tm-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'tm-status ' + type;
+    if (msg) setTimeout(() => {
+        if (el.textContent === msg) el.textContent = '';
+    }, 3500);
+}
+
+function initTradeCategorySelect() {
+    const sel = $('tm-category');
+    if (!sel) return;
+    sel.innerHTML = TRADE_CATEGORIES.map(c =>
+        `<option value="${c.id}">${c.icon} ${c.name}</option>`
+    ).join('');
+}
+
+function initTradeCategoryFilters() {
+    const wrap = $('tm-cat-filters');
+    if (!wrap) return;
+    wrap.innerHTML =
+        `<span class="tm-chip active" data-cat="all">Все категории</span>` +
+        TRADE_CATEGORIES.map(c =>
+            `<span class="tm-chip" data-cat="${c.id}">${c.icon} ${c.name}</span>`
+        ).join('');
+}
+
+document.querySelectorAll('.tm-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tm-type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        tradeFormType = btn.dataset.type;
+    });
+});
+
+$('tm-price')?.addEventListener('input', updateTradeFormTotal);
+$('tm-qty')?.addEventListener('input',   updateTradeFormTotal);
+
+$('tm-search')?.addEventListener('input', renderTradeListings);
+$('tm-only-mine')?.addEventListener('change', renderTradeListings);
+
+$('tm-type-filters')?.addEventListener('click', e => {
+    const chip = e.target.closest('.tm-chip');
+    if (!chip) return;
+    document.querySelectorAll('#tm-type-filters .tm-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    tradeFilterType = chip.dataset.type;
+    renderTradeListings();
+});
+
+$('tm-cat-filters')?.addEventListener('click', e => {
+    const chip = e.target.closest('.tm-chip');
+    if (!chip) return;
+    document.querySelectorAll('#tm-cat-filters .tm-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    tradeFilterCat = chip.dataset.cat;
+    renderTradeListings();
+});
+
+$('tm-listings')?.addEventListener('click', async e => {
+    const btn = e.target.closest('.tm-delete');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const t = tradesCache.find(x => String(x.id) === String(id));
+    if (!t) return;
+    if (!confirm(`Удалить заявку «${t.name}»?`)) return;
     const { error } = await supabase.from('trades').delete().eq('id', id);
     if (error) return alert(error.message);
-    await logAdminAction('Удалил сделку', nickname || null, `id: ${id}`);
+    await logAdminAction('Удалил торговую заявку', `${t.nickname} — ${t.name}`, `id: ${id}`);
     renderTrades();
-}
+});
 
-$('tradeAddBtn').addEventListener('click', async () => {
+$('tm-submit')?.addEventListener('click', async () => {
     if (!currentClan) return;
-    const type = $('tradeType').value;
-    const item = $('tradeItem').value.trim();
-    const nickname = $('tradeNickname').value.trim();
-    const amount = Number($('tradeAmount').value);
-    const port = $('tradePort').value.trim();
-    const note = $('tradeNote').value.trim();
-    const statusEl = $('tradeStatus');
+    const category = $('tm-category').value;
+    const name     = $('tm-name').value.trim();
+    const price    = parseInt($('tm-price').value);
+    const qty      = parseInt($('tm-qty').value);
+    const port     = $('tm-port').value.trim();
+    const nickname = $('tm-nickname').value.trim();
+    const note     = $('tm-note').value.trim();
 
-    if (!item) { flashStatusEl(statusEl, 'Укажите товар', '#ff7a7a'); return; }
-    if (!nickname) { flashStatusEl(statusEl, 'Укажите ваш ник', '#ff7a7a'); return; }
-    if (nickname.length < 2) { flashStatusEl(statusEl, 'Ник слишком короткий', '#ff7a7a'); return; }
-    if (!amount || amount <= 0) { flashStatusEl(statusEl, 'Укажите сумму > 0', '#ff7a7a'); return; }
+    if (!name)                  return setTradeStatus('Укажите название.', 'error');
+    if (!price || price <= 0)   return setTradeStatus('Укажите корректную цену.', 'error');
+    if (!qty   || qty   <= 0)   return setTradeStatus('Укажите корректное количество.', 'error');
+    if (!nickname)              return setTradeStatus('Укажите ваш ник.', 'error');
+    if (nickname.length < 2)    return setTradeStatus('Ник слишком короткий.', 'error');
 
     const { error } = await supabase.from('trades').insert({
         clan: currentClan,
-        type, item, nickname, amount,
+        type: tradeFormType,
+        category,
+        name,
+        price,
+        qty,
         port: port || null,
+        nickname,
         note: note || null,
         status: 'active'
     });
-    if (error) { flashStatusEl(statusEl, 'Ошибка: ' + error.message, '#ff7a7a'); return; }
+    if (error) return setTradeStatus('Ошибка: ' + error.message, 'error');
 
     await logAdminAction(
-        `Новая сделка (${type === 'buy' ? 'куплю' : 'продам'})`,
-        `${nickname} — ${item} — ${amount}`,
+        `Новая торговая заявка (${tradeFormType === 'buy' ? 'куплю' : 'продам'})`,
+        `${nickname} — ${name} — ${price}×${qty}`,
         port ? `порт: ${port}` : null
     );
 
-    // Сохраняем ник, чтобы в следующий раз подставился автоматически
     localStorage.setItem(VIEWER_NICK_KEY, nickname);
 
-    ['tradeItem','tradeAmount','tradePort','tradeNote'].forEach(id => $(id).value = '');
-    flashStatusEl(statusEl, '✔ Выставлено', '#6ee7a7');
+    $('tm-name').value  = '';
+    $('tm-price').value = '';
+    $('tm-qty').value   = 1;
+    $('tm-port').value  = '';
+    $('tm-note').value  = '';
+    updateTradeFormTotal();
+
+    setTradeStatus('✅ Заявка опубликована!', 'success');
     renderTrades();
 });
 
@@ -1829,7 +1935,7 @@ $('deleteClanBtn').addEventListener('click', async () => {
         `• Списки игроков (враги, друзья, нейтралы, личное)\n` +
         `• События гильдии\n` +
         `• Операции казны\n` +
-        `• Сделки торговли\n` +
+        `• Торговые заявки (биржа)\n` +
         `• Билды ПВП и ПБ (только этой гильдии, общие останутся)\n\n` +
         `Это действие НЕОБРАТИМО. Продолжить?`;
 
@@ -2163,6 +2269,11 @@ function escapeHtml(str) {
     await loadPartners();
     renderApplyClanSelect();
     await loadFaq();
+
+    // Инициализация UI биржи (один раз)
+    initTradeCategorySelect();
+    initTradeCategoryFilters();
+    updateTradeFormTotal();
 
     const { data: { session } } = await supabase.auth.getSession();
     isAdmin = !!session?.user && ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
