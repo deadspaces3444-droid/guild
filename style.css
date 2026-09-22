@@ -1457,3 +1457,414 @@ a.icon-btn:hover {
     .side-item { min-width: auto; padding: 10px 14px; }
     .side-ico { font-size: 20px; }
 }
+/* ============ СЧЁТЧИК ОНЛАЙН ============ */
+.online-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(23, 26, 33, 0.85);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(110, 231, 167, 0.35);
+    color: #6ee7a7;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+}
+.online-badge b { color: #fff; }
+
+/* ============ ТОРГОВЛЯ НА ГЛАВНОЙ ============ */
+.home-trade-section {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.trade-market {
+    --tm-bg: #120e0a;
+    --tm-panel: #1e1712;
+    --tm-panel-2: #2a211a;
+    --tm-gold: #c9a227;
+    --tm-gold-light: #e8c95a;
+    --tm-parchment: #e8d5b7;
+    --tm-text: #d8c9b0;
+    --tm-muted: #8a7a64;
+    --tm-green: #4caf50;
+    --tm-green-dim: #2f4a2f;
+    --tm-red: #c0392b;
+    --tm-red-dim: #4a2620;
+    --tm-blue: #5a7fbf;
+    --tm-blue-dim: #26344a;
+    --tm-border: #3a2e22;
+    background: radial-gradient(circle at 20% 0%, #241b12 0%, var(--tm-bg) 60%);
+    border: 1px solid var(--tm-border);
+    border-radius: 14px;
+    padding: 20px;
+    font-family: Georgia, 'Times New Roman', serif;
+    color: var(--tm-text);
+    font-size: 14px;
+}
+.tm-topbar {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 2px solid var(--tm-gold);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.tm-title { font-size: 22px; color: var(--tm-gold-light); letter-spacing: 1px; text-shadow: none; margin: 0; }
+.tm-subtitle { color: var(--tm-muted); font-style: italic; font-size: 13px; }
+.tm-counters { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.tm-counter {
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--tm-border);
+}
+.tm-counter.buy  { background: linear-gradient(135deg, var(--tm-green-dim), var(--tm-panel)); border-color: var(--tm-green); }
+.tm-counter.sell { background: linear-gradient(135deg, var(--tm-red-dim),   var(--tm-panel)); border-color: var(--tm-red); }
+.tm-ci { font-size: 32px; }
+.tm-cb { display: flex; flex-direction: column; gap: 2px; }
+.tm-cl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--tm-muted); }
+.tm-cv { font-size: 24px; font-weight: bold; color: var(--tm-gold-light); }
+.tm-cs { font-size: 12px; color: var(--tm-muted); }
+.tm-counter.buy  .tm-cv { color: #a8dca8; }
+.tm-counter.sell .tm-cv { color: #e8a89f; }
+.tm-layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
+.tm-panel {
+    background: linear-gradient(180deg, var(--tm-panel-2), var(--tm-panel));
+    border: 1px solid var(--tm-border);
+    border-radius: 10px;
+    padding: 16px;
+}
+.tm-panel-title {
+    font-size: 15px;
+    color: var(--tm-gold-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-bottom: 10px;
+    margin: 0 0 14px;
+    border-bottom: 1px solid var(--tm-border);
+    text-shadow: none;
+}
+.tm-fg { margin-bottom: 12px; }
+.tm-fg label {
+    display: block;
+    font-size: 11px;
+    color: var(--tm-muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 5px;
+}
+.tm-fg input,
+.tm-fg select,
+.tm-fg textarea {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--tm-panel);
+    border: 1px solid var(--tm-border);
+    border-radius: 6px;
+    color: var(--tm-text);
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+}
+.tm-fg textarea { min-height: 60px; }
+.tm-fg input:focus,
+.tm-fg select:focus,
+.tm-fg textarea:focus { outline: none; border-color: var(--tm-gold); }
+.tm-fg input[readonly] { color: var(--tm-gold-light); font-weight: bold; cursor: default; }
+.tm-frow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tm-type-switch { display: flex; gap: 8px; margin-bottom: 14px; }
+.tm-type-btn {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 1px solid var(--tm-border);
+    background: var(--tm-panel);
+    font-size: 14px;
+    transition: all .15s;
+    color: var(--tm-muted);
+}
+.tm-type-btn.buy.active  { background: var(--tm-green-dim); border-color: var(--tm-green); color: #d6f0d6; }
+.tm-type-btn.sell.active { background: var(--tm-red-dim);   border-color: var(--tm-red);   color: #f0d6d0; }
+.tm-btn-gold {
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--tm-gold-light);
+    border-radius: 6px;
+    padding: 11px 14px;
+    font-size: 14px;
+    width: 100%;
+    background: var(--tm-gold);
+    color: #1a120b;
+    font-weight: bold;
+    transition: all .15s;
+}
+.tm-btn-gold:hover { background: var(--tm-gold-light); }
+.tm-status {
+    min-height: 18px;
+    font-size: 12px;
+    margin-top: 10px;
+    text-align: center;
+    color: var(--tm-muted);
+}
+.tm-status.error { color: #e07a5f; }
+.tm-status.success { color: #8fd18f; }
+.tm-filters { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.tm-filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.tm-chip {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--tm-border);
+    background: var(--tm-panel);
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--tm-muted);
+    transition: all .15s;
+    user-select: none;
+}
+.tm-chip:hover { border-color: var(--tm-gold); color: var(--tm-text); }
+.tm-chip.active { background: var(--tm-gold); color: #1a120b; border-color: var(--tm-gold-light); font-weight: bold; }
+.tm-chip.active.buy  { background: var(--tm-green); color: #10240f; border-color: #7fbf7f; }
+.tm-chip.active.sell { background: var(--tm-red);   color: #fff;    border-color: #e07a5f; }
+#tm-search {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--tm-panel);
+    border: 1px solid var(--tm-border);
+    border-radius: 6px;
+    color: var(--tm-text);
+    font-family: inherit;
+    font-size: 14px;
+}
+#tm-search:focus { outline: none; border-color: var(--tm-gold); }
+.tm-mine-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--tm-muted);
+    cursor: pointer;
+}
+.tm-mine-check input { width: auto; accent-color: var(--tm-gold); }
+.tm-listings {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+.tm-listing {
+    background: linear-gradient(180deg, var(--tm-panel-2), var(--tm-panel));
+    border: 1px solid var(--tm-border);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color .2s, transform .2s;
+}
+.tm-listing:hover { transform: translateY(-2px); }
+.tm-listing.buy  { border-left: 4px solid var(--tm-green); }
+.tm-listing.sell { border-left: 4px solid var(--tm-red); }
+.tm-listing.mine { box-shadow: 0 0 0 1px var(--tm-gold) inset; }
+.tm-listing-head { display: flex; align-items: flex-start; gap: 10px; }
+.tm-listing-icon { font-size: 28px; line-height: 1; }
+.tm-listing-title { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tm-listing-title h4 {
+    font-size: 16px;
+    color: var(--tm-parchment);
+    line-height: 1.2;
+    word-break: break-word;
+    text-shadow: none;
+    margin: 0;
+}
+.tm-listing-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tm-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    background: var(--tm-panel);
+    border: 1px solid var(--tm-border);
+    color: var(--tm-muted);
+}
+.tm-tag.buy  { background: var(--tm-green-dim); color: #a8dca8; border-color: var(--tm-green); }
+.tm-tag.sell { background: var(--tm-red-dim);   color: #e8a89f; border-color: var(--tm-red); }
+.tm-tag.cat  { background: var(--tm-blue-dim);  color: #a8bede; border-color: var(--tm-blue); }
+.tm-tag.clan { background: #3a2a1a; color: #ffd479; border-color: #c9a227; }
+.tm-listing-price {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--tm-border);
+}
+.tm-listing-price .amount { font-size: 20px; font-weight: bold; color: var(--tm-gold-light); }
+.tm-listing-price .per { font-size: 12px; color: var(--tm-muted); }
+.tm-listing-price .total { margin-left: auto; font-size: 12px; color: var(--tm-muted); }
+.tm-listing-port { font-size: 12px; color: #a8bede; font-style: italic; }
+.tm-listing-note {
+    font-size: 13px;
+    color: var(--tm-text);
+    opacity: .85;
+    font-style: italic;
+    line-height: 1.4;
+    word-break: break-word;
+}
+.tm-listing-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--tm-muted);
+    padding-top: 8px;
+    border-top: 1px dashed var(--tm-border);
+}
+.tm-listing-foot .author { color: var(--tm-parchment); }
+.tm-listing-foot .time { margin-left: auto; }
+.tm-listing-foot .tm-delete {
+    background: transparent;
+    border: 1px solid var(--tm-border);
+    color: var(--tm-muted);
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+}
+.tm-listing-foot .tm-delete:hover { color: var(--tm-red); border-color: var(--tm-red); }
+.trade-market .empty {
+    color: var(--tm-muted);
+    font-style: italic;
+    padding: 30px 12px;
+    text-align: center;
+    grid-column: 1 / -1;
+    background: transparent;
+}
+
+/* ============ ТАКТИКА БОЯ ============ */
+.tactics-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .8);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    animation: tacticsFadeIn .2s ease;
+}
+@keyframes tacticsFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.tactics-content {
+    background: linear-gradient(180deg, #1a2230 0%, #121821 100%);
+    border: 1px solid var(--border);
+    border-top: 3px solid #ffd479;
+    border-radius: 16px;
+    max-width: 760px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .7);
+    overflow: hidden;
+}
+.tactics-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 22px;
+    background: rgba(15, 17, 21, 0.6);
+    border-bottom: 1px solid var(--border);
+}
+.tactics-header h2 {
+    font-size: 18px;
+    color: #ffd479;
+    margin: 0;
+    flex: 1;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, .6);
+}
+.tactics-close {
+    width: 34px; height: 34px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.tactics-close:hover { background: rgba(255, 122, 122, 0.1); border-color: var(--red); color: var(--red); }
+.tactics-body {
+    padding: 20px 22px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.tactics-section h3 {
+    font-size: 15px;
+    color: #7db9ff;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    text-shadow: none;
+}
+.tactics-text {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #cfd3dc;
+    white-space: pre-line;
+}
+.tactics-text b { color: #fff; }
+.tactics-footer {
+    padding: 12px 22px;
+    background: rgba(15, 17, 21, 0.6);
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+}
+.kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #ffd479;
+}
+
+/* Адаптив торговли и тактики */
+@media (max-width: 900px) {
+    .tm-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+    .trade-market { padding: 14px; }
+    .tm-counters { grid-template-columns: 1fr; gap: 10px; }
+    .tm-counter { padding: 12px 14px; }
+    .tm-ci { font-size: 26px; }
+    .tm-cv { font-size: 20px; }
+    .tm-listings { grid-template-columns: 1fr; }
+    .tactics-modal { padding: 10px; }
+    .tactics-content { border-radius: 12px; max-height: 95vh; }
+    .tactics-header { padding: 14px 16px; }
+    .tactics-header h2 { font-size: 15px; }
+    .tactics-body { padding: 16px; gap: 16px; }
+}
