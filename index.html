@@ -16,6 +16,7 @@
     <!-- ГЛАВНАЯ -->
     <div id="screen-home" class="screen">
         <div class="top-right">
+            <span id="onlineBadge" class="online-badge" title="Пользователей онлайн">🟢 <b id="onlineCount">0</b></span>
             <span id="adminInfo"></span>
             <button id="adminPanelBtn" hidden title="Админ-панель">⚙️</button>
             <button id="adminLoginBtn">🔐 Админ</button>
@@ -38,6 +39,106 @@
 
             <h2 class="section-title">Гильдии</h2>
             <div id="clanGrid" class="clan-grid"></div>
+
+            <!-- ТОРГОВЛЯ НА ГЛАВНОЙ -->
+            <section id="homeTradeSection" class="home-trade-section">
+                <h2 class="section-title">🪙 Гильдейский рынок</h2>
+                <div class="trade-market">
+                    <header class="tm-topbar">
+                        <h3 class="tm-title">📣 Биржа заявок</h3>
+                        <span class="tm-subtitle">World of Sea Battle</span>
+                    </header>
+
+                    <div class="tm-counters">
+                        <div class="tm-counter buy">
+                            <div class="tm-ci">🛒</div>
+                            <div class="tm-cb">
+                                <span class="tm-cl">Золото на покупку</span>
+                                <span class="tm-cv" id="tm-counter-buy-gold">0 🪙</span>
+                                <span class="tm-cs" id="tm-counter-buy-sub">0 заявок</span>
+                            </div>
+                        </div>
+                        <div class="tm-counter sell">
+                            <div class="tm-ci">💰</div>
+                            <div class="tm-cb">
+                                <span class="tm-cl">Золото на продажу</span>
+                                <span class="tm-cv" id="tm-counter-sell-gold">0 🪙</span>
+                                <span class="tm-cs" id="tm-counter-sell-sub">0 заявок</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tm-layout">
+                        <section class="tm-panel">
+                            <h4 class="tm-panel-title">📝 Новая заявка</h4>
+                            <div class="tm-type-switch">
+                                <div class="tm-type-btn buy active" data-type="buy">🛒 Покупка</div>
+                                <div class="tm-type-btn sell" data-type="sell">💰 Продажа</div>
+                            </div>
+                            <div class="tm-fg">
+                                <label>Гильдия</label>
+                                <select id="tm-clan"></select>
+                            </div>
+                            <div class="tm-fg">
+                                <label>Категория</label>
+                                <select id="tm-category"></select>
+                            </div>
+                            <div class="tm-fg">
+                                <label>Название *</label>
+                                <input type="text" id="tm-name" maxlength="60" placeholder="Например: Дубовые доски">
+                            </div>
+                            <div class="tm-frow">
+                                <div class="tm-fg">
+                                    <label>Цена за ед. *</label>
+                                    <input type="number" id="tm-price" min="1" step="1" placeholder="0">
+                                </div>
+                                <div class="tm-fg">
+                                    <label>Количество *</label>
+                                    <input type="number" id="tm-qty" min="1" step="1" value="1">
+                                </div>
+                            </div>
+                            <div class="tm-fg">
+                                <label>Итого золота</label>
+                                <input type="text" id="tm-total" readonly value="0 🪙">
+                            </div>
+                            <div class="tm-fg">
+                                <label>Порт (необязательно)</label>
+                                <input type="text" id="tm-port" maxlength="60" placeholder="Порт-Рояль">
+                            </div>
+                            <div class="tm-fg">
+                                <label>Ваш ник *</label>
+                                <input type="text" id="tm-nickname" maxlength="32" placeholder="Капитан">
+                            </div>
+                            <div class="tm-fg">
+                                <label>Примечание</label>
+                                <textarea id="tm-note" maxlength="140" placeholder="Доп. условия..."></textarea>
+                            </div>
+                            <button id="tm-submit" class="tm-btn-gold">Опубликовать заявку</button>
+                            <p id="tm-status" class="tm-status"></p>
+                        </section>
+
+                        <section class="tm-panel">
+                            <h4 class="tm-panel-title">📋 Доска заявок</h4>
+                            <div class="tm-filters">
+                                <input type="search" id="tm-search" placeholder="🔍 Поиск по названию...">
+                                <div class="tm-filter-row" id="tm-clan-filters"></div>
+                                <div class="tm-filter-row" id="tm-type-filters">
+                                    <span class="tm-chip active" data-type="all">Все</span>
+                                    <span class="tm-chip buy" data-type="buy">🛒 Покупка</span>
+                                    <span class="tm-chip sell" data-type="sell">💰 Продажа</span>
+                                </div>
+                                <div class="tm-filter-row" id="tm-cat-filters"></div>
+                                <div class="tm-filter-row">
+                                    <label class="tm-mine-check">
+                                        <input type="checkbox" id="tm-only-mine"> Только мои заявки
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="tm-listings" class="tm-listings"></div>
+                        </section>
+                    </div>
+                </div>
+            </section>
 
             <section id="applySection" class="apply-section">
                 <h2 class="section-title">📝 Подать заявку в гильдию</h2>
@@ -157,6 +258,7 @@
                 <button class="side-item" data-section="pvp"><span class="side-ico">⚔️</span><span>Билды ПВП</span></button>
                 <button class="side-item" data-section="pb"><span class="side-ico">🛡</span><span>Билды ПБ</span></button>
                 <button class="side-item" data-section="contacts"><span class="side-ico">💬</span><span>Контакты</span></button>
+                <button class="side-item" id="openTacticsBtn"><span class="side-ico">📖</span><span>Тактика боя</span></button>
                 <button class="side-item admin-only" data-section="applications" hidden><span class="side-ico">📝</span><span>Заявки</span></button>
             </aside>
 
@@ -271,11 +373,12 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА: ПАРОЛЬ -->
+    <!-- МОДАЛКА: ПАРОЛЬ + НИК -->
     <div id="clanPassModal" class="modal" hidden>
         <div class="modal-content">
             <h2>🔐 Вход в гильдию</h2>
             <p id="clanPassName" class="auth-clan-name"></p>
+            <input type="text" id="clanNickname" placeholder="Ваш игровой ник" maxlength="32" autocomplete="nickname">
             <input type="password" id="clanPassword" placeholder="Пароль гильдии" autocomplete="current-password">
             <p id="clanPassError" class="error"></p>
             <div class="modal-actions">
@@ -309,6 +412,7 @@
                 <button class="admin-tab active" data-atab="clans">🏰 Гильдии</button>
                 <button class="admin-tab" data-atab="partners">🤝 Партнёры</button>
                 <button class="admin-tab" data-atab="faq">❓ FAQ</button>
+                <button class="admin-tab" data-atab="tactics">📖 Тактика</button>
                 <button class="admin-tab" data-atab="site">⚙️ Настройки</button>
             </div>
 
@@ -381,6 +485,23 @@
                 <div id="faqAdminList" class="faq-admin-list"></div>
             </div>
 
+            <div id="atab-tactics" class="admin-tab-content">
+                <p class="hint admin-hint">
+                    Редактирование разделов тактики боя. Поддерживается HTML: 
+                    <b>&lt;b&gt;жирный&lt;/b&gt;</b>, <b>&lt;br&gt;</b>, <b>&lt;ul&gt;&lt;li&gt;...&lt;/li&gt;&lt;/ul&gt;</b>.
+                </p>
+                <div class="add-form" style="border-style:solid">
+                    <input type="text" id="tacId" placeholder="ID (латиница, напр. nagib)" maxlength="30">
+                    <input type="text" id="tacTitle" placeholder="Заголовок *" maxlength="120">
+                    <input type="text" id="tacIcon" placeholder="Иконка (эмодзи)" maxlength="4">
+                    <input type="number" id="tacOrder" placeholder="Порядок" min="0" step="1" value="10">
+                    <textarea id="tacContent" placeholder="Содержимое * (HTML)" rows="6"></textarea>
+                    <button id="tacAddBtn">➕ Добавить раздел</button>
+                    <span id="tacStatus"></span>
+                </div>
+                <div id="tacticsAdminList" class="partners-admin-list"></div>
+            </div>
+
             <div id="atab-site" class="admin-tab-content">
                 <div class="admin-field">
                     <label>Discord Webhook URL</label>
@@ -395,6 +516,37 @@
             <div class="modal-actions">
                 <button id="closeAdminPanel" class="secondary">Закрыть</button>
             </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: РЕДАКТИРОВАНИЕ РАЗДЕЛА ТАКТИКИ -->
+    <div id="tacticsEditModal" class="modal" hidden>
+        <div class="modal-content admin-panel-wide">
+            <h2>✏️ Редактировать раздел тактики</h2>
+            <input type="hidden" id="tacEditId">
+            <div class="admin-field"><label>Заголовок</label><input type="text" id="tacEditTitle" maxlength="120"></div>
+            <div class="admin-field"><label>Иконка</label><input type="text" id="tacEditIcon" maxlength="4"></div>
+            <div class="admin-field"><label>Порядок</label><input type="number" id="tacEditOrder" min="0" step="1"></div>
+            <div class="admin-field"><label>Содержимое (HTML)</label><textarea id="tacEditContent" rows="12"></textarea></div>
+            <p id="tacEditMsg" class="error"></p>
+            <div class="modal-actions">
+                <button id="saveTacEdit">💾 Сохранить</button>
+                <button id="cancelTacEdit" class="secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: ТАКТИКА БОЯ (просмотр) -->
+    <div id="tacticsModal" class="tactics-modal" hidden>
+        <div class="tactics-content">
+            <header class="tactics-header">
+                <h2>⚓ Тактика боя — World of Sea Battle</h2>
+                <button id="closeTactics" class="tactics-close" title="Закрыть">✕</button>
+            </header>
+            <div class="tactics-body" id="tacticsBody"></div>
+            <footer class="tactics-footer">
+                <span>💡 Нажми <span class="kbd">Esc</span> или кликни вне окна, чтобы закрыть</span>
+            </footer>
         </div>
     </div>
 
@@ -512,7 +664,7 @@
 
     <footer class="site-footer">
         <span class="footer-left">Mist Time — Сергеев С.В</span>
-        <span class="footer-right">v1.5.2</span>
+        <span class="footer-right">v1.6.0</span>
     </footer>
 
     <script type="module" src="app.js"></script>
