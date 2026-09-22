@@ -22,6 +22,7 @@ let currentGame   = null;
 let currentClan   = null;
 let pendingClanId = null;
 let currentTab    = 'enemies';
+let homeCurrentTab = 'enemies';
 let isAdmin       = false;
 let movingItem    = null;
 let editingItem   = null;
@@ -373,7 +374,11 @@ function renderHomeCards() {
 function isUnlocked() { return isAdmin || localStorage.getItem(UNLOCK_KEY) === '1'; }
 function handleClanClick(id) {
     if (applyAccessControl()) return;
-    isUnlocked() ? openClan(id) : openClanInfo(id);
+    if (isUnlocked()) {
+        openHomeLists(id);
+    } else {
+        openClanInfo(id);
+    }
 }
 
 /* ===================== SCOPE ===================== */
@@ -427,7 +432,9 @@ $('backToHomeBtn').addEventListener('click', () => {
     if (applyAccessControl()) return;
     showScreen('home');
 });
-$('clanViewBtn').addEventListener('click', () => { if (pendingClanId) openClan(pendingClanId); });
+$('clanViewBtn').addEventListener('click', () => {
+    if (pendingClanId) openHomeLists(pendingClanId);
+});
 
 /* ===================== ВХОД ПО ПАРОЛЮ ===================== */
 $('clanLoginBtn').addEventListener('click', () => {
@@ -459,7 +466,9 @@ $('doClanLogin').addEventListener('click', async () => {
     await logView(nick, pendingClanId, 'вход в гильдию');
 
     const cid = pendingClanId; pendingClanId = null;
-    openClan(cid);
+
+    /* После входа — показываем списки прямо на главной */
+    openHomeLists(cid);
 });
 $('clanNickname').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('clanPassword').focus();
@@ -468,7 +477,161 @@ $('clanPassword').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('doClanLogin').click();
 });
 
-/* ===================== ОТКРЫТИЕ ГИЛЬДИИ ===================== */
+/* ===================== СПИСКИ НА ГЛАВНОЙ ===================== */
+function openHomeLists(id) {
+    if (applyAccessControl()) return;
+    const clan = clansCache[id];
+    if (!clan) return;
+    if (!isUnlocked()) { openClanInfo(id); return; }
+
+    currentClan = id;
+    localStorage.setItem(LAST_CLAN_KEY, id);
+
+    const viewerNick = localStorage.getItem(VIEWER_NICK_KEY);
+    if (viewerNick) logView(viewerNick, id, 'просмотр списков на главной');
+
+    /* Показываем главную */
+    showScreen('home');
+    applyBg();
+
+    /* Скрываем hero и карточки, показываем панель */
+    const hero = $('heroVideo');
+    const title = $('guildsTitle');
+    const grid = $('clanGrid');
+    const panel = $('homeListsSection');
+    if (hero)  hero.hidden = true;
+    if (title) title.hidden = true;
+    if (grid)  grid.hidden = true;
+    if (panel) panel.hidden = false;
+
+    /* Заполняем шапку панели */
+    $('homeListsLogo').src = clan.image || '';
+    $('homeListsLogo').alt = clan.name;
+    $('homeListsLogo').onerror = () => { $('homeListsLogo').style.display = 'none'; };
+    $('homeListsTitle').textContent = clan.name;
+
+    /* Сбрасываем таб на «Враги» */
+    homeCurrentTab = 'enemies';
+    document.querySelectorAll('[data-home-tab]').forEach(b =>
+        b.classList.toggle('active', b.dataset.homeTab === 'enemies')
+    );
+
+    /* Сбрасываем поиск */
+    const searchEl = $('homeSearchInput');
+    if (searchEl) searchEl.value = '';
+
+    /* Загружаем список врагов */
+    loadHomeList('enemies');
+
+    /* Автозаполнение ника для торговли (если понадобится) */
+    const tn = $('tm-nickname');
+    if (tn && !tn.value) {
+        const n = currentViewerNick();
+        if (n) tn.value = n;
+    }
+}
+
+function closeHomeLists() {
+    const hero = $('heroVideo');
+    const title = $('guildsTitle');
+    const grid = $('clanGrid');
+    const panel = $('homeListsSection');
+    if (hero)  hero.hidden = false;
+    if (title) title.hidden = false;
+    if (grid)  grid.hidden = false;
+    if (panel) panel.hidden = true;
+}
+
+async function loadHomeList(tab) {
+    if (!currentClan) return;
+    const ul = $('homePlayerList');
+    if (!ul) return;
+    ul.innerHTML = '<li class="empty">Загрузка…</li>';
+
+    const { data, error } = await supabase.from(tab).select('*')
+        .eq('clan', currentClan)
+        .order('created_at', { ascending: false });
+
+    ul.innerHTML = '';
+    if (error) { ul.innerHTML = `<li class="empty">Ошибка: ${error.message}</li>`; return; }
+    if (!data?.length) { ul.innerHTML = '<li class="empty">Список пуст</li>'; return; }
+
+    data.forEach(item => {
+        const li = document.createElement('li');
+        const parts = [];
+        if (item.nickname)     parts.push(`<span class="nick">${escapeHtml(item.nickname)}</span>`);
+        if (item.player_guild) parts.push(`<span class="guild">${escapeHtml(item.player_guild)}</span>`);
+        if (item.faction)      parts.push(`<span class="faction">${escapeHtml(item.faction)}</span>`);
+
+        const actions = isAdmin ? `<div class="actions">
+            <button class="edit" title="Ред.">✏️</button>
+            <button class="move" title="Пер.">↔</button>
+            <button class="delete" title="Уд.">🗑</button>
+        </div>` : '';
+
+        li.innerHTML = `<div class="info"><div class="row-main">${parts.join('')}</div>
+            ${item.note ? `<span class="note">${escapeHtml(item.note)}</span>` : ''}</div>${actions}`;
+
+        if (isAdmin) {
+            li.querySelector('.edit').addEventListener('click', () => openEditModal(tab, item));
+            li.querySelector('.move').addEventListener('click', () => openMoveModal(tab, item.id));
+            li.querySelector('.delete').addEventListener('click', async () => {
+                if (!confirm('Удалить запись?')) return;
+                const { error } = await supabase.from(tab).delete().eq('id', item.id);
+                if (error) return alert(error.message);
+                await logAdminAction(`Удалил запись (${tab})`, null, `id: ${item.id}`);
+                refreshLists(tab);
+            });
+        }
+        ul.appendChild(li);
+    });
+    applyHomeSearchFilter();
+}
+
+function applyHomeSearchFilter() {
+    const q = ($('homeSearchInput')?.value || '').toLowerCase().trim();
+    document.querySelectorAll('#homePlayerList li').forEach(li => {
+        if (!q) { li.style.display = ''; return; }
+        li.style.display = li.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+/* Обработчики панели на главной */
+$('homeListsClose').addEventListener('click', () => {
+    closeHomeLists();
+    /* Оставляем currentClan, чтобы клик по карточке сразу открывал списки */
+});
+
+$('homeOpenFullBtn').addEventListener('click', () => {
+    if (currentClan) openClan(currentClan);
+});
+
+$('homeLeaveBtn').addEventListener('click', () => {
+    if (!confirm('Заблокировать просмотр? Пароль потребуется ввести снова.')) return;
+    localStorage.removeItem(UNLOCK_KEY);
+    localStorage.removeItem(LAST_CLAN_KEY);
+    localStorage.removeItem(VIEWER_NICK_KEY);
+    currentClan = null;
+    closeHomeLists();
+    if (applyAccessControl()) return;
+    showScreen('home');
+    applyBg();
+});
+
+document.querySelectorAll('[data-home-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tab = btn.dataset.homeTab;
+        homeCurrentTab = tab;
+        document.querySelectorAll('[data-home-tab]').forEach(b =>
+            b.classList.toggle('active', b.dataset.homeTab === tab)
+        );
+        loadHomeList(tab);
+    });
+});
+
+$('homeSearchInput').addEventListener('input', applyHomeSearchFilter);
+
+/* ===================== ОТКРЫТИЕ ГИЛЬДИИ (ПОЛНЫЙ ВИД) ===================== */
 function openClan(id) {
     if (applyAccessControl()) return;
     const clan = clansCache[id];
@@ -509,6 +672,7 @@ function openClan(id) {
 }
 $('backBtn').addEventListener('click', () => {
     if (applyAccessControl()) return;
+    closeHomeLists();
     showScreen('home');
     applyBg();
 });
@@ -518,15 +682,16 @@ $('clanLeaveBtn').addEventListener('click', () => {
     localStorage.removeItem(LAST_CLAN_KEY);
     localStorage.removeItem(VIEWER_NICK_KEY);
     currentClan = null;
+    closeHomeLists();
     if (applyAccessControl()) return;
     showScreen('home');
     applyBg();
 });
 
 /* ===================== ВКЛАДКИ ===================== */
-document.querySelectorAll('.tab:not([data-trade-filter])').forEach(btn => {
+document.querySelectorAll('.tab:not([data-trade-filter]):not([data-home-tab])').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab:not([data-trade-filter])').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab:not([data-trade-filter]):not([data-home-tab])').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
         currentTab = btn.dataset.tab;
@@ -546,7 +711,16 @@ function applySearchFilter() {
 }
 
 /* ===================== СПИСКИ ===================== */
-function renderAll() { if (currentClan) TABS.forEach(loadList); }
+function refreshLists(tab) {
+    loadList(tab);
+    if (currentClan && $('homeListsSection') && !$('homeListsSection').hidden) {
+        loadHomeList(tab);
+    }
+}
+function renderAll() {
+    if (!currentClan) return;
+    TABS.forEach(refreshLists);
+}
 async function loadList(tab) {
     if (!currentClan) return;
     const ul = document.querySelector(`[data-list="${tab}"]`);
@@ -1970,6 +2144,7 @@ $('deleteClanBtn').addEventListener('click', async () => {
             currentClan = null;
             localStorage.removeItem(LAST_CLAN_KEY);
             localStorage.removeItem(UNLOCK_KEY);
+            closeHomeLists();
             showScreen('home');
         }
         renderHomeCards();
@@ -2080,7 +2255,7 @@ $('saveEdit').addEventListener('click', async () => {
     if (error) { $('editError').textContent = 'Ошибка: ' + error.message; return; }
     await logAdminAction(`Изменил запись (${tab})`, nick || pg, `id: ${id}`);
     $('editModal').hidden = true; editingItem = null;
-    loadList(tab);
+    refreshLists(tab);
 });
 ['editPlayerGuild','editNickname','editFaction','editNote'].forEach(id => {
     $(id).addEventListener('keydown', e => {
@@ -2109,7 +2284,7 @@ $('addBtn').addEventListener('click', async () => {
     ['playerGuild','nickname','faction','note'].forEach(id => $(id).value = '');
     $('playerGuild').focus();
     flashStatus('✔ Добавлено', '#6ee7a7');
-    loadList(currentTab);
+    refreshLists(currentTab);
 });
 ['playerGuild','nickname','faction','note'].forEach(id => {
     $(id).addEventListener('keydown', e => {
@@ -2130,7 +2305,7 @@ async function deleteItem(tab, id) {
     const { error } = await supabase.from(tab).delete().eq('id', id);
     if (error) return alert(error.message);
     await logAdminAction(`Удалил запись (${tab})`, null, `id: ${id}`);
-    loadList(tab);
+    refreshLists(tab);
 }
 function openMoveModal(fromTab, id) {
     movingItem = { fromTab, id };
@@ -2157,7 +2332,7 @@ document.querySelectorAll('#moveModal [data-target]').forEach(btn => {
             data.nickname || data.player_guild || null,
             `id: ${id}`
         );
-        loadList(fromTab); loadList(toTab);
+        refreshLists(fromTab); refreshLists(toTab);
     });
 });
 
@@ -2235,6 +2410,13 @@ async function handleBuildHash() {
     if (!m) return;
     const { data, error } = await supabase.from('builds').select('*').eq('id', m[1]).single();
     if (error || !data) return;
+
+    /* Нужно открыть полный вид гильдии, чтобы показать билды */
+    let openClanId = null;
+    if (data.clan && clansCache[data.clan]) openClanId = data.clan;
+    else openClanId = localStorage.getItem(LAST_CLAN_KEY) || null;
+    if (openClanId && clansCache[openClanId]) openClan(openClanId);
+
     const section = data.type === 'pvp' ? 'pvp' : 'pb';
     document.querySelector(`.side-item[data-section="${section}"]`)?.click();
     setTimeout(() => {
@@ -2270,7 +2452,7 @@ function escapeHtml(str) {
     renderApplyClanSelect();
     await loadFaq();
 
-    // Инициализация UI биржи (один раз)
+    /* Инициализация UI биржи (один раз) */
     initTradeCategorySelect();
     initTradeCategoryFilters();
     updateTradeFormTotal();
@@ -2286,6 +2468,15 @@ function escapeHtml(str) {
 
     showScreen('home');
     applyBg();
+
+    /* Если пользователь уже авторизован в гильдию и есть последняя гильдия —
+       показываем списки прямо на главной */
+    if (isUnlocked()) {
+        const lastClan = localStorage.getItem(LAST_CLAN_KEY);
+        if (lastClan && clansCache[lastClan]) {
+            openHomeLists(lastClan);
+        }
+    }
 
     setTimeout(handleBuildHash, 800);
 })();
