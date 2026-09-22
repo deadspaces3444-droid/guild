@@ -53,7 +53,7 @@
             <h2 class="section-title" id="guildsTitle">Гильдии</h2>
             <div id="clanGrid" class="clan-grid"></div>
 
-            <!-- ═══ СПИСКИ ГИЛЬДИИ НА ГЛАВНОЙ (только для авторизованных) ═══ -->
+            <!-- СПИСКИ ГИЛЬДИИ НА ГЛАВНОЙ -->
             <section id="homeListsSection" class="home-lists-section" hidden>
                 <div class="home-lists-header">
                     <img id="homeListsLogo" class="home-lists-logo" src="" alt="">
@@ -190,7 +190,7 @@
                 <button class="side-item" data-section="pvp"><span class="side-ico">⚔️</span><span>Билды ПВП</span></button>
                 <button class="side-item" data-section="pb"><span class="side-ico">🛡</span><span>Билды ПБ</span></button>
                 <button class="side-item" data-section="contacts"><span class="side-ico">💬</span><span>Контакты</span></button>
-                <button class="side-item" id="openTacticsBtn"><span class="side-ico">📖</span><span>Тактика боя</span></button>
+                <button class="side-item admin-only" id="openTacticsBtn" hidden><span class="side-ico">📖</span><span>Тактика боя</span></button>
                 <button class="side-item admin-only" data-section="applications" hidden><span class="side-ico">📝</span><span>Заявки</span></button>
             </aside>
 
@@ -398,7 +398,7 @@
         </div>
     </div>
 
-    <!-- ═══════════ АДМИН-ПАНЕЛЬ ═══════════ -->
+    <!-- АДМИН-ПАНЕЛЬ -->
     <div id="adminView" hidden>
         <aside class="admin-sidebar">
             <div class="admin-sidebar-brand">
