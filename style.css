@@ -922,7 +922,7 @@ body::before {
     font-family: inherit; align-self: center;
 }
 .add-form button:hover { background: var(--accent-hover); }
-#status, #pvpStatus, #pbStatus, #evStatus, #trStatus, #partnerStatus, #gameStatus {
+#status, #pvpStatus, #pbStatus, #evStatus, #trStatus, #partnerStatus, #gameStatus, #tacStatus {
     color: var(--green); font-size: 13px;
     align-self: center; width: 100%; text-align: center;
 }
@@ -1359,104 +1359,6 @@ a.icon-btn:hover {
     border-color: var(--green); color: var(--green);
 }
 
-/* ============ АДАПТИВ ============ */
-@media (max-width: 900px) {
-    #clanView header { padding: 0; }
-    .clan-layout { flex-direction: column; padding: 0; }
-    .sidebar {
-        width: 100%; position: static; flex-direction: row;
-        overflow-x: auto; padding-bottom: 4px;
-    }
-    .side-item { flex: 1 1 auto; min-width: 130px; justify-content: center; padding: 10px 12px; font-size: 13px; }
-    .side-ico { font-size: 16px; }
-    .clan-main { width: 100%; }
-}
-
-@media (max-width: 700px) {
-    body { padding: 12px 12px 50px; }
-    .top-right { position: static; justify-content: center; margin-bottom: 14px; }
-
-    .game-toolbar {
-        top: 10px;
-        padding: 4px;
-        border-radius: 12px;
-    }
-    .game-tab { padding: 6px 10px; font-size: 12px; gap: 6px; }
-    .game-tab img { width: 18px; height: 18px; }
-    .game-tab-emoji { font-size: 14px; }
-
-    .home-wrap { padding: 80px 8px 30px; gap: 24px; }
-    .hero-video { aspect-ratio: 16 / 10; border-radius: 14px; }
-    .hero-text { padding: 16px; }
-    .hero-text h1 { font-size: 22px; }
-    .hero-text p { font-size: 13px; }
-    .section-title { font-size: 20px; }
-    .clan-grid { grid-template-columns: 1fr; gap: 16px; }
-    .clan-card { min-height: auto; padding: 20px; }
-    .clan-card img { width: 80px; height: 80px; }
-    .back-btn { position: static; margin-bottom: 12px; }
-    .clan-info-wrap { padding: 10px 0 30px; min-height: auto; }
-    .clan-info { padding: 26px 20px; border-radius: 16px; }
-    .clan-info-logo { width: 110px; height: 110px; }
-    .clan-info-name { font-size: 22px; }
-    .clan-info-desc { font-size: 14px; }
-    .clan-info-rules-wrap,
-    .clan-info-news-wrap { padding: 14px 16px; }
-    .clan-info-rules,
-    .clan-info-news { font-size: 13px; }
-    #clanView header {
-        flex-direction: column; gap: 12px;
-        align-items: stretch; text-align: left; margin-bottom: 20px;
-    }
-    #clanView header h1 {
-        font-size: 20px; justify-content: flex-start;
-        gap: 8px; order: -1;
-    }
-    #clanView .back-btn { align-self: flex-start; }
-    #clanView .top-right { justify-content: flex-start; }
-    .tabs { gap: 6px; margin-bottom: 16px; }
-    .tab { padding: 8px 12px; font-size: 13px; flex: 1 1 auto; }
-    .add-form { padding: 12px; gap: 6px; }
-    .add-form input,
-    .add-form textarea,
-    .add-form select { min-width: 100%; padding: 10px 12px; }
-    .add-form button { width: 100%; padding: 12px; }
-    .player-list li { padding: 10px 12px; align-items: flex-start; gap: 8px; }
-    .player-list li .actions { flex-direction: column; }
-    .player-list li .actions button { width: 32px; height: 32px; font-size: 13px; }
-    .modal-content { padding: 20px; }
-    .contact-card { padding: 12px; gap: 12px; }
-    .contact-card img { width: 40px; height: 40px; }
-    .contact-btn { padding: 8px 12px; font-size: 13px; }
-    .thanks-card { padding: 20px 18px; }
-    .thanks-text { font-size: 14px; }
-    .apply-grid { grid-template-columns: 1fr; }
-    .stats-row { grid-template-columns: repeat(2, 1fr); }
-    .treasury-balance { padding: 14px 18px; flex-direction: column; gap: 6px; align-items: flex-start; }
-    .treasury-balance-value { font-size: 22px; }
-    .event-card { flex-direction: column; gap: 10px; }
-    .event-date-block { flex-direction: row; gap: 6px; min-width: auto; align-self: flex-start; padding: 6px 12px; }
-    .event-day { font-size: 18px; }
-    .event-month { margin-top: 0; }
-    .partners-list { grid-template-columns: 1fr; }
-    .partner-card { padding: 14px 16px; }
-    .partner-logo { width: 48px; height: 48px; }
-    .partner-letter { font-size: 20px; }
-    .yt-promo-card { flex-direction: column; text-align: center; padding: 20px; }
-    .yt-promo-logo { width: 80px; height: 80px; }
-    .yt-promo-btn { align-self: center; }
-    .yt-promo-name { font-size: 18px; justify-content: center; }
-}
-
-@media (max-width: 520px) {
-    .hero-text h1 { font-size: 18px; }
-    .hero-text p { display: none; }
-    #adminInfo, #adminInfo2, #adminInfo3 { max-width: 100px; font-size: 11px; }
-    .site-footer { font-size: 11px; padding: 6px 10px; }
-    .side-item span:not(.side-ico) { display: none; }
-    .side-item { min-width: auto; padding: 10px 14px; }
-    .side-ico { font-size: 20px; }
-}
 /* ============ СЧЁТЧИК ОНЛАЙН ============ */
 .online-badge {
     display: inline-flex;
@@ -1851,20 +1753,118 @@ a.icon-btn:hover {
     color: #ffd479;
 }
 
-/* Адаптив торговли и тактики */
+/* ============ АДАПТИВ ============ */
 @media (max-width: 900px) {
+    #clanView header { padding: 0; }
+    .clan-layout { flex-direction: column; padding: 0; }
+    .sidebar {
+        width: 100%; position: static; flex-direction: row;
+        overflow-x: auto; padding-bottom: 4px;
+    }
+    .side-item { flex: 1 1 auto; min-width: 130px; justify-content: center; padding: 10px 12px; font-size: 13px; }
+    .side-ico { font-size: 16px; }
+    .clan-main { width: 100%; }
+
     .tm-layout { grid-template-columns: 1fr; }
 }
+
 @media (max-width: 700px) {
+    body { padding: 12px 12px 50px; }
+    .top-right { position: static; justify-content: center; margin-bottom: 14px; }
+
+    .game-toolbar {
+        top: 10px;
+        padding: 4px;
+        border-radius: 12px;
+    }
+    .game-tab { padding: 6px 10px; font-size: 12px; gap: 6px; }
+    .game-tab img { width: 18px; height: 18px; }
+    .game-tab-emoji { font-size: 14px; }
+
+    .home-wrap { padding: 80px 8px 30px; gap: 24px; }
+    .hero-video { aspect-ratio: 16 / 10; border-radius: 14px; }
+    .hero-text { padding: 16px; }
+    .hero-text h1 { font-size: 22px; }
+    .hero-text p { font-size: 13px; }
+    .section-title { font-size: 20px; }
+    .clan-grid { grid-template-columns: 1fr; gap: 16px; }
+    .clan-card { min-height: auto; padding: 20px; }
+    .clan-card img { width: 80px; height: 80px; }
+    .back-btn { position: static; margin-bottom: 12px; }
+    .clan-info-wrap { padding: 10px 0 30px; min-height: auto; }
+    .clan-info { padding: 26px 20px; border-radius: 16px; }
+    .clan-info-logo { width: 110px; height: 110px; }
+    .clan-info-name { font-size: 22px; }
+    .clan-info-desc { font-size: 14px; }
+    .clan-info-rules-wrap,
+    .clan-info-news-wrap { padding: 14px 16px; }
+    .clan-info-rules,
+    .clan-info-news { font-size: 13px; }
+    #clanView header {
+        flex-direction: column; gap: 12px;
+        align-items: stretch; text-align: left; margin-bottom: 20px;
+    }
+    #clanView header h1 {
+        font-size: 20px; justify-content: flex-start;
+        gap: 8px; order: -1;
+    }
+    #clanView .back-btn { align-self: flex-start; }
+    #clanView .top-right { justify-content: flex-start; }
+    .tabs { gap: 6px; margin-bottom: 16px; }
+    .tab { padding: 8px 12px; font-size: 13px; flex: 1 1 auto; }
+    .add-form { padding: 12px; gap: 6px; }
+    .add-form input,
+    .add-form textarea,
+    .add-form select { min-width: 100%; padding: 10px 12px; }
+    .add-form button { width: 100%; padding: 12px; }
+    .player-list li { padding: 10px 12px; align-items: flex-start; gap: 8px; }
+    .player-list li .actions { flex-direction: column; }
+    .player-list li .actions button { width: 32px; height: 32px; font-size: 13px; }
+    .modal-content { padding: 20px; }
+    .contact-card { padding: 12px; gap: 12px; }
+    .contact-card img { width: 40px; height: 40px; }
+    .contact-btn { padding: 8px 12px; font-size: 13px; }
+    .thanks-card { padding: 20px 18px; }
+    .thanks-text { font-size: 14px; }
+    .apply-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .treasury-balance { padding: 14px 18px; flex-direction: column; gap: 6px; align-items: flex-start; }
+    .treasury-balance-value { font-size: 22px; }
+    .event-card { flex-direction: column; gap: 10px; }
+    .event-date-block { flex-direction: row; gap: 6px; min-width: auto; align-self: flex-start; padding: 6px 12px; }
+    .event-day { font-size: 18px; }
+    .event-month { margin-top: 0; }
+    .partners-list { grid-template-columns: 1fr; }
+    .partner-card { padding: 14px 16px; }
+    .partner-logo { width: 48px; height: 48px; }
+    .partner-letter { font-size: 20px; }
+    .yt-promo-card { flex-direction: column; text-align: center; padding: 20px; }
+    .yt-promo-logo { width: 80px; height: 80px; }
+    .yt-promo-btn { align-self: center; }
+    .yt-promo-name { font-size: 18px; justify-content: center; }
+
     .trade-market { padding: 14px; }
     .tm-counters { grid-template-columns: 1fr; gap: 10px; }
     .tm-counter { padding: 12px 14px; }
     .tm-ci { font-size: 26px; }
     .tm-cv { font-size: 20px; }
     .tm-listings { grid-template-columns: 1fr; }
+
     .tactics-modal { padding: 10px; }
     .tactics-content { border-radius: 12px; max-height: 95vh; }
     .tactics-header { padding: 14px 16px; }
     .tactics-header h2 { font-size: 15px; }
     .tactics-body { padding: 16px; gap: 16px; }
+}
+
+@media (max-width: 520px) {
+    .hero-text h1 { font-size: 18px; }
+    .hero-text p { display: none; }
+    #adminInfo, #adminInfo2, #adminInfo3 { max-width: 100px; font-size: 11px; }
+    .site-footer { font-size: 11px; padding: 6px 10px; }
+    .side-item span:not(.side-ico) { display: none; }
+    .side-item { min-width: auto; padding: 10px 14px; }
+    .side-ico { font-size: 20px; }
+    .stats-row { grid-template-columns: 1fr; }
+    .online-badge { font-size: 11px; padding: 4px 8px; }
 }
