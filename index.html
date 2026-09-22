@@ -8,6 +8,27 @@
 </head>
 <body>
 
+    <!-- ЭКРАН ТЕХРАБОТ -->
+    <div id="screen-maintenance" class="screen" hidden>
+        <div class="top-right">
+            <span id="adminInfoM"></span>
+            <button id="adminPanelBtnM" hidden title="Админ-панель">⚙️</button>
+            <button id="adminLoginBtnM">🔐 Админ</button>
+            <button id="adminLogoutBtnM" hidden>🚪 Выйти</button>
+        </div>
+        <div class="maintenance-wrap">
+            <div class="maintenance-card">
+                <div class="maintenance-icon">🛠️</div>
+                <h1 class="maintenance-title">Технические работы</h1>
+                <p id="maintenanceMessage" class="maintenance-text">Идут технические работы. Заходите позже.</p>
+                <p class="maintenance-hint">Приносим извинения за неудобства.</p>
+                <div class="maintenance-actions">
+                    <button id="maintenanceRefresh" class="big-btn primary">🔄 Обновить страницу</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ГЛАВНАЯ -->
     <div id="screen-home" class="screen">
         <div class="top-right">
@@ -141,6 +162,7 @@
                 <button class="side-item active" data-section="lists"><span class="side-ico">📋</span><span>Списки</span></button>
                 <button class="side-item" data-section="events"><span class="side-ico">📅</span><span>События</span></button>
                 <button class="side-item" data-section="treasury"><span class="side-ico">💰</span><span>Казна</span></button>
+                <button class="side-item" data-section="trade"><span class="side-ico">🪙</span><span>Торговля</span></button>
                 <button class="side-item" data-section="pvp"><span class="side-ico">⚔️</span><span>Билды ПВП</span></button>
                 <button class="side-item" data-section="pb"><span class="side-ico">🛡</span><span>Билды ПБ</span></button>
                 <button class="side-item" data-section="contacts"><span class="side-ico">💬</span><span>Контакты</span></button>
@@ -201,6 +223,51 @@
                     </section>
                     <p class="hint admin-only" hidden>💡 Указывай сумму и описание.</p>
                     <div id="treasuryList" class="treasury-list"></div>
+                </div>
+
+                <!-- ═══════════ ТОРГОВЛЯ ═══════════ -->
+                <div id="section-trade" class="clan-section">
+                    <h2>🪙 Торговля гильдии</h2>
+
+                    <div class="trade-counters">
+                        <div class="trade-counter">
+                            <div class="trade-counter-label">Всего сделок</div>
+                            <div id="tradeCountTotal" class="trade-counter-value">0</div>
+                        </div>
+                        <div class="trade-counter active">
+                            <div class="trade-counter-label">Активных</div>
+                            <div id="tradeCountActive" class="trade-counter-value">0</div>
+                        </div>
+                        <div class="trade-counter done">
+                            <div class="trade-counter-label">Завершено</div>
+                            <div id="tradeCountDone" class="trade-counter-value">0</div>
+                        </div>
+                    </div>
+
+                    <nav class="tabs trade-tabs">
+                        <button class="tab active" data-trade-filter="all">Все</button>
+                        <button class="tab" data-trade-filter="buy">🛒 Куплю</button>
+                        <button class="tab" data-trade-filter="sell">💰 Продам</button>
+                        <button class="tab" data-trade-filter="active">🔵 Активные</button>
+                        <button class="tab" data-trade-filter="done">✅ Завершённые</button>
+                    </nav>
+
+                    <section class="add-form trade-form">
+                        <select id="tradeType">
+                            <option value="sell">💰 Продам</option>
+                            <option value="buy">🛒 Куплю</option>
+                        </select>
+                        <input type="text" id="tradeItem" placeholder="Товар *" maxlength="80">
+                        <input type="text" id="tradeNickname" placeholder="Ваш ник *" maxlength="32">
+                        <input type="number" id="tradeAmount" placeholder="Сумма *" min="0" step="1">
+                        <input type="text" id="tradePort" placeholder="Порт (необязательно)" maxlength="60">
+                        <input type="text" id="tradeNote" placeholder="Заметка" maxlength="200">
+                        <button id="tradeAddBtn">➕ Выставить</button>
+                        <span id="tradeStatus"></span>
+                    </section>
+                    <p class="hint">💡 Товар, ник и сумма — обязательны. Порт можно указать, если сделка уже назначена.</p>
+
+                    <div id="tradesList" class="trades-list"></div>
                 </div>
 
                 <div id="section-pvp" class="clan-section">
@@ -434,6 +501,20 @@
                         <label>Discord Webhook URL</label>
                         <input type="text" id="adminWebhook" placeholder="https://discord.com/api/webhooks/..." maxlength="400">
                     </div>
+
+                    <div class="admin-field">
+                        <label>Режим технических работ</label>
+                        <label class="switch-row">
+                            <input type="checkbox" id="adminMaintenance">
+                            <span class="switch-label">Включить режим техработ (обычные пользователи увидят заглушку)</span>
+                        </label>
+                    </div>
+
+                    <div class="admin-field">
+                        <label>Сообщение на экране техработ</label>
+                        <textarea id="adminMaintenanceMsg" rows="3" placeholder="Идут технические работы. Заходите позже."></textarea>
+                    </div>
+
                     <p id="adminSiteMsg" class="error"></p>
                     <div class="modal-actions">
                         <button id="saveSiteSettings">💾 Сохранить</button>
@@ -463,7 +544,7 @@
         </main>
     </div>
 
-    <!-- МОДАЛКА: ПАРОЛЬ ГИЛЬДИИ (с ником) -->
+    <!-- МОДАЛКА: ПАРОЛЬ ГИЛЬДИИ -->
     <div id="clanPassModal" class="modal" hidden>
         <div class="modal-content">
             <h2>🔐 Вход в гильдию</h2>
@@ -478,7 +559,7 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА: ВХОД АДМИНА (с ником) -->
+    <!-- МОДАЛКА: ВХОД АДМИНА -->
     <div id="adminAuthModal" class="modal" hidden>
         <div class="modal-content">
             <h2>🔐 Вход администратора</h2>
